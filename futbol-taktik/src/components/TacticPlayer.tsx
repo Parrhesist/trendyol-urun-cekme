@@ -179,17 +179,28 @@ export function TacticPlayer({
   const colors = { home: data.settings.homeColor, away: data.settings.awayColor };
   return (
     <div className={'tplayer' + (big ? ' big' : '')}>
-      <Pitch tokens={tactic.tokens} pos={a.pos} drawings={frame?.drawings ?? []} half={tactic.half} colors={colors} subFor={labels.subFor} roleFor={labels.roleFor} tokenScale={tactic.tokenScale} />
       {a.n > 1 && (
         <div className="tplayer-bar">
-          <Btn icon={a.playing ? 'pause' : 'play'} variant="primary" size={big ? 'lg' : 'sm'} onClick={togglePlay} aria-label={a.playing ? 'Durdur' : 'Oynat'} />
-          <Btn icon="prev" size={big ? 'lg' : 'sm'} variant="ghost" onClick={() => goStep(a.fi - 1)} aria-label="Önceki adım" />
+          <Btn icon={a.playing ? 'pause' : 'play'} variant="primary" size={big ? 'lg' : 'sm'} onClick={togglePlay} aria-label={a.playing ? 'Durdur' : 'Oynat'}>
+            {a.playing ? 'Durdur' : 'Oynat'}
+          </Btn>
+          <Btn icon="prev" size={big ? 'lg' : 'sm'} variant="ghost" onClick={() => goStep(a.fi - 1)} disabled={a.fi === 0} aria-label="Önceki adım" />
+          <ol className="tp-steps" aria-label="Adımlar">
+            {tactic.frames.map((_, i) => (
+              <li key={i}>
+                <button type="button" className={i === a.fi ? 'on' : ''} onClick={() => goStep(i)} aria-label={`Adım ${i + 1}`} aria-current={i === a.fi ? 'step' : undefined}>
+                  {i + 1}
+                </button>
+              </li>
+            ))}
+          </ol>
+          <Btn icon="next" size={big ? 'lg' : 'sm'} variant="ghost" onClick={() => goStep(a.fi + 1)} disabled={a.fi >= a.n - 1} aria-label="Sonraki adım" />
           <span className="tplayer-step">
             Adım {a.fi + 1}/{a.n}
           </span>
-          <Btn icon="next" size={big ? 'lg' : 'sm'} variant="ghost" onClick={() => goStep(a.fi + 1)} aria-label="Sonraki adım" />
         </div>
       )}
+      <Pitch tokens={tactic.tokens} pos={a.pos} drawings={frame?.drawings ?? []} half={tactic.half} colors={colors} subFor={labels.subFor} roleFor={labels.roleFor} tokenScale={tactic.tokenScale} />
       {frame?.note && <p className="tplayer-note">{frame.note}</p>}
     </div>
   );

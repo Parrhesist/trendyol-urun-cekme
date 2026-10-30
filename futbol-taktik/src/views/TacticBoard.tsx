@@ -403,6 +403,44 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
         </div>
       )}
 
+      <section className="frames" aria-label="Adımlar ve oynatma">
+        <div className="frames-ctrl">
+          <Btn icon={anim.playing ? 'pause' : 'play'} variant="primary" size="lg" onClick={anim.playing ? anim.stop : anim.play} disabled={t.frames.length < 2}>
+            {anim.playing ? 'Durdur' : 'Oynat'}
+          </Btn>
+          <Btn icon="prev" variant="ghost" size="lg" onClick={() => anim.setFi(fi - 1)} disabled={fi === 0} aria-label="Önceki adım" />
+          <Btn icon="next" variant="ghost" size="lg" onClick={() => anim.setFi(fi + 1)} disabled={fi >= t.frames.length - 1} aria-label="Sonraki adım" />
+        </div>
+        <ol className="frame-list">
+          {t.frames.map((_, i) => (
+            <li key={i}>
+              <button type="button" className={i === fi ? 'on' : ''} onClick={() => anim.setFi(i)}>
+                {i + 1}
+              </button>
+            </li>
+          ))}
+          {editable && (
+            <li>
+              <button type="button" className="add" onClick={addFrame} title="Bu adımı kopyalayıp yeni adım ekle">
+                + Adım ekle
+              </button>
+            </li>
+          )}
+        </ol>
+        <div className="frame-note">
+          {editable ? (
+            <textarea id="frame-note" rows={2} placeholder={`Adım ${fi + 1} için koçluk notu: kim, nereye, ne zaman?`} value={frame.note ?? ''} onChange={(e) => setFrame((f) => ({ ...f, note: e.target.value }), false)} />
+          ) : (
+            <p className="note-read">{frame.note || 'Bu adım için not yok.'}</p>
+          )}
+          {editable && t.frames.length > 1 && (
+            <Btn variant="ghost" size="sm" icon="trash" onClick={delFrame}>
+              Adımı sil
+            </Btn>
+          )}
+        </div>
+      </section>
+
       <div className="editor-main">
         <div className="board-wrap">
           <Pitch
@@ -569,43 +607,6 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
         </aside>
       </div>
 
-      <footer className="frames">
-        <div className="frames-ctrl">
-          <Btn icon={anim.playing ? 'pause' : 'play'} variant="primary" size="lg" onClick={anim.playing ? anim.stop : anim.play} disabled={t.frames.length < 2}>
-            {anim.playing ? 'Durdur' : 'Oynat'}
-          </Btn>
-          <Btn icon="prev" variant="ghost" size="lg" onClick={() => anim.setFi(fi - 1)} disabled={fi === 0} aria-label="Önceki adım" />
-          <Btn icon="next" variant="ghost" size="lg" onClick={() => anim.setFi(fi + 1)} disabled={fi >= t.frames.length - 1} aria-label="Sonraki adım" />
-        </div>
-        <ol className="frame-list">
-          {t.frames.map((_, i) => (
-            <li key={i}>
-              <button type="button" className={i === fi ? 'on' : ''} onClick={() => anim.setFi(i)}>
-                {i + 1}
-              </button>
-            </li>
-          ))}
-          {editable && (
-            <li>
-              <button type="button" className="add" onClick={addFrame} title="Bu adımı kopyalayıp yeni adım ekle">
-                + Adım ekle
-              </button>
-            </li>
-          )}
-        </ol>
-        <div className="frame-note">
-          {editable ? (
-            <textarea id="frame-note" rows={2} placeholder={`Adım ${fi + 1} için koçluk notu: kim, nereye, ne zaman?`} value={frame.note ?? ''} onChange={(e) => setFrame((f) => ({ ...f, note: e.target.value }), false)} />
-          ) : (
-            <p className="note-read">{frame.note || 'Bu adım için not yok.'}</p>
-          )}
-          {editable && t.frames.length > 1 && (
-            <Btn variant="ghost" size="sm" icon="trash" onClick={delFrame}>
-              Adımı sil
-            </Btn>
-          )}
-        </div>
-      </footer>
       {sharing && <ShareModal kind="taktik" id={t.id} title={t.name} onClose={() => setSharing(false)} />}
     </div>
   );

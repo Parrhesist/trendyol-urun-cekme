@@ -3309,3 +3309,39 @@ body.no-select,
     max-height: none;
   }
 }
+
+/* oynatma ve adımlar sahanın üstünde */
+.tplayer-bar {
+  flex-wrap: wrap;
+}
+.tp-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.tp-steps button {
+  min-width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: 700 15px var(--f-display);
+  cursor: pointer;
+}
+.tp-steps button.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.tplayer.big .tp-steps button {
+  min-width: 44px;
+  height: 44px;
+  font-size: 20px;
+}
+.tplayer-bar .tplayer-step {
+  margin-left: auto;
+}
