@@ -96,7 +96,20 @@ export function ArrowDefs() {
   );
 }
 
-export function TokenShape({ t, p, sub, selected, colors, scale = 1 }: { t: Token; p: Pt; sub?: string; selected?: boolean; colors: { home: string; away: string }; scale?: number }) {
+/** Mevki rozeti (oyuncunun üstünde küçük etiket) */
+export function RoleBadge({ role, y, tone }: { role: string; y: number; tone?: 'warn' }) {
+  const w = role.length * 0.95 + 1.3;
+  return (
+    <g transform={`translate(0,${y})`} className={'role-badge' + (tone ? ' ' + tone : '')}>
+      <rect x={-w / 2} y={-1.05} width={w} height={2.1} rx={1.05} />
+      <text y={0.5} textAnchor="middle">
+        {role}
+      </text>
+    </g>
+  );
+}
+
+export function TokenShape({ t, p, sub, role, selected, colors, scale = 1 }: { t: Token; p: Pt; sub?: string; role?: string; selected?: boolean; colors: { home: string; away: string }; scale?: number }) {
   const r = 1.75 * scale;
   if (t.kind === 'ball')
     return (
@@ -127,12 +140,26 @@ export function TokenShape({ t, p, sub, selected, colors, scale = 1 }: { t: Toke
       <text y={0.62 * scale} textAnchor="middle" className="tok-num" style={{ fontSize: (t.label.length > 2 ? 1.25 : 1.75) * scale }}>
         {t.label}
       </text>
+      {role && <RoleBadge role={role} y={-r - 1.45} />}
       {sub && (
         <text y={r + 2} textAnchor="middle" className="tok-sub">
           {sub}
         </text>
       )}
     </g>
+  );
+}
+
+/** Saha zemini: çim şeritleri, çizgiler ve ok uçları. Üstüne çizilecekler children olarak verilir. */
+export function PitchSurface({ half, children }: { half?: boolean; children?: ReactNode }) {
+  return (
+    <>
+      <ArrowDefs />
+      <rect x={-6} y={-6} width={PITCH.w + 12} height={PITCH.h + 12} className="pitch-bg" />
+      <Stripes half={half} />
+      <PitchLines half={half} />
+      {children}
+    </>
   );
 }
 
@@ -146,6 +173,7 @@ interface Props {
   half?: boolean;
   colors: { home: string; away: string };
   subFor?: (t: Token) => string | undefined;
+  roleFor?: (t: Token) => string | undefined;
   tool?: Tool;
   color?: string;
   editable?: boolean;
@@ -244,10 +272,7 @@ export function Pitch(props: Props) {
       role="img"
       aria-label="Taktik tahtası"
     >
-      <ArrowDefs />
-      <rect x={-6} y={-6} width={PITCH.w + 12} height={PITCH.h + 12} className="pitch-bg" />
-      <Stripes half={half} />
-      <PitchLines half={half} />
+      <PitchSurface half={half} />
       {props.ghostDrawings?.map((d) => <DrawingShape key={'g' + d.id} d={d} faded />)}
       {drawings.map((d) => (
         <DrawingShape key={d.id} d={d} onClick={editable && tool === 'erase' ? () => props.onErase?.(d.id) : undefined} />
@@ -256,7 +281,7 @@ export function Pitch(props: Props) {
       {order.map((t) =>
         pos[t.id] ? (
           <g key={t.id} onPointerDown={(e) => startToken(e, t.id)} style={{ cursor: editable && tool === 'move' ? 'grab' : undefined }}>
-            <TokenShape t={t} p={pos[t.id]} sub={props.subFor?.(t)} selected={props.selected === t.id} colors={colors} />
+            <TokenShape t={t} p={pos[t.id]} sub={props.subFor?.(t)} role={props.roleFor?.(t)} selected={props.selected === t.id} colors={colors} />
           </g>
         ) : null,
       )}
@@ -268,4 +293,13 @@ export function Pitch(props: Props) {
 /** Küçük, etkileşimsiz önizleme */
 export function MiniPitch({ tokens, pos, drawings, half, colors }: { tokens: Token[]; pos: Record<string, Pt>; drawings: Drawing[]; half?: boolean; colors: { home: string; away: string } }) {
   return <Pitch tokens={tokens} pos={pos} drawings={drawings} half={half} colors={colors} className="mini" />;
+}
+
+/** SVG içinde ekran koordinatını saha metresine çevirir; saha dışındaysa null */
+export function clientToPitch(svg: SVGSVGElement | null, clientX: number, clientY: number, margin = 3): Pt | null {
+  const m = svg?.getScreenCTM();
+  if (!svg || !m) return null;
+  const pt = new DOMPoint(clientX, clientY).matrixTransform(m.inverse());
+  if (pt.x < -margin || pt.y < -margin || pt.x > PITCH.w + margin || pt.y > PITCH.h + margin) return null;
+  return { x: +pt.x.toFixed(2), y: +pt.y.toFixed(2) };
 }

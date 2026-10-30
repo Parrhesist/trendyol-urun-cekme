@@ -25,6 +25,11 @@ const readHash = () => location.hash.replace(/^#/, '') || 'panel';
 export function App() {
   const { data, mode, canEdit, isEmpty, replaceAll } = useStore();
   const [route, setRoute] = useState(readHash);
+  // maçtan açılan taktikte "geri" maça döner
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+  useEffect(() => {
+    if (!route.startsWith('taktik-')) setReturnTo(null);
+  }, [route]);
   useEffect(() => {
     const h = () => {
       setRoute(readHash());
@@ -72,13 +77,31 @@ export function App() {
   else
     switch (section) {
       case 'taktik':
-        view = <TacticBoard openId={id} onOpen={(x) => go(x ? 'taktik-' + x : 'taktik')} />;
+        view = (
+          <TacticBoard
+            openId={id}
+            backLabel={returnTo ? 'Maça dön' : undefined}
+            onOpen={(x) => {
+              if (!x && returnTo) go(returnTo);
+              else go(x ? 'taktik-' + x : 'taktik');
+            }}
+          />
+        );
         break;
       case 'antrenman':
         view = <Training onOpenTactic={(x) => go('taktik-' + x)} />;
         break;
       case 'maclar':
-        view = <Matches openId={id} onOpen={(x) => go(x ? 'mac-' + x : 'maclar')} />;
+        view = (
+          <Matches
+            openId={id}
+            onOpen={(x) => go(x ? 'mac-' + x : 'maclar')}
+            onOpenTactic={(tid, mid) => {
+              setReturnTo('mac-' + mid);
+              go('taktik-' + tid);
+            }}
+          />
+        );
         break;
       case 'kadro':
         view = <Squad />;

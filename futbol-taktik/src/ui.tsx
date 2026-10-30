@@ -29,6 +29,10 @@ export function Icon({ name, size = 18 }: { name: string; size?: number }) {
     upload: 'M12 16V4M7 9l5-5 5 5M4 20h16',
     present: 'M3 4h18v12H3zM12 16v4M8 20h8',
     flag: 'M5 21V4h11l-2 4 2 4H5',
+    grip: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
+    undo: 'M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3',
+    up: 'M6 15l6-6 6 6',
+    down: 'M6 9l6 6 6-6',
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

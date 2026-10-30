@@ -13,6 +13,7 @@ export const DEFAULT_SETTINGS: Settings = {
   homeColor: '#d4452b',
   awayColor: '#2f5d9e',
   showNames: false,
+  labels: 'role',
 };
 
 const EMPTY: TeamData = { settings: DEFAULT_SETTINGS, players: [], tactics: [], drills: [], sessions: [], matches: [] };

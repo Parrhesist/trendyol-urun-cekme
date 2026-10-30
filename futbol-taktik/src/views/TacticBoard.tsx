@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pitch, MiniPitch, type Tool } from '../components/Pitch';
-import { useTacticAnimation, useTokenSub } from '../components/TacticPlayer';
+import { labelModeOf, useTacticAnimation, useTokenLabels } from '../components/TacticPlayer';
 import { cloneFrame, FORMATION_NAMES, FORMATIONS, makeTactic, mirror, uid } from '../football';
-import { autoLineup } from '../lineup';
+import { autoLineup, tacticFromMatch } from '../lineup';
 import { useStore } from '../store';
-import type { Pt, Tactic, TacticCategory, Token, TokenKind } from '../types';
+import type { LabelMode, Pt, Tactic, TacticCategory, Token, TokenKind } from '../types';
 import { Btn, ConfirmBtn, Empty, Field, Icon, Modal, Segmented, toggleFullscreen } from '../ui';
 import { ShareModal } from './Share';
+
+const fmtShort = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 
 const CATEGORIES: TacticCategory[] = ['Hücum', 'Savunma', 'Geçiş', 'Duran Top', 'Antrenman'];
 
@@ -20,7 +22,14 @@ const TOOLS: { id: Tool; icon: string; label: string }[] = [
   { id: 'erase', icon: 'eraser', label: 'Sil' },
 ];
 
-export function TacticBoard({ openId, onOpen }: { openId?: string; onOpen: (id: string | null) => void }) {
+const LABEL_OPTS: { value: LabelMode; label: string }[] = [
+  { value: 'num', label: 'No' },
+  { value: 'role', label: 'Mevki' },
+  { value: 'name', label: 'İsim' },
+  { value: 'both', label: 'İkisi' },
+];
+
+export function TacticBoard({ openId, onOpen, backLabel }: { openId?: string; onOpen: (id: string | null) => void; backLabel?: string }) {
   const { data, canEdit } = useStore();
   const [filter, setFilter] = useState<TacticCategory | 'Tümü'>('Tümü');
   const [creating, setCreating] = useState(false);
@@ -30,7 +39,7 @@ export function TacticBoard({ openId, onOpen }: { openId?: string; onOpen: (id: 
   );
   const current = data.tactics.find((t) => t.id === openId);
 
-  if (openId && current) return <Editor key={current.id} tactic={current} onBack={() => onOpen(null)} />;
+  if (openId && current) return <Editor key={current.id} tactic={current} onBack={() => onOpen(null)} backLabel={backLabel} />;
 
   const colors = { home: data.settings.homeColor, away: data.settings.awayColor };
   return (
@@ -60,6 +69,7 @@ export function TacticBoard({ openId, onOpen }: { openId?: string; onOpen: (id: 
                 <small>
                   {t.formation}
                   {t.awayFormation ? ` – ${t.awayFormation}` : ''} · {t.frames.length} adım
+                  {t.matchId && data.matches.find((m) => m.id === t.matchId) ? ` · ${data.matches.find((m) => m.id === t.matchId)!.opponent} maçı` : ''}
                 </small>
               </div>
             </button>
@@ -87,9 +97,22 @@ function NewTacticModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
   const [away, setAway] = useState<string>('4-4-2');
   const [half, setHalf] = useState(false);
   const [blank, setBlank] = useState(false);
+  const [source, setSource] = useState('');
+  const sourceMatches = [...data.matches].filter((m) => Object.keys(m.pre.lineup).length).sort((a, b) => b.date.localeCompare(a.date));
   const create = async () => {
     let t: Tactic;
-    if (blank) {
+    const sm = data.matches.find((m) => m.id === source);
+    if (!blank && sm) {
+      t = tacticFromMatch(sm, data.players, { name: name || `${category} — ${sm.opponent}`, category, withOpponent: false, half });
+      t.matchId = undefined;
+      if (away !== 'yok') {
+        const opp = makeTactic('', formation, { away });
+        const ids = opp.tokens.filter((k) => k.kind === 'away');
+        t.tokens.splice(t.tokens.length - 1, 0, ...ids);
+        ids.forEach((k) => (t.frames[0].pos[k.id] = opp.frames[0].pos[k.id]));
+        t.awayFormation = away;
+      }
+    } else if (blank) {
       t = makeTactic(name || 'Yeni diyagram', formation, { category });
       t.tokens = t.tokens.filter((k) => k.kind === 'ball');
       t.frames[0].pos = Object.fromEntries(Object.entries(t.frames[0].pos).filter(([k]) => t.tokens.some((x) => x.id === k)));
@@ -136,8 +159,18 @@ function NewTacticModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
             <option value="yari">Yarı saha (hücum yönü)</option>
           </select>
         </Field>
-        <Field label="Bizim diziliş" hint="İlk 11 kadrodan otomatik yerleşir">
-          <select id="nt-form" value={formation} onChange={(e) => setFormation(e.target.value)} disabled={blank}>
+        <Field label="Oyuncular" hint={source ? 'Maçtaki diziliş ve konumlarıyla gelir' : 'Kadrodan mevkiye göre yerleşir'}>
+          <select id="nt-src" value={source} onChange={(e) => setSource(e.target.value)} disabled={blank}>
+            <option value="">Seçilen dizilişle, otomatik</option>
+            {sourceMatches.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.opponent || 'Maç'} kadrosu ({fmtShort(m.date)})
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Bizim diziliş">
+          <select id="nt-form" value={formation} onChange={(e) => setFormation(e.target.value)} disabled={blank || !!source}>
             {FORMATION_NAMES.map((f) => (
               <option key={f}>{f}</option>
             ))}
@@ -159,8 +192,9 @@ function NewTacticModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
   );
 }
 
-function Editor({ tactic, onBack }: { tactic: Tactic; onBack: () => void }) {
-  const { data, save, remove, canEdit, toast } = useStore();
+function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => void; backLabel?: string }) {
+  const { data, save, remove, canEdit, toast, saveSettings } = useStore();
+  const [labelMode, setLabelMode] = useState<LabelMode>(labelModeOf(data.settings));
   const [t, setT] = useState<Tactic>(tactic);
   const [tool, setTool] = useState<Tool>('move');
   const [color, setColor] = useState('a');
@@ -171,7 +205,11 @@ function Editor({ tactic, onBack }: { tactic: Tactic; onBack: () => void }) {
   const history = useRef<Tactic[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
   const anim = useTacticAnimation(t);
-  const sub = useTokenSub();
+  const labels = useTokenLabels(t, labelMode);
+  const changeLabels = (v: LabelMode) => {
+    setLabelMode(v);
+    if (canEdit) saveSettings({ ...data.settings, labels: v });
+  };
   const fi = Math.min(anim.fi, t.frames.length - 1);
   const frame = t.frames[fi];
   const editable = canEdit && !anim.playing && anim.progress >= 1 && !present;
@@ -314,13 +352,21 @@ function Editor({ tactic, onBack }: { tactic: Tactic; onBack: () => void }) {
   return (
     <div className={'editor' + (present ? ' presenting' : '')} ref={rootRef}>
       <header className="editor-head">
-        {!present && <Btn variant="ghost" icon="prev" onClick={onBack} aria-label="Taktiklere dön" />}
+        {!present && (
+          <Btn variant="ghost" icon="prev" onClick={onBack} aria-label={backLabel ?? 'Taktiklere dön'}>
+            {backLabel}
+          </Btn>
+        )}
         {canEdit && !present ? (
           <input id="tac-name" className="title-input" value={t.name} onChange={(e) => update((d) => ({ ...d, name: e.target.value }), false)} aria-label="Taktik adı" />
         ) : (
           <h1 className="editor-title">{t.name}</h1>
         )}
         <div className="editor-actions">
+          <div className="label-switch" title="Oyuncuların üstünde/altında ne yazsın">
+            <span className="field-label">Etiket</span>
+            <Segmented id="tac-labels" value={labelMode} onChange={changeLabels} options={LABEL_OPTS} />
+          </div>
           {!present && canEdit && (
             <span className="save-state" aria-live="polite">
               {dirty ? 'Kaydediliyor…' : 'Kaydedildi'}
@@ -377,7 +423,8 @@ function Editor({ tactic, onBack }: { tactic: Tactic; onBack: () => void }) {
             drawings={frame.drawings}
             half={t.half}
             colors={colors}
-            subFor={sub}
+            subFor={labels.subFor}
+            roleFor={labels.roleFor}
             tool={tool}
             color={color}
             editable={editable}
@@ -396,6 +443,12 @@ function Editor({ tactic, onBack }: { tactic: Tactic; onBack: () => void }) {
             {selTok && editable ? (
               <section>
                 <h3>Seçili: {selTok.kind === 'home' ? 'Oyuncu' : selTok.kind === 'away' ? 'Rakip' : selTok.kind === 'ball' ? 'Top' : selTok.kind === 'cone' ? 'Huni' : 'Kale'}</h3>
+                {labels.roleName(selTok) && (
+                  <p className="role-line">
+                    <span className="role-chip">{labels.roleName(selTok)!.split(' · ')[0]}</span> {labels.roleName(selTok)!.split(' · ')[1]}
+                    <small className="muted"> — ilk adımdaki konumuna göre</small>
+                  </p>
+                )}
                 {(selTok.kind === 'home' || selTok.kind === 'away') && (
                   <Field label="Etiket (forma no / mevki)">
                     <input id="tok-label" value={selTok.label} maxLength={4} onChange={(e) => updateTok({ label: e.target.value })} />

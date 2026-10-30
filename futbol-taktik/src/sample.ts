@@ -1,4 +1,5 @@
 import { addDays, cloneFrame, FORMATIONS, makeTactic, todayISO, uid } from './football';
+import { DEFAULT_INSTRUCTIONS } from './lineup';
 import type { Drawing, Drill, EventType, Match, MatchEvent, Player, Pt, Session, Tactic, TeamData } from './types';
 
 // Örnek veri: uygulamanın ilk açılışta dolu görünmesi için. Ayarlar > "Tüm verileri sil" ile temizlenir.
@@ -376,6 +377,8 @@ export function buildSample(): TeamData {
         planDefence: 'Orta blok, geri pas tetikleyicisiyle önde pres. Hedef forvete ikinci top için DOS yakın.',
         planTransition: 'Top kazanınca ilk pas ileri, sol kanat derinlik koşusu. Kayıpta 5 saniye pres.',
         tacticIds: [tactics[0].id, tactics[1].id, tactics[2].id],
+        duties: { captain: 'p4', penalty: 'p10', corner: 'p11', freeKick: 'p10' },
+        instructions: { ...DEFAULT_INSTRUCTIONS, block: 'yuksek', line: 'yuksek', press: 'yogun', tempo: 'hizli', focus: 'sol', offside: true },
         tasks: {
           p6: 'Stoperler arasına in, 9 numaranın sırtında kal.',
           p10: 'Rakip MO ikilisi arasında konumlan, dönerek oyna.',

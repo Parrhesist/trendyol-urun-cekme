@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Importer } from '../components/Importer';
 import { buildSample } from '../sample';
 import { DEFAULT_SETTINGS, useStore } from '../store';
-import type { TeamData } from '../types';
+import type { LabelMode, TeamData } from '../types';
 import { Btn, ConfirmBtn, copyText, Field } from '../ui';
 
 export function SettingsView() {
@@ -40,9 +40,14 @@ export function SettingsView() {
           <Field label="Rakip rengi">
             <input id="st-away" type="color" value={s.awayColor} onChange={(e) => setS({ ...s, awayColor: e.target.value })} />
           </Field>
-          <label className="check wide">
-            <input id="st-names" type="checkbox" checked={s.showNames} onChange={(e) => setS({ ...s, showNames: e.target.checked })} /> Taktik tahtasında oyuncu soyadlarını göster
-          </label>
+          <Field label="Taktik tahtasında oyuncu etiketi" wide>
+            <select id="st-labels" value={s.labels ?? (s.showNames ? 'name' : 'role')} onChange={(e) => setS({ ...s, labels: e.target.value as LabelMode })}>
+              <option value="num">Yalnız forma numarası</option>
+              <option value="role">Mevki (sahadaki konuma göre)</option>
+              <option value="name">Soyad</option>
+              <option value="both">Mevki ve soyad</option>
+            </select>
+          </Field>
         </div>
         <Btn
           variant="primary"

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { surname } from '../lineup';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ROLE_NAMES, surname, tokenRoles } from '../lineup';
 import { usePlayer, useStore } from '../store';
-import type { Pt, Tactic, Token } from '../types';
+import type { LabelMode, Pt, Tactic, Token } from '../types';
 import { Btn } from '../ui';
 import { Pitch } from './Pitch';
 
@@ -99,29 +99,38 @@ export function useTacticAnimation(tactic: Tactic | undefined) {
   return { fi, setFi: go, playing, play, stop, pos, progress, n };
 }
 
-export function useTokenSub() {
+export const labelModeOf = (s: { labels?: LabelMode; showNames: boolean }): LabelMode => s.labels ?? (s.showNames ? 'name' : 'role');
+
+/** Oyuncu etiketleri: altta soyad, üstte konuma göre mevki (ayara göre) */
+export function useTokenLabels(tactic: Tactic | undefined, mode?: LabelMode) {
   const { data } = useStore();
   const player = usePlayer();
-  return useCallback(
+  const m = mode ?? labelModeOf(data.settings);
+  const f0 = tactic?.frames[0]?.pos;
+  const roles = useMemo(() => (tactic ? tokenRoles(tactic) : {}), [tactic?.tokens, f0, tactic?.category]); // eslint-disable-line react-hooks/exhaustive-deps
+  const subFor = useCallback(
     (t: Token) => {
-      if (!data.settings.showNames || t.kind !== 'home') return undefined;
+      if ((m !== 'name' && m !== 'both') || t.kind !== 'home') return undefined;
       const p = player(t.playerId);
       return p ? surname(p.name) : undefined;
     },
-    [data.settings.showNames, player],
+    [m, player],
   );
+  const roleFor = useCallback((t: Token) => (m === 'role' || m === 'both' ? roles[t.id] : undefined), [m, roles]);
+  const roleName = (t: Token) => (roles[t.id] ? `${roles[t.id]} · ${ROLE_NAMES[roles[t.id]] ?? ''}` : undefined);
+  return { subFor, roleFor, roleName, mode: m };
 }
 
 /** Salt-okunur, oynatılabilir taktik görünümü (sunumlar, antrenman kartları) */
 export function TacticPlayer({ tactic, big }: { tactic: Tactic; big?: boolean }) {
   const { data } = useStore();
   const a = useTacticAnimation(tactic);
-  const sub = useTokenSub();
+  const labels = useTokenLabels(tactic);
   const frame = tactic.frames[Math.min(a.fi, a.n - 1)];
   const colors = { home: data.settings.homeColor, away: data.settings.awayColor };
   return (
     <div className={'tplayer' + (big ? ' big' : '')}>
-      <Pitch tokens={tactic.tokens} pos={a.pos} drawings={frame?.drawings ?? []} half={tactic.half} colors={colors} subFor={sub} />
+      <Pitch tokens={tactic.tokens} pos={a.pos} drawings={frame?.drawings ?? []} half={tactic.half} colors={colors} subFor={labels.subFor} roleFor={labels.roleFor} />
       {a.n > 1 && (
         <div className="tplayer-bar">
           <Btn icon={a.playing ? 'pause' : 'play'} variant="primary" size={big ? 'lg' : 'sm'} onClick={a.playing ? a.stop : a.play} aria-label={a.playing ? 'Durdur' : 'Oynat'} />

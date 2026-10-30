@@ -43,6 +43,7 @@ export type TacticCategory = 'Hücum' | 'Savunma' | 'Geçiş' | 'Duran Top' | 'A
 
 export interface Tactic {
   id: string;
+  matchId?: string; // bu maç için hazırlanmış taktik
   name: string;
   category: TacticCategory;
   formation: string;
@@ -106,6 +107,27 @@ export type StatKey =
   | 'xg'
   | 'kosu_km';
 
+export interface Duties {
+  captain?: string;
+  penalty?: string;
+  corner?: string;
+  freeKick?: string;
+}
+
+export interface TeamInstructions {
+  block: 'alcak' | 'orta' | 'yuksek'; // pres başlangıç hattı
+  line: 'derin' | 'normal' | 'yuksek'; // savunma hattı
+  press: 'az' | 'dengeli' | 'yogun';
+  width: 'dar' | 'dengeli' | 'genis';
+  tempo: 'yavas' | 'dengeli' | 'hizli';
+  passing: 'kisa' | 'karisik' | 'direkt';
+  buildUp: 'kisa' | 'karisik' | 'uzun';
+  focus: 'sol' | 'merkez' | 'sag' | 'dengeli';
+  onWin: 'hizli' | 'sakin';
+  onLose: 'karsi_pres' | 'geri_cekil';
+  offside: boolean;
+}
+
 export interface Match {
   id: string;
   date: string;
@@ -126,6 +148,9 @@ export interface Match {
     planTransition: string;
     tacticIds: string[];
     tasks: Record<string, string>; // playerId -> görev
+    positions?: Record<string, Pt>; // slot -> sahadaki serbest konum (yoksa diziliş şablonundan)
+    duties?: Duties;
+    instructions?: TeamInstructions;
   };
   half: {
     us: number | null;
@@ -152,7 +177,11 @@ export interface Settings {
   homeColor: string;
   awayColor: string;
   showNames: boolean;
+  labels?: LabelMode;
 }
+
+/** Taktik tahtasında oyuncu altındaki etiket */
+export type LabelMode = 'num' | 'name' | 'role' | 'both';
 
 export interface TeamData {
   settings: Settings;

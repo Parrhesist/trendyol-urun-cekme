@@ -1,15 +1,18 @@
 import { useMemo, useRef, useState } from 'react';
 import { CompareRow } from '../components/Charts';
 import { Importer } from '../components/Importer';
-import { Pitch, TokenShape } from '../components/Pitch';
+import { InstructionsPitch } from '../components/InstructionsPitch';
+import { LineupBoard } from '../components/LineupBoard';
+import { Pitch } from '../components/Pitch';
 import { TacticPlayer } from '../components/TacticPlayer';
 import { EVENTS_TEMPLATE, EVENT_KEYS, importEvents, importStats, STATS_TEMPLATE } from '../csv';
-import { addDays, EVENT_META, EVENT_TYPES, fmtDate, FORMATION_NAMES, FORMATIONS, MANUAL_STATS, mirror, PITCH, STATUS_META, todayISO, uid } from '../football';
-import { autoLineup, surname } from '../lineup';
+import { addDays, EVENT_META, EVENT_TYPES, fmtDate, MANUAL_STATS, PITCH, todayISO, uid } from '../football';
+import { autoLineup, benchOf, DEFAULT_INSTRUCTIONS, detectFormation, matchSlots, slotRoles, surname } from '../lineup';
 import { usePlayer, useStore } from '../store';
 import { countEvents, isPlayed, result, RESULT_LABEL } from '../stats';
-import type { EventType, Match, MatchEvent, Player, Pt, Token } from '../types';
+import type { EventType, Match, MatchEvent, Player, Pt } from '../types';
 import { Btn, ConfirmBtn, Empty, Field, Icon, lines, Pill, Segmented, toggleFullscreen } from '../ui';
+import { INSTRUCTION_LABEL, MatchPrep } from './MatchPrep';
 import { ShareModal } from './Share';
 
 type Tab = 'once' | 'devre' | 'sonra' | 'veri';
@@ -42,10 +45,10 @@ export function newMatch(players: Player[]): Match {
   };
 }
 
-export function Matches({ openId, onOpen }: { openId?: string; onOpen: (id: string | null) => void }) {
+export function Matches({ openId, onOpen, onOpenTactic }: { openId?: string; onOpen: (id: string | null) => void; onOpenTactic: (id: string, matchId: string) => void }) {
   const { data, canEdit, save } = useStore();
   const match = data.matches.find((m) => m.id === openId);
-  if (openId && match) return <MatchDetail key={match.id} match={match} onBack={() => onOpen(null)} />;
+  if (openId && match) return <MatchDetail key={match.id} match={match} onBack={() => onOpen(null)} onOpenTactic={(id) => onOpenTactic(id, match.id)} />;
   const sorted = [...data.matches].sort((a, b) => b.date.localeCompare(a.date));
   const upcoming = sorted.filter((m) => !isPlayed(m)).reverse();
   const played = sorted.filter(isPlayed);
@@ -116,9 +119,16 @@ export function Matches({ openId, onOpen }: { openId?: string; onOpen: (id: stri
   );
 }
 
-function MatchDetail({ match, onBack }: { match: Match; onBack: () => void }) {
+// Taktik tahtasından dönüldüğünde maçın açık sekmesi korunur
+const lastTab: Record<string, Tab> = {};
+
+function MatchDetail({ match, onBack, onOpenTactic }: { match: Match; onBack: () => void; onOpenTactic: (id: string) => void }) {
   const { save, remove, canEdit } = useStore();
-  const [tab, setTab] = useState<Tab>(isPlayed(match) ? 'sonra' : 'once');
+  const [tab, setTabState] = useState<Tab>(lastTab[match.id] ?? (isPlayed(match) ? 'sonra' : 'once'));
+  const setTab = (t: Tab) => {
+    lastTab[match.id] = t;
+    setTabState(t);
+  };
   const [presenting, setPresenting] = useState<null | 'once' | 'devre'>(null);
   const [sharing, setSharing] = useState(false);
   const m = match;
@@ -182,213 +192,12 @@ function MatchDetail({ match, onBack }: { match: Match; onBack: () => void }) {
           { value: 'veri', label: 'Veri aktar' },
         ]}
       />
-      {tab === 'once' && <PrePanel m={m} setPre={setPre} onPresent={() => setPresenting('once')} />}
+      {tab === 'once' && <MatchPrep m={m} setPre={setPre} onPresent={() => setPresenting('once')} onOpenTactic={onOpenTactic} />}
       {tab === 'devre' && <HalfPanel m={m} setHalf={setHalf} onPresent={() => setPresenting('devre')} />}
       {tab === 'sonra' && <PostPanel m={m} setPost={setPost} />}
       {tab === 'veri' && <DataPanel m={m} setPost={setPost} />}
       {presenting && <Presentation m={m} kind={presenting} onClose={() => setPresenting(null)} />}
       {sharing && <ShareModal kind="mac" id={m.id} title={`${m.opponent} maçı`} onClose={() => setSharing(false)} />}
-    </div>
-  );
-}
-
-/* ---------------- Maç öncesi ---------------- */
-
-function LineupPitch({ m, onSlot, selected, big }: { m: Match; onSlot?: (i: number) => void; selected?: number | null; big?: boolean }) {
-  const { data } = useStore();
-  const player = usePlayer();
-  const slots = FORMATIONS[m.pre.formation];
-  const oppSlots = FORMATIONS[m.pre.oppFormation];
-  const colors = { home: data.settings.homeColor, away: data.settings.awayColor };
-  const tokens: Token[] = [];
-  const pos: Record<string, Pt> = {};
-  slots.forEach(([role, x, y], i) => {
-    const p = player(m.pre.lineup[String(i)]);
-    tokens.push({ id: 's' + i, kind: 'home', label: p ? String(p.number) : role });
-    pos['s' + i] = { x, y };
-  });
-  if (oppSlots && big)
-    oppSlots.forEach(([, x, y], i) => {
-      tokens.push({ id: 'o' + i, kind: 'away', label: '' });
-      pos['o' + i] = mirror({ x, y });
-    });
-  const overlay = (
-    <g>
-      {slots.map(([role, x, y], i) => {
-        const p = player(m.pre.lineup[String(i)]);
-        return (
-          <g key={i} onPointerDown={(e) => (e.stopPropagation(), onSlot?.(i))} style={{ cursor: onSlot ? 'pointer' : undefined }}>
-            <TokenShape t={{ id: 's' + i, kind: 'home', label: p ? String(p.number) : role }} p={{ x, y }} colors={colors} selected={selected === i} scale={1.1} />
-            <text x={x} y={y + 4.4} textAnchor="middle" className="tok-sub">
-              {p ? surname(p.name) : 'Boş'}
-            </text>
-            {p && p.status !== 'hazir' && <circle cx={x + 1.6} cy={y - 1.6} r={0.7} className={'warn-dot tone-' + STATUS_META[p.status].tone} />}
-          </g>
-        );
-      })}
-    </g>
-  );
-  return <Pitch tokens={tokens.filter((t) => t.kind === 'away')} pos={pos} drawings={[]} colors={colors} overlay={overlay} className={big ? 'board' : 'lineup-pitch'} />;
-}
-
-function PrePanel({ m, setPre, onPresent }: { m: Match; setPre: (p: Partial<Match['pre']>) => void; onPresent: () => void }) {
-  const { data, canEdit } = useStore();
-  const player = usePlayer();
-  const [slot, setSlot] = useState<number | null>(null);
-  const starters = Object.values(m.pre.lineup);
-  const players = [...data.players].sort((a, b) => a.number - b.number);
-  const assign = (playerId: string) => {
-    if (slot == null) return;
-    const lineup = { ...m.pre.lineup };
-    // oyuncu başka slottaysa yer değiştir
-    const prevSlot = Object.entries(lineup).find(([, id]) => id === playerId)?.[0];
-    const current = lineup[String(slot)];
-    if (prevSlot != null) {
-      if (current) lineup[prevSlot] = current;
-      else delete lineup[prevSlot];
-    }
-    lineup[String(slot)] = playerId;
-    setPre({ lineup, bench: m.pre.bench.filter((b) => b !== playerId) });
-    setSlot(null);
-  };
-  const tf = (k: keyof Match['pre'], label: string, rows = 4, ph = '') => (
-    <Field label={label}>
-      <textarea id={'pre-' + k} rows={rows} value={m.pre[k] as string} placeholder={ph} readOnly={!canEdit} onChange={(e) => setPre({ [k]: e.target.value })} />
-    </Field>
-  );
-  return (
-    <div className="stack">
-      <div className="row between">
-        <p className="muted">Kadroyu sahada kurun, rakibi analiz edin, oyun planını yazın. Soyunma odasında “Sunum” ile ekrana yansıtın.</p>
-        <Btn variant="primary" icon="present" size="lg" onClick={onPresent}>
-          Soyunma odası sunumu
-        </Btn>
-      </div>
-      <div className="two-col wide-left">
-        <section className="panel">
-          <div className="row between">
-            <h2 className="section-title">İlk 11</h2>
-            {canEdit && (
-              <div className="row">
-                <select id="pre-form" value={m.pre.formation} onChange={(e) => setPre({ formation: e.target.value, lineup: Object.fromEntries(autoLineup(e.target.value, data.players).map((id, i) => [String(i), id]).filter(([, id]) => id)) })} aria-label="Diziliş">
-                  {FORMATION_NAMES.map((f) => (
-                    <option key={f}>{f}</option>
-                  ))}
-                </select>
-                <Btn size="sm" onClick={() => setPre({ lineup: Object.fromEntries(autoLineup(m.pre.formation, data.players).map((id, i) => [String(i), id]).filter(([, id]) => id)) })}>
-                  Otomatik diz
-                </Btn>
-              </div>
-            )}
-          </div>
-          <LineupPitch m={m} onSlot={canEdit ? setSlot : undefined} selected={slot} />
-          {canEdit && <p className="hint">Bir oyuncuya dokunun, sonra listeden yerine geçecek oyuncuyu seçin.</p>}
-        </section>
-        <section className="panel">
-          {slot != null ? (
-            <>
-              <h2 className="section-title">Slot: {FORMATIONS[m.pre.formation][slot][0]}</h2>
-              <div className="pick-list">
-                {players.map((p) => (
-                  <button key={p.id} type="button" className={'pick' + (starters.includes(p.id) ? ' in' : '')} onClick={() => assign(p.id)}>
-                    <span className="shirt">{p.number}</span>
-                    <span>{p.name}</span>
-                    <small>{p.role}</small>
-                    {p.status !== 'hazir' && <Pill tone={STATUS_META[p.status].tone}>{STATUS_META[p.status].label}</Pill>}
-                  </button>
-                ))}
-              </div>
-              <Btn variant="ghost" onClick={() => setSlot(null)}>
-                Vazgeç
-              </Btn>
-            </>
-          ) : (
-            <>
-              <h2 className="section-title">Yedekler ({m.pre.bench.length})</h2>
-              <div className="chips">
-                {players
-                  .filter((p) => !starters.includes(p.id))
-                  .map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      disabled={!canEdit}
-                      className={'chip' + (m.pre.bench.includes(p.id) ? ' on' : '') + (p.status === 'sakat' || p.status === 'cezali' ? ' off' : '')}
-                      onClick={() => setPre({ bench: m.pre.bench.includes(p.id) ? m.pre.bench.filter((x) => x !== p.id) : [...m.pre.bench, p.id] })}
-                      title={STATUS_META[p.status].label}
-                    >
-                      {p.number} {surname(p.name)}
-                    </button>
-                  ))}
-              </div>
-              <h2 className="section-title">Oyuncu görevleri</h2>
-              <div className="tasks">
-                {FORMATIONS[m.pre.formation].map(([role], i) => {
-                  const p = player(m.pre.lineup[String(i)]);
-                  if (!p) return null;
-                  return (
-                    <label key={p.id} className="task">
-                      <span className="shirt">{p.number}</span>
-                      <span className="task-who">
-                        {surname(p.name)} <small>{role}</small>
-                      </span>
-                      <input id={'task-' + p.id} value={m.pre.tasks[p.id] ?? ''} readOnly={!canEdit} placeholder="Görev…" onChange={(e) => setPre({ tasks: { ...m.pre.tasks, [p.id]: e.target.value } })} />
-                    </label>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </section>
-      </div>
-
-      <section className="panel">
-        <div className="row between">
-          <h2 className="section-title">Rakip analizi</h2>
-          <label className="inline">
-            Rakip dizilişi{' '}
-            <select id="pre-oppform" value={m.pre.oppFormation} disabled={!canEdit} onChange={(e) => setPre({ oppFormation: e.target.value })}>
-              {FORMATION_NAMES.map((f) => (
-                <option key={f}>{f}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div className="three-col">
-          {tf('oppStrengths', 'Güçlü yönleri', 5, 'Her satır bir madde')}
-          {tf('oppWeaknesses', 'Zayıf yönleri', 5, 'Her satır bir madde')}
-          {tf('oppKeyPlayers', 'Kilit oyuncular', 5, 'No — özellik')}
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2 className="section-title">Oyun planı</h2>
-        <div className="three-col">
-          {tf('planAttack', 'Hücumda', 4)}
-          {tf('planDefence', 'Savunmada', 4)}
-          {tf('planTransition', 'Geçişlerde', 4)}
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2 className="section-title">Bu maçın taktikleri</h2>
-        <div className="chips">
-          {data.tactics
-            .filter((t) => t.category !== 'Antrenman')
-            .map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                disabled={!canEdit}
-                className={'chip' + (m.pre.tacticIds.includes(t.id) ? ' on' : '')}
-                onClick={() => setPre({ tacticIds: m.pre.tacticIds.includes(t.id) ? m.pre.tacticIds.filter((x) => x !== t.id) : [...m.pre.tacticIds, t.id] })}
-              >
-                {t.name}
-              </button>
-            ))}
-        </div>
-        <p className="hint">Seçilen taktikler soyunma odası sunumunda animasyonlu olarak gösterilir.</p>
-      </section>
     </div>
   );
 }
@@ -410,7 +219,7 @@ function HalfPanel({ m, setHalf, onPresent }: { m: Match; setHalf: (p: Partial<M
   };
   const tags = Array.from(new Set([...QUICK_TAGS, ...m.half.good, ...m.half.bad]));
   const starters = Object.values(m.pre.lineup);
-  const bench = m.pre.bench.length ? m.pre.bench : data.players.filter((p) => !starters.includes(p.id)).map((p) => p.id);
+  const bench = benchOf(m.pre).length ? benchOf(m.pre) : data.players.filter((p) => !starters.includes(p.id)).map((p) => p.id);
   return (
     <div className="stack">
       <div className="row between">
@@ -928,6 +737,14 @@ function Presentation({ m, kind, onClose }: { m: Match; kind: 'once' | 'devre'; 
   const [i, setI] = useState(0);
   const bullet = (s: string) => lines(s).map((x) => <li key={x}>{x}</li>);
   const tactics = m.pre.tacticIds.map((id) => data.tactics.find((t) => t.id === id)).filter((t): t is NonNullable<typeof t> => !!t);
+  const slots = matchSlots(m.pre);
+  const shape = detectFormation(
+    slots.map((s) => ({ id: s.key, p: s.p })),
+    slotRoles(slots),
+  );
+  const ins = { ...DEFAULT_INSTRUCTIONS, ...m.pre.instructions };
+  const duties = m.pre.duties ?? {};
+  const pn = (id?: string) => (id && player(id) ? `${player(id)!.number} ${surname(player(id)!.name)}` : '—');
 
   const slides: { title: string; body: React.ReactNode }[] =
     kind === 'once'
@@ -937,13 +754,13 @@ function Presentation({ m, kind, onClose }: { m: Match; kind: 'once' | 'devre'; 
             body: (
               <div className="slide-cover">
                 <p className="slide-kicker">
-                  {fmtDate(m.date, { weekday: 'long', day: 'numeric', month: 'long' })} · {m.time} · {m.venue}
+                  {fmtDate(m.date, { weekday: 'long', day: 'numeric', month: 'long' })} · {m.time} · {m.venue} · Diziliş {shape}
                 </p>
                 <div className="slide-lineup">
-                  <LineupPitch m={m} big />
+                  <LineupBoard slots={slots} player={player} colors={{ home: data.settings.homeColor, away: data.settings.awayColor }} captain={duties.captain} />
                 </div>
                 <p className="muted">
-                  Yedekler: {m.pre.bench.map((id) => `${player(id)?.number} ${surname(player(id)?.name ?? '')}`).join(' · ') || '—'}
+                  Yedekler: {benchOf(m.pre).map((id) => pn(id)).join(' · ') || '—'}
                 </p>
               </div>
             ),
@@ -983,6 +800,38 @@ function Presentation({ m, kind, onClose }: { m: Match; kind: 'once' | 'devre'; 
                   <h3>Geçişlerde</h3>
                   <ul>{bullet(m.pre.planTransition)}</ul>
                 </div>
+              </div>
+            ),
+          },
+          {
+            title: 'Takım talimatları',
+            body: (
+              <div className="slide-ins">
+                <InstructionsPitch ins={ins} slots={slots} color={data.settings.homeColor} />
+                <dl className="slide-dl">
+                  {INSTRUCTION_LABEL(ins).map((x) => (
+                    <div key={x.label}>
+                      <dt>{x.label}</dt>
+                      <dd>{x.value}</dd>
+                    </div>
+                  ))}
+                  {ins.offside && (
+                    <div>
+                      <dt>Ofsayt taktiği</dt>
+                      <dd>Evet</dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt>Kaptan</dt>
+                    <dd>{pn(duties.captain)}</dd>
+                  </div>
+                  <div>
+                    <dt>Penaltı · Korner · Serbest vuruş</dt>
+                    <dd>
+                      {pn(duties.penalty)} · {pn(duties.corner)} · {pn(duties.freeKick)}
+                    </dd>
+                  </div>
+                </dl>
               </div>
             ),
           },
