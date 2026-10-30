@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import { Importer } from '../components/Importer';
+import { LinkBox } from '../present/Actions';
+import { appBase, linkFor, SCREEN_HASH } from '../present/links';
 import { buildSample } from '../sample';
 import { DEFAULT_SETTINGS, useStore } from '../store';
 import type { LabelMode, TeamData } from '../types';
@@ -49,6 +51,40 @@ export function SettingsView() {
             </select>
           </Field>
         </div>
+        <Btn
+          variant="primary"
+          onClick={() => {
+            saveSettings(s);
+            toast('Ayarlar kaydedildi');
+          }}
+        >
+          Kaydet
+        </Btn>
+      </section>
+
+      <section className="panel">
+        <h2 className="section-title">TV ve ekranlar</h2>
+        <p className="muted">
+          Soyunma odası veya tesis TV'sinde bu bağlantıyı bir kez açıp bırakın. Taktik, maç ve antrenman sunumlarını tabletten <strong>Ekrana yansıt → TV'ye gönder</strong> ile oraya gönderirsiniz; slaytlar, taktik adımları ve süreler tabletle birlikte ilerler.
+        </p>
+        <LinkBox link={linkFor(s, SCREEN_HASH)} id="st-screen-link" />
+        <ul className="tv-howto">
+          <li>
+            <strong>Samsung, LG, Android TV tarayıcısı:</strong> bağlantıyı açın, claude.ai'ye uygulamayı açabilen bir hesapla giriş yapın, yer imlerine ekleyin. Kumandada ← → slayt, ↑ ↓ taktik adımı, OK oynat.
+          </li>
+          <li>
+            <strong>Chromecast / Google TV:</strong> bilgisayarda Chrome ile bağlantıyı açın → ⋮ menü → Yayınla → TV'yi seçin.
+          </li>
+          <li>
+            <strong>Apple TV / AirPlay:</strong> iPad'de Denetim Merkezi → Ekran Yansıtma, sonra uygulamada Ekrana yansıt → Tam ekran başlat. TV'de giriş gerekmez.
+          </li>
+          <li>
+            <strong>HDMI kablosu:</strong> bilgisayarı TV'ye bağlayın, bağlantıyı yeni bir pencerede açıp TV ekranına taşıyın.
+          </li>
+        </ul>
+        <Field label="Uygulama bağlantısı" hint="TV, sunum ve paylaşım bağlantıları bu adresle oluşturulur. Boş bırakılırsa otomatik bulunur.">
+          <input id="st-appurl" value={s.appUrl ?? ''} placeholder={appBase({}) || 'https://claude.ai/artifact/…'} onChange={(e) => setS({ ...s, appUrl: e.target.value })} />
+        </Field>
         <Btn
           variant="primary"
           onClick={() => {

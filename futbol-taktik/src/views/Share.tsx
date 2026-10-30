@@ -1,58 +1,30 @@
-import { useEffect, useRef, useState } from 'react';
+import { QR } from '../components/QR';
+import { LinkBox } from '../present/Actions';
+import { appBase, linkFor } from '../present/links';
 import { useStore } from '../store';
-import { Btn, copyText, Modal } from '../ui';
-
-const framed = () => {
-  try {
-    return window.self !== window.top;
-  } catch {
-    return true;
-  }
-};
+import { Modal } from '../ui';
 
 /** Taktik veya maç için doğrudan açılan bağlantı */
 export function ShareModal({ kind, id, title, onClose }: { kind: 'taktik' | 'mac'; id: string; title: string; onClose: () => void }) {
-  const { mode, toast } = useStore();
-  const hash = `#${kind}-${id}`;
-  const inArtifact = framed();
-  const url = inArtifact ? hash : location.href.split('#')[0] + hash;
-  const ref = useRef<HTMLElement>(null);
-  const [copied, setCopied] = useState(false);
-  useEffect(() => {
-    if (location.hash !== hash) location.hash = hash;
-  }, [hash]);
-
+  const { data, mode } = useStore();
+  const link = linkFor(data.settings, `${kind}-${id}`);
+  const hasBase = !!appBase(data.settings);
   return (
     <Modal title="Bağlantı ile paylaş" onClose={onClose}>
       <p>
-        <strong>{title}</strong> doğrudan açılacak şekilde paylaşılır. Oyuncular bağlantıyı açınca taktiği görür ve adımları oynatabilir, değiştiremez.
+        <strong>{title}</strong> bu bağlantıyla doğrudan açılır. Oyuncular görür ve adımları oynatabilir, değiştiremez.
       </p>
-      {inArtifact ? (
-        <ol className="steps">
-          <li>
-            Sayfanın sağ üstündeki <strong>Share / Paylaş</strong> menüsünü açın ve erişimi oyuncularınıza verin (e-posta ile ya da bağlantıya sahip herkes).
-          </li>
-          <li>
-            Aynı menüden <strong>Copy link / Bağlantıyı kopyala</strong> deyin. Bu ekran açıkken kopyalanan bağlantı sonuna <code>{hash}</code> eklenmiş olarak gelir ve doğrudan bu {kind === 'taktik' ? 'taktiği' : 'maçı'} açar.
-          </li>
-          <li>Bağlantıyı WhatsApp grubu veya e-posta ile oyunculara gönderin.</li>
-        </ol>
-      ) : null}
-      <div className="share-box">
-        <code ref={ref}>{url}</code>
-        <Btn
-          icon="copy"
-          variant="primary"
-          onClick={async () => {
-            const ok = await copyText(inArtifact ? hash : url, ref.current);
-            setCopied(ok);
-            toast(ok ? 'Kopyalandı' : 'Metin seçildi, kopyalayabilirsiniz');
-          }}
-        >
-          {copied ? 'Kopyalandı' : inArtifact ? 'Eki kopyala' : 'Bağlantıyı kopyala'}
-        </Btn>
+      <div className="cast-link">
+        <LinkBox link={link} id="share-link" />
+        {hasBase && <QR text={link} size={132} label="Paylaşım bağlantısı QR kodu" />}
       </div>
-      {mode === 'local' && <p className="hint">Not: Bu kopya verileri yalnızca bu cihazda tutuyor. Oyuncuların aynı veriyi görmesi için uygulamanın paylaşılan sürümünü kullanın.</p>}
+      {mode === 'shared' && (
+        <p className="hint">
+          Oyuncuların açabilmesi için sayfanın sağ üstündeki <strong>Share / Paylaş</strong> menüsünden onlara erişim verin.
+        </p>
+      )}
+      {mode === 'local' && <p className="hint">Bu kopya verileri yalnızca bu cihazda tutuyor. Oyuncuların aynı veriyi görmesi için uygulamanın paylaşılan sürümünü kullanın.</p>}
+      {!hasBase && <p className="hint">Tam adres için Ayarlar → TV ve ekranlar bölümüne uygulamanın bağlantısını girin.</p>}
     </Modal>
   );
 }

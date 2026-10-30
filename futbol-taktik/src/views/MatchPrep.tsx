@@ -13,12 +13,14 @@ import {
   DEFAULT_INSTRUCTIONS,
   detectFormation,
   fitFor,
+  INSTRUCTION_GROUPS,
   matchSlots,
   ROLE_NAMES,
   slotRoles,
   surname,
   tacticFromMatch,
 } from '../lineup';
+import { PresentActions } from '../present/Actions';
 import { usePlayer, useStore } from '../store';
 import type { Duties, Match, Player, Pt, TacticCategory, TeamInstructions, Token } from '../types';
 import { Btn, ConfirmBtn, Empty, Field, Icon, Modal, Pill, Segmented } from '../ui';
@@ -29,7 +31,7 @@ type SetPre = (p: Partial<Match['pre']>) => void;
 // Taktik tahtasından maça dönüldüğünde kalınan alt sekme hatırlanır
 const lastSub: Record<string, Sub> = {};
 
-export function MatchPrep({ m, setPre, onPresent, onOpenTactic }: { m: Match; setPre: SetPre; onPresent: () => void; onOpenTactic: (id: string) => void }) {
+export function MatchPrep({ m, setPre, onOpenTactic }: { m: Match; setPre: SetPre; onOpenTactic: (id: string) => void }) {
   const [sub, setSub] = useState<Sub>(lastSub[m.id] ?? 'dizilis');
   useEffect(() => {
     lastSub[m.id] = sub;
@@ -48,9 +50,9 @@ export function MatchPrep({ m, setPre, onPresent, onOpenTactic }: { m: Match; se
             { value: 'rakip', label: 'Rakip ve oyun planı' },
           ]}
         />
-        <Btn variant="primary" icon="present" size="lg" onClick={onPresent}>
-          Soyunma odası sunumu
-        </Btn>
+        <div className="row">
+          <PresentActions target={{ kind: 'mac', id: m.id }} label="Soyunma odası sunumu" />
+        </div>
       </div>
       {sub === 'dizilis' && <LineupEditor m={m} setPre={setPre} />}
       {sub === 'talimat' && <InstructionsEditor m={m} setPre={setPre} />}
@@ -573,39 +575,6 @@ function SlotPanel(props: {
 }
 
 /* ================= Takım talimatları ================= */
-
-type OptDef = { key: Exclude<keyof TeamInstructions, 'offside'>; label: string; help: string; options: [string, string][] };
-
-const INSTRUCTION_GROUPS: { title: string; items: OptDef[] }[] = [
-  {
-    title: 'Savunma',
-    items: [
-      { key: 'block', label: 'Savunma bloğu', help: 'Rakibe nerede baskı başlar', options: [['alcak', 'Alçak'], ['orta', 'Orta'], ['yuksek', 'Yüksek']] },
-      { key: 'line', label: 'Savunma hattı', help: 'Son adam hattının yüksekliği', options: [['derin', 'Derin'], ['normal', 'Normal'], ['yuksek', 'Yüksek']] },
-      { key: 'press', label: 'Pres yoğunluğu', help: 'Topa ne kadar agresif gidilir', options: [['az', 'Az'], ['dengeli', 'Dengeli'], ['yogun', 'Yoğun']] },
-    ],
-  },
-  {
-    title: 'Geçişler',
-    items: [
-      { key: 'onLose', label: 'Top kaybedince', help: 'Kayıptan sonraki ilk 5 saniye', options: [['karsi_pres', 'Karşı pres'], ['geri_cekil', 'Geri çekil, yerleş']] },
-      { key: 'onWin', label: 'Top kazanınca', help: 'Kazanılan topla ilk karar', options: [['hizli', 'Hızlı hücum'], ['sakin', 'Topu sakla']] },
-    ],
-  },
-  {
-    title: 'Hücum',
-    items: [
-      { key: 'buildUp', label: 'Kaleciden oyun kurma', help: 'Aut ve kaleci topları', options: [['kisa', 'Kısa'], ['karisik', 'Karışık'], ['uzun', 'Uzun']] },
-      { key: 'passing', label: 'Pas stili', help: '', options: [['kisa', 'Kısa pas'], ['karisik', 'Karışık'], ['direkt', 'Direkt']] },
-      { key: 'tempo', label: 'Tempo', help: '', options: [['yavas', 'Yavaş'], ['dengeli', 'Dengeli'], ['hizli', 'Hızlı']] },
-      { key: 'width', label: 'Hücum genişliği', help: 'Kanat oyuncularının çizgiye yakınlığı', options: [['dar', 'Dar'], ['dengeli', 'Dengeli'], ['genis', 'Geniş']] },
-      { key: 'focus', label: 'Hücum yönü', help: 'Ağırlıklı oynanacak koridor', options: [['sol', 'Sol kanat'], ['merkez', 'Merkez'], ['sag', 'Sağ kanat'], ['dengeli', 'Dengeli']] },
-    ],
-  },
-];
-
-export const INSTRUCTION_LABEL = (ins: TeamInstructions) =>
-  INSTRUCTION_GROUPS.flatMap((g) => g.items.map((it) => ({ label: it.label, value: it.options.find(([v]) => v === ins[it.key])?.[1] ?? '' })));
 
 const STYLES: { name: string; desc: string; ins: TeamInstructions }[] = [
   { name: 'Dengeli', desc: 'Orta blok, karışık oyun', ins: DEFAULT_INSTRUCTIONS },

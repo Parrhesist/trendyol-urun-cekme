@@ -122,10 +122,58 @@ export function useTokenLabels(tactic: Tactic | undefined, mode?: LabelMode) {
 }
 
 /** Salt-okunur, oynatılabilir taktik görünümü (sunumlar, antrenman kartları) */
-export function TacticPlayer({ tactic, big }: { tactic: Tactic; big?: boolean }) {
+/**
+ * Salt-okunur, oynatılabilir taktik görünümü (sunumlar, antrenman kartları).
+ * `step`/`play` verilirse dışarıdan yönetilir: TV ekranı tabletteki adımı ve oynatmayı izler.
+ */
+export function TacticPlayer({
+  tactic,
+  big,
+  step,
+  play,
+  onStep,
+  onPlay,
+}: {
+  tactic: Tactic;
+  big?: boolean;
+  step?: number;
+  play?: number;
+  onStep?: (n: number) => void;
+  onPlay?: () => void;
+}) {
   const { data } = useStore();
   const a = useTacticAnimation(tactic);
   const labels = useTokenLabels(tactic);
+  const prevStep = useRef(step);
+  const prevPlay = useRef(play);
+  useEffect(() => {
+    if (step) a.setFi(step); // ortadan katılan ekran doğrudan o adıma geçer
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (step != null && step !== prevStep.current) {
+      prevStep.current = step;
+      a.setFi(step);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+  useEffect(() => {
+    if (play != null && play !== prevPlay.current) {
+      prevPlay.current = play;
+      if (play > 0) a.play();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [play]);
+  const goStep = (n: number) => {
+    const i = Math.max(0, Math.min(a.n - 1, n));
+    if (onStep) onStep(i);
+    else a.setFi(i);
+  };
+  const togglePlay = () => {
+    if (a.playing) a.stop();
+    else if (onPlay) onPlay();
+    else a.play();
+  };
   const frame = tactic.frames[Math.min(a.fi, a.n - 1)];
   const colors = { home: data.settings.homeColor, away: data.settings.awayColor };
   return (
@@ -133,12 +181,12 @@ export function TacticPlayer({ tactic, big }: { tactic: Tactic; big?: boolean })
       <Pitch tokens={tactic.tokens} pos={a.pos} drawings={frame?.drawings ?? []} half={tactic.half} colors={colors} subFor={labels.subFor} roleFor={labels.roleFor} />
       {a.n > 1 && (
         <div className="tplayer-bar">
-          <Btn icon={a.playing ? 'pause' : 'play'} variant="primary" size={big ? 'lg' : 'sm'} onClick={a.playing ? a.stop : a.play} aria-label={a.playing ? 'Durdur' : 'Oynat'} />
-          <Btn icon="prev" size={big ? 'lg' : 'sm'} variant="ghost" onClick={() => a.setFi(a.fi - 1)} aria-label="Önceki adım" />
+          <Btn icon={a.playing ? 'pause' : 'play'} variant="primary" size={big ? 'lg' : 'sm'} onClick={togglePlay} aria-label={a.playing ? 'Durdur' : 'Oynat'} />
+          <Btn icon="prev" size={big ? 'lg' : 'sm'} variant="ghost" onClick={() => goStep(a.fi - 1)} aria-label="Önceki adım" />
           <span className="tplayer-step">
             Adım {a.fi + 1}/{a.n}
           </span>
-          <Btn icon="next" size={big ? 'lg' : 'sm'} variant="ghost" onClick={() => a.setFi(a.fi + 1)} aria-label="Sonraki adım" />
+          <Btn icon="next" size={big ? 'lg' : 'sm'} variant="ghost" onClick={() => goStep(a.fi + 1)} aria-label="Sonraki adım" />
         </div>
       )}
       {frame?.note && <p className="tplayer-note">{frame.note}</p>}

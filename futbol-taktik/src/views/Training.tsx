@@ -3,6 +3,7 @@ import { LoadChart } from '../components/Charts';
 import { MiniPitch } from '../components/Pitch';
 import { TacticPlayer } from '../components/TacticPlayer';
 import { addDays, fmtDate, makeTactic, todayISO, uid, weekStart } from '../football';
+import { PresentActions } from '../present/Actions';
 import { useStore } from '../store';
 import { acwr, acwrText, acwrTone, loadSeries, sessionLoad, sessionMinutes } from '../stats';
 import type { Drill, Session } from '../types';
@@ -57,6 +58,7 @@ export function Training({ onOpenTactic }: { onOpenTactic: (id: string) => void 
             <span className="muted">
               Hafta yükü <strong className="tabnum">{weekLoad.toLocaleString('tr-TR')} AU</strong>
             </span>
+            <PresentActions target={{ kind: 'hafta', id: week }} label="Haftayı göster" size="sm" />
           </div>
           <div className="week-grid">
             {days.map((d, i) => {
@@ -309,6 +311,7 @@ function SessionModal({ session, onClose }: { session: Session; onClose: () => v
       footer={
         canEdit ? (
           <>
+            {!isNew && <PresentActions target={{ kind: 'antrenman', id: s.id }} size="md" />}
             {!isNew && (
               <ConfirmBtn
                 variant="ghost"
@@ -333,7 +336,9 @@ function SessionModal({ session, onClose }: { session: Session; onClose: () => v
               Kaydet
             </Btn>
           </>
-        ) : undefined
+        ) : (
+          <PresentActions target={{ kind: 'antrenman', id: s.id }} size="md" />
+        )
       }
     >
       <fieldset disabled={!canEdit} className="form-grid">

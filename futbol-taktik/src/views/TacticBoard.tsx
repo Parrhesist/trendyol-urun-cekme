@@ -5,7 +5,8 @@ import { cloneFrame, FORMATION_NAMES, FORMATIONS, makeTactic, mirror, uid } from
 import { autoLineup, tacticFromMatch } from '../lineup';
 import { useStore } from '../store';
 import type { LabelMode, Pt, Tactic, TacticCategory, Token, TokenKind } from '../types';
-import { Btn, ConfirmBtn, Empty, Field, Icon, Modal, Segmented, toggleFullscreen } from '../ui';
+import { Btn, ConfirmBtn, Empty, Field, Icon, Modal, Segmented } from '../ui';
+import { PresentActions } from '../present/Actions';
 import { ShareModal } from './Share';
 
 const fmtShort = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
@@ -199,7 +200,6 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
   const [tool, setTool] = useState<Tool>('move');
   const [color, setColor] = useState('a');
   const [selected, setSelected] = useState<string | null>(null);
-  const [present, setPresent] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [dirty, setDirty] = useState(false);
   const history = useRef<Tactic[]>([]);
@@ -212,7 +212,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
   };
   const fi = Math.min(anim.fi, t.frames.length - 1);
   const frame = t.frames[fi];
-  const editable = canEdit && !anim.playing && anim.progress >= 1 && !present;
+  const editable = canEdit && !anim.playing && anim.progress >= 1;
   const colors = { home: data.settings.homeColor, away: data.settings.awayColor };
 
   // Dışarıdan (başka cihaz) gelen değişiklikler, yerelde kaydedilmemiş düzenleme yoksa uygulanır
@@ -320,15 +320,6 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
   const selTok = t.tokens.find((k) => k.id === selected);
   const updateTok = (patch: Partial<Token>) => update((d) => ({ ...d, tokens: d.tokens.map((k) => (k.id === selected ? { ...k, ...patch } : k)) }));
 
-  const enterPresent = () => {
-    setPresent(true);
-    setSelected(null);
-    toggleFullscreen(rootRef.current);
-  };
-  const exitPresent = () => {
-    setPresent(false);
-    if (document.fullscreenElement) toggleFullscreen();
-  };
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -341,7 +332,6 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') undo();
       if ((e.key === 'Delete' || e.key === 'Backspace') && selected && editable) delToken(selected);
-      if (e.key === 'Escape' && present) exitPresent();
     };
     window.addEventListener('keydown', k);
     return () => window.removeEventListener('keydown', k);
@@ -350,14 +340,12 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
   const players = [...data.players].sort((a, b) => a.number - b.number);
 
   return (
-    <div className={'editor' + (present ? ' presenting' : '')} ref={rootRef}>
+    <div className="editor" ref={rootRef}>
       <header className="editor-head">
-        {!present && (
-          <Btn variant="ghost" icon="prev" onClick={onBack} aria-label={backLabel ?? 'Taktiklere dön'}>
-            {backLabel}
-          </Btn>
-        )}
-        {canEdit && !present ? (
+        <Btn variant="ghost" icon="prev" onClick={onBack} aria-label={backLabel ?? 'Taktiklere dön'}>
+          {backLabel}
+        </Btn>
+        {canEdit ? (
           <input id="tac-name" className="title-input" value={t.name} onChange={(e) => update((d) => ({ ...d, name: e.target.value }), false)} aria-label="Taktik adı" />
         ) : (
           <h1 className="editor-title">{t.name}</h1>
@@ -367,21 +355,15 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
             <span className="field-label">Etiket</span>
             <Segmented id="tac-labels" value={labelMode} onChange={changeLabels} options={LABEL_OPTS} />
           </div>
-          {!present && canEdit && (
+          {canEdit && (
             <span className="save-state" aria-live="polite">
               {dirty ? 'Kaydediliyor…' : 'Kaydedildi'}
             </span>
           )}
-          {!present && <Btn icon="share" onClick={() => setSharing(true)}>Paylaş</Btn>}
-          {present ? (
-            <Btn icon="close" variant="primary" onClick={exitPresent}>
-              Sunumdan çık
-            </Btn>
-          ) : (
-            <Btn icon="present" variant="primary" onClick={enterPresent}>
-              Sunum
-            </Btn>
-          )}
+          <Btn icon="share" onClick={() => setSharing(true)}>
+            Paylaş
+          </Btn>
+          <PresentActions target={{ kind: 'taktik', id: t.id }} size="md" />
         </div>
       </header>
 
@@ -438,8 +420,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
           />
         </div>
 
-        {!present && (
-          <aside className="inspector">
+        <aside className="inspector">
             {selTok && editable ? (
               <section>
                 <h3>Seçili: {selTok.kind === 'home' ? 'Oyuncu' : selTok.kind === 'away' ? 'Rakip' : selTok.kind === 'ball' ? 'Top' : selTok.kind === 'cone' ? 'Huni' : 'Kale'}</h3>
@@ -540,8 +521,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
                 )}
               </section>
             )}
-          </aside>
-        )}
+        </aside>
       </div>
 
       <footer className="frames">
@@ -572,7 +552,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
           {editable ? (
             <textarea id="frame-note" rows={2} placeholder={`Adım ${fi + 1} için koçluk notu: kim, nereye, ne zaman?`} value={frame.note ?? ''} onChange={(e) => setFrame((f) => ({ ...f, note: e.target.value }), false)} />
           ) : (
-            <p className="note-read">{frame.note || (present ? '' : 'Bu adım için not yok.')}</p>
+            <p className="note-read">{frame.note || 'Bu adım için not yok.'}</p>
           )}
           {editable && t.frames.length > 1 && (
             <Btn variant="ghost" size="sm" icon="trash" onClick={delFrame}>

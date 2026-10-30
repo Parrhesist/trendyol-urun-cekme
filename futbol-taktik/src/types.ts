@@ -178,6 +178,7 @@ export interface Settings {
   awayColor: string;
   showNames: boolean;
   labels?: LabelMode;
+  appUrl?: string; // TV ve paylaşım bağlantıları için uygulama adresi
 }
 
 /** Taktik tahtasında oyuncu altındaki etiket */

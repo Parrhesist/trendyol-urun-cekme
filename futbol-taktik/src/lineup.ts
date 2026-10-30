@@ -209,6 +209,39 @@ export const DEFAULT_INSTRUCTIONS: TeamInstructions = {
   offside: false,
 };
 
+export type OptDef = { key: Exclude<keyof TeamInstructions, 'offside'>; label: string; help: string; options: [string, string][] };
+
+export const INSTRUCTION_GROUPS: { title: string; items: OptDef[] }[] = [
+  {
+    title: 'Savunma',
+    items: [
+      { key: 'block', label: 'Savunma bloğu', help: 'Rakibe nerede baskı başlar', options: [['alcak', 'Alçak'], ['orta', 'Orta'], ['yuksek', 'Yüksek']] },
+      { key: 'line', label: 'Savunma hattı', help: 'Son adam hattının yüksekliği', options: [['derin', 'Derin'], ['normal', 'Normal'], ['yuksek', 'Yüksek']] },
+      { key: 'press', label: 'Pres yoğunluğu', help: 'Topa ne kadar agresif gidilir', options: [['az', 'Az'], ['dengeli', 'Dengeli'], ['yogun', 'Yoğun']] },
+    ],
+  },
+  {
+    title: 'Geçişler',
+    items: [
+      { key: 'onLose', label: 'Top kaybedince', help: 'Kayıptan sonraki ilk 5 saniye', options: [['karsi_pres', 'Karşı pres'], ['geri_cekil', 'Geri çekil, yerleş']] },
+      { key: 'onWin', label: 'Top kazanınca', help: 'Kazanılan topla ilk karar', options: [['hizli', 'Hızlı hücum'], ['sakin', 'Topu sakla']] },
+    ],
+  },
+  {
+    title: 'Hücum',
+    items: [
+      { key: 'buildUp', label: 'Kaleciden oyun kurma', help: 'Aut ve kaleci topları', options: [['kisa', 'Kısa'], ['karisik', 'Karışık'], ['uzun', 'Uzun']] },
+      { key: 'passing', label: 'Pas stili', help: '', options: [['kisa', 'Kısa pas'], ['karisik', 'Karışık'], ['direkt', 'Direkt']] },
+      { key: 'tempo', label: 'Tempo', help: '', options: [['yavas', 'Yavaş'], ['dengeli', 'Dengeli'], ['hizli', 'Hızlı']] },
+      { key: 'width', label: 'Hücum genişliği', help: 'Kanat oyuncularının çizgiye yakınlığı', options: [['dar', 'Dar'], ['dengeli', 'Dengeli'], ['genis', 'Geniş']] },
+      { key: 'focus', label: 'Hücum yönü', help: 'Ağırlıklı oynanacak koridor', options: [['sol', 'Sol kanat'], ['merkez', 'Merkez'], ['sag', 'Sağ kanat'], ['dengeli', 'Dengeli']] },
+    ],
+  },
+];
+
+export const INSTRUCTION_LABEL = (ins: TeamInstructions) =>
+  INSTRUCTION_GROUPS.flatMap((g) => g.items.map((it) => ({ label: it.label, value: it.options.find(([v]) => v === ins[it.key])?.[1] ?? '' })));
+
 /** Talimatların sahadaki karşılığı (metre) */
 export const PRESS_LINE = { alcak: 38, orta: 52.5, yuksek: 70 } as const;
 export const DEF_LINE = { derin: 16, normal: 25, yuksek: 36 } as const;

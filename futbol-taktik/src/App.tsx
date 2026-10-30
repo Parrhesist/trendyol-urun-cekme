@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { LiveIndicator } from './present/Actions';
+import { parseDeckHash, SCREEN_HASH } from './present/links';
+import { DeckPage, ScreenView } from './present/Screen';
 import { buildSample } from './sample';
 import { useStore } from './store';
 import { Btn, Icon, Toasts } from './ui';
@@ -10,6 +13,7 @@ import { TacticBoard } from './views/TacticBoard';
 import { Training } from './views/Training';
 
 // Görünümler adres çubuğundaki #ad ile açılır: #panel, #taktik, #taktik-<id>, #antrenman, #maclar, #mac-<id>, #kadro, #ayarlar
+// TV ve sunum: #ekran (TV bekleme/yayın ekranı), #sunum-<tür>-<id> (doğrudan tam ekran sunum)
 
 const NAV = [
   { id: 'panel', label: 'Panel', icon: 'home' },
@@ -41,6 +45,23 @@ export function App() {
   const go = (r: string) => {
     location.hash = r;
   };
+
+  // TV ekranı ve doğrudan sunum bağlantıları menüsüz, tam ekran açılır
+  if (route === SCREEN_HASH)
+    return (
+      <>
+        <ScreenView />
+        <Toasts />
+      </>
+    );
+  const deckTarget = parseDeckHash(route);
+  if (deckTarget)
+    return (
+      <>
+        <DeckPage target={deckTarget} onExit={() => go('panel')} />
+        <Toasts />
+      </>
+    );
 
   const [section, id] = route.startsWith('taktik-') ? ['taktik', route.slice(7)] : route.startsWith('mac-') ? ['maclar', route.slice(4)] : [route, undefined];
 
@@ -133,6 +154,7 @@ export function App() {
         </div>
       </nav>
       <main className="main">{view}</main>
+      <LiveIndicator />
       <Toasts />
     </div>
   );

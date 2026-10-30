@@ -13,6 +13,14 @@ Tablet öncelikli (ekrana yansıtılabilir), bilgisayarda da çalışan tek tak�
   - *Rakip ve oyun planı*, soyunma odası sunumu; devre arası (hızlı değerlendirme, değişiklikler, ikinci yarı mesajı), maç sonrası (sahaya dokunarak olay girişi, şut ve ısı haritası, istatistik karşılaştırma, oyuncu puanları, antrenmana aktarılan odaklar), CSV ile veri aktarımı.
 - **Kadro**: oyuncu durumu (hazır/şüpheli/sakat/cezalı), sezon istatistikleri, CSV ile aktarım.
 
+## TV ve ekranlara yansıtma
+Her sunum ekranında (taktik, maç öncesi, devre arası, antrenman seansı, haftalık plan) **Sunum** ve **Ekrana yansıt** düğmeleri var:
+- **Bağlı TV'ye gönder**: TV tarayıcısında bir kez `…#ekran` adresi açılır (bekleme ekranı: saat, sıradaki maç ve antrenman). Tabletten gönderilen sunum gelir; slayt, taktik adımı ve antrenman süresi tabletle eşzamanlı ilerler. Paylaşılan modda `live/screen` belgesi ve bağlı ekranları sayan oda varlığı (presence), yerel modda aynı cihazdaki pencereler arasında BroadcastChannel kullanılır (HDMI ile bağlı TV'deki ikinci pencere).
+- **Bu cihazı yansıt**: AirPlay, Chromecast veya HDMI ile tam ekran sunum; TV'de giriş gerekmez.
+- **Doğrudan bağlantı**: `…#sunum-<mac|devre|taktik|antrenman|hafta>-<id>` sunumu tek başına, tam ekran açar; QR kod ile telefona aktarılır.
+- Kumanda/klavye: ← → slayt, ↑ ↓ taktik adımı, OK/Enter oynat veya süreyi başlat, F tam ekran. TV'de kontroller birkaç saniye sonra gizlenir, ekran uykuya geçmez (tarayıcı izin verirse).
+- Bağlantılar `VITE_APP_URL` (bkz. `.env.production`) ya da Ayarlar → TV ve ekranlar → Uygulama bağlantısı ile oluşturulur.
+
 ## Altyapı
 React 18 + TypeScript + Vite, tek HTML dosyasına derlenir (`vite-plugin-singlefile`). Grafikler ve saha SVG ile çizilir, harici kütüphane yoktur.
 

@@ -31,6 +31,8 @@ interface StoreValue {
   replaceAll: (d: TeamData) => Promise<void>;
   toast: (msg: string, tone?: 'ok' | 'err') => void;
   toasts: { id: number; msg: string; tone: 'ok' | 'err' }[];
+  /** Paylaşılan veritabanı ve canlı oda (TV yayını için); yerel modda null */
+  handles: { db: DB | null; room: unknown | null };
 }
 
 const Ctx = createContext<StoreValue | null>(null);
@@ -44,7 +46,7 @@ type DocRef = {
   onSnapshot(n: (s: DocSnap) => void, e?: (err: unknown) => void): () => void;
 };
 type ColRef = { doc(id: string): DocRef; onSnapshot(n: (s: { docs: DocSnap[] }) => void, e?: (err: unknown) => void): () => void };
-type DB = { doc(p: string): DocRef; collection(p: string): ColRef };
+export type DB = { doc(p: string): DocRef; collection(p: string): ColRef };
 type ClaudeRT = { use(name: string): Promise<unknown> };
 
 const plain = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
@@ -71,6 +73,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [canEdit, setCanEdit] = useState(true);
   const [loaded, setLoaded] = useState(0);
   const [toasts, setToasts] = useState<StoreValue['toasts']>([]);
+  const [handles, setHandles] = useState<StoreValue['handles']>({ db: null, room: null });
   const dbRef = useRef<DB | null>(null);
   const queues = useRef(new Map<string, Promise<unknown>>());
   const dirty = useRef(new Set<string>()); // yazımı henüz onaylanmamış belgeler: yerel sürüm geçerli
@@ -106,6 +109,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const user = (await rt.use('user').catch(() => null)) as { can(n: string): Promise<boolean | null> } | null;
       const can = user ? await user.can('data.write').catch(() => null) : null;
       setCanEdit(can !== false);
+      const room = await rt.use('room').catch(() => null);
+      if (cancelled) return;
+      setHandles({ db, room });
       setMode('shared');
       const seen = new Set<string>();
       const markLoaded = (k: string) => {
@@ -272,8 +278,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const effectiveMode: Mode = mode === 'shared' && loaded < 6 ? 'loading' : mode;
 
   const value = useMemo(
-    () => ({ data, mode: effectiveMode, canEdit, isEmpty, save, remove, saveSettings, replaceAll, toast, toasts }),
-    [data, effectiveMode, canEdit, isEmpty, save, remove, saveSettings, replaceAll, toast, toasts],
+    () => ({ data, mode: effectiveMode, canEdit, isEmpty, save, remove, saveSettings, replaceAll, toast, toasts, handles }),
+    [data, effectiveMode, canEdit, isEmpty, save, remove, saveSettings, replaceAll, toast, toasts, handles],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

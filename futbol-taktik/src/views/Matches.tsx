@@ -1,18 +1,16 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CompareRow } from '../components/Charts';
 import { Importer } from '../components/Importer';
-import { InstructionsPitch } from '../components/InstructionsPitch';
-import { LineupBoard } from '../components/LineupBoard';
 import { Pitch } from '../components/Pitch';
-import { TacticPlayer } from '../components/TacticPlayer';
 import { EVENTS_TEMPLATE, EVENT_KEYS, importEvents, importStats, STATS_TEMPLATE } from '../csv';
 import { addDays, EVENT_META, EVENT_TYPES, fmtDate, MANUAL_STATS, PITCH, todayISO, uid } from '../football';
-import { autoLineup, benchOf, DEFAULT_INSTRUCTIONS, detectFormation, matchSlots, slotRoles, surname } from '../lineup';
+import { autoLineup, benchOf, surname } from '../lineup';
 import { usePlayer, useStore } from '../store';
 import { countEvents, isPlayed, result, RESULT_LABEL } from '../stats';
 import type { EventType, Match, MatchEvent, Player, Pt } from '../types';
-import { Btn, ConfirmBtn, Empty, Field, Icon, lines, Pill, Segmented, toggleFullscreen } from '../ui';
-import { INSTRUCTION_LABEL, MatchPrep } from './MatchPrep';
+import { Btn, ConfirmBtn, Empty, Field, Icon, Pill, Segmented } from '../ui';
+import { PresentActions } from '../present/Actions';
+import { MatchPrep } from './MatchPrep';
 import { ShareModal } from './Share';
 
 type Tab = 'once' | 'devre' | 'sonra' | 'veri';
@@ -129,7 +127,6 @@ function MatchDetail({ match, onBack, onOpenTactic }: { match: Match; onBack: ()
     lastTab[match.id] = t;
     setTabState(t);
   };
-  const [presenting, setPresenting] = useState<null | 'once' | 'devre'>(null);
   const [sharing, setSharing] = useState(false);
   const m = match;
   const upd = (fn: (m: Match) => Match) => canEdit && save('matches', fn(m));
@@ -192,11 +189,10 @@ function MatchDetail({ match, onBack, onOpenTactic }: { match: Match; onBack: ()
           { value: 'veri', label: 'Veri aktar' },
         ]}
       />
-      {tab === 'once' && <MatchPrep m={m} setPre={setPre} onPresent={() => setPresenting('once')} onOpenTactic={onOpenTactic} />}
-      {tab === 'devre' && <HalfPanel m={m} setHalf={setHalf} onPresent={() => setPresenting('devre')} />}
+      {tab === 'once' && <MatchPrep m={m} setPre={setPre} onOpenTactic={onOpenTactic} />}
+      {tab === 'devre' && <HalfPanel m={m} setHalf={setHalf} />}
       {tab === 'sonra' && <PostPanel m={m} setPost={setPost} />}
       {tab === 'veri' && <DataPanel m={m} setPost={setPost} />}
-      {presenting && <Presentation m={m} kind={presenting} onClose={() => setPresenting(null)} />}
       {sharing && <ShareModal kind="mac" id={m.id} title={`${m.opponent} maçı`} onClose={() => setSharing(false)} />}
     </div>
   );
@@ -206,7 +202,7 @@ function MatchDetail({ match, onBack, onOpenTactic }: { match: Match; onBack: ()
 
 const QUICK_TAGS = ['Önde pres', 'Pres tetikleyicileri', 'Oyun kurma', 'Kanat bindirmeleri', 'Duran top savunması', 'Duran top hücumu', 'İkinci toplar', 'Top kayıpları', 'Geçiş savunması', 'Hat arası mesafe', 'Bitiricilik', 'İletişim', 'Tempo', 'Hava topları'];
 
-function HalfPanel({ m, setHalf, onPresent }: { m: Match; setHalf: (p: Partial<Match['half']>) => void; onPresent: () => void }) {
+function HalfPanel({ m, setHalf }: { m: Match; setHalf: (p: Partial<Match['half']>) => void }) {
   const { data, canEdit } = useStore();
   const player = usePlayer();
   const [custom, setCustom] = useState('');
@@ -229,9 +225,9 @@ function HalfPanel({ m, setHalf, onPresent }: { m: Match; setHalf: (p: Partial<M
           <span className="score-dash">–</span>
           <ScoreBox value={m.half.them} onChange={(v) => setHalf({ them: v })} label="Rakip" disabled={!canEdit} />
         </div>
-        <Btn variant="primary" icon="present" size="lg" onClick={onPresent}>
-          Devre arası ekranı
-        </Btn>
+        <div className="row">
+          <PresentActions target={{ kind: 'devre', id: m.id }} label="Devre arası ekranı" />
+        </div>
       </div>
       <div className="two-col">
         <section className="panel">
@@ -724,212 +720,6 @@ function DataPanel({ m, setPost }: { m: Match; setPost: (p: Partial<Match['post'
           }}
         />
       </section>
-    </div>
-  );
-}
-
-/* ---------------- Sunum (ekrana yansıtma) ---------------- */
-
-function Presentation({ m, kind, onClose }: { m: Match; kind: 'once' | 'devre'; onClose: () => void }) {
-  const { data } = useStore();
-  const player = usePlayer();
-  const root = useRef<HTMLDivElement>(null);
-  const [i, setI] = useState(0);
-  const bullet = (s: string) => lines(s).map((x) => <li key={x}>{x}</li>);
-  const tactics = m.pre.tacticIds.map((id) => data.tactics.find((t) => t.id === id)).filter((t): t is NonNullable<typeof t> => !!t);
-  const slots = matchSlots(m.pre);
-  const shape = detectFormation(
-    slots.map((s) => ({ id: s.key, p: s.p })),
-    slotRoles(slots),
-  );
-  const ins = { ...DEFAULT_INSTRUCTIONS, ...m.pre.instructions };
-  const duties = m.pre.duties ?? {};
-  const pn = (id?: string) => (id && player(id) ? `${player(id)!.number} ${surname(player(id)!.name)}` : '—');
-
-  const slides: { title: string; body: React.ReactNode }[] =
-    kind === 'once'
-      ? [
-          {
-            title: `${data.settings.teamName} – ${m.opponent}`,
-            body: (
-              <div className="slide-cover">
-                <p className="slide-kicker">
-                  {fmtDate(m.date, { weekday: 'long', day: 'numeric', month: 'long' })} · {m.time} · {m.venue} · Diziliş {shape}
-                </p>
-                <div className="slide-lineup">
-                  <LineupBoard slots={slots} player={player} colors={{ home: data.settings.homeColor, away: data.settings.awayColor }} captain={duties.captain} />
-                </div>
-                <p className="muted">
-                  Yedekler: {benchOf(m.pre).map((id) => pn(id)).join(' · ') || '—'}
-                </p>
-              </div>
-            ),
-          },
-          {
-            title: `Rakip: ${m.opponent} (${m.pre.oppFormation})`,
-            body: (
-              <div className="slide-cols">
-                <div>
-                  <h3 className="tone-bad">Dikkat</h3>
-                  <ul>{bullet(m.pre.oppStrengths)}</ul>
-                </div>
-                <div>
-                  <h3 className="tone-good">Fırsat</h3>
-                  <ul>{bullet(m.pre.oppWeaknesses)}</ul>
-                </div>
-                <div>
-                  <h3>Kilit oyuncular</h3>
-                  <ul>{bullet(m.pre.oppKeyPlayers)}</ul>
-                </div>
-              </div>
-            ),
-          },
-          {
-            title: 'Oyun planı',
-            body: (
-              <div className="slide-cols">
-                <div>
-                  <h3>Hücumda</h3>
-                  <ul>{bullet(m.pre.planAttack)}</ul>
-                </div>
-                <div>
-                  <h3>Savunmada</h3>
-                  <ul>{bullet(m.pre.planDefence)}</ul>
-                </div>
-                <div>
-                  <h3>Geçişlerde</h3>
-                  <ul>{bullet(m.pre.planTransition)}</ul>
-                </div>
-              </div>
-            ),
-          },
-          {
-            title: 'Takım talimatları',
-            body: (
-              <div className="slide-ins">
-                <InstructionsPitch ins={ins} slots={slots} color={data.settings.homeColor} />
-                <dl className="slide-dl">
-                  {INSTRUCTION_LABEL(ins).map((x) => (
-                    <div key={x.label}>
-                      <dt>{x.label}</dt>
-                      <dd>{x.value}</dd>
-                    </div>
-                  ))}
-                  {ins.offside && (
-                    <div>
-                      <dt>Ofsayt taktiği</dt>
-                      <dd>Evet</dd>
-                    </div>
-                  )}
-                  <div>
-                    <dt>Kaptan</dt>
-                    <dd>{pn(duties.captain)}</dd>
-                  </div>
-                  <div>
-                    <dt>Penaltı · Korner · Serbest vuruş</dt>
-                    <dd>
-                      {pn(duties.penalty)} · {pn(duties.corner)} · {pn(duties.freeKick)}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-            ),
-          },
-          ...tactics.map((t) => ({ title: t.name, body: <TacticPlayer key={t.id} tactic={t} big /> })),
-          {
-            title: 'Görevler',
-            body: (
-              <ul className="slide-tasks">
-                {Object.entries(m.pre.tasks)
-                  .filter(([, v]) => v)
-                  .map(([id, v]) => (
-                    <li key={id}>
-                      <span className="shirt big">{player(id)?.number}</span>
-                      <span>
-                        <strong>{player(id)?.name}</strong>
-                        <br />
-                        {v}
-                      </span>
-                    </li>
-                  ))}
-              </ul>
-            ),
-          },
-        ]
-      : [
-          {
-            title: `Devre arası  ${m.half.us ?? 0} – ${m.half.them ?? 0}`,
-            body: (
-              <div className="slide-cols">
-                <div>
-                  <h3 className="tone-good">Devam</h3>
-                  <ul>{m.half.good.map((x) => <li key={x}>{x}</li>)}</ul>
-                </div>
-                <div>
-                  <h3 className="tone-bad">Düzelt</h3>
-                  <ul>{m.half.bad.map((x) => <li key={x}>{x}</li>)}</ul>
-                </div>
-                <div>
-                  <h3>Değişiklikler</h3>
-                  <ul>
-                    {m.half.subs.map((s, j) => (
-                      <li key={j}>
-                        ↓ {player(s.out)?.number} {surname(player(s.out)?.name ?? '')} · ↑ {player(s.in)?.number} {surname(player(s.in)?.name ?? '')}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ),
-          },
-          { title: 'İkinci yarı', body: <ol className="slide-message">{bullet(m.half.message)}</ol> },
-        ];
-
-  const go = (d: number) => setI((x) => Math.max(0, Math.min(slides.length - 1, x + d)));
-  const s = slides[i];
-  return (
-    <div
-      className="present"
-      ref={root}
-      tabIndex={-1}
-      onKeyDown={(e) => {
-        if (e.key === 'ArrowRight' || e.key === 'PageDown') go(1);
-        if (e.key === 'ArrowLeft' || e.key === 'PageUp') go(-1);
-        if (e.key === 'Escape') onClose();
-      }}
-    >
-      <header className="present-head">
-        <span className="present-count tabnum">
-          {i + 1} / {slides.length}
-        </span>
-        <h1>{s.title}</h1>
-        <div className="row">
-          <Btn icon="expand" variant="ghost" onClick={() => toggleFullscreen(root.current)} aria-label="Tam ekran" />
-          <Btn
-            icon="close"
-            variant="ghost"
-            onClick={() => {
-              if (document.fullscreenElement) toggleFullscreen();
-              onClose();
-            }}
-            aria-label="Kapat"
-          />
-        </div>
-      </header>
-      <div className="present-body">{s.body}</div>
-      <footer className="present-foot">
-        <Btn icon="prev" size="lg" onClick={() => go(-1)} disabled={i === 0}>
-          Geri
-        </Btn>
-        <div className="dots">
-          {slides.map((_, j) => (
-            <button key={j} type="button" className={j === i ? 'on' : ''} onClick={() => setI(j)} aria-label={`Slayt ${j + 1}`} />
-          ))}
-        </div>
-        <Btn icon="next" size="lg" variant="primary" onClick={() => go(1)} disabled={i === slides.length - 1}>
-          İleri
-        </Btn>
-      </footer>
     </div>
   );
 }
