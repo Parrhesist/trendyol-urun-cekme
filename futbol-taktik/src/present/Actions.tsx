@@ -175,9 +175,9 @@ export function CastModal({ target, onClose, onStart }: { target: DeckTarget; on
       <div className="cast-options">
         <section className="cast-card primary">
           <h3>
-            <Icon name="present" /> Bu cihazı TV'ye yansıt <span className="pill pill-good">Önerilen</span>
+            <Icon name="present" /> Aynı Wi-Fi'deki TV'ye yansıt <span className="pill pill-good">Önerilen</span>
           </h3>
-          <p>TV'yi cihazınızın kendi yansıtma özelliği bulur; uygulamada kurulum ya da TV'de giriş gerekmez.</p>
+          <p>Tablet, telefon ya da bilgisayarınız aynı Wi-Fi'deki TV'leri kendisi bulur (AirPlay, Smart View, Chromecast, Miracast). Uygulamada kurulum, TV'de giriş gerekmez.</p>
           {mine && (
             <div className="mirror-steps">
               <strong>{mine.device}</strong>
@@ -198,6 +198,15 @@ export function CastModal({ target, onClose, onStart }: { target: DeckTarget; on
           >
             Tam ekran başlat
           </Btn>
+          <details open={!mine}>
+            <summary>TV listede çıkmıyorsa</summary>
+            <ul className="steps">
+              <li>Cihaz ile TV aynı Wi-Fi ağında olmalı. Misafir ağı (guest) ve bazı kurum ağları cihazların birbirini görmesini engeller.</li>
+              <li>TV açık olmalı (bekleme modunda değil) ve TV'de yansıtma açık olmalı: Samsung'da Ayarlar → Genel → Apple AirPlay Ayarları; LG'de ana ekranda AirPlay → Açık; Chromecast ve Google TV'de ek ayar gerekmez.</li>
+              <li>VPN açıksa kapatın; Wi-Fi'yi kapatıp açmak listeyi yeniler.</li>
+              <li>TV yansıtmayı desteklemiyorsa HDMI kablosu ya da Chromecast cihazı kullanın.</li>
+            </ul>
+          </details>
           <details open={!mine}>
             <summary>{mine ? 'Diğer cihazlar' : 'Cihazınıza göre adımlar'}</summary>
             {others.map((o) => (
