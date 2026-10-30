@@ -21,6 +21,7 @@ import {
   tacticFromMatch,
 } from '../lineup';
 import { PresentActions } from '../present/Actions';
+import { LibraryPicker } from './Library';
 import { usePlayer, useStore } from '../store';
 import type { Duties, Match, Player, Pt, TacticCategory, TeamInstructions, Token } from '../types';
 import { Btn, ConfirmBtn, Empty, Field, Icon, Modal, Pill, Segmented } from '../ui';
@@ -672,6 +673,7 @@ function MatchTactics({ m, setPre, onOpenTactic }: { m: Match; setPre: SetPre; o
   const { data, save, canEdit, toast } = useStore();
   const [creating, setCreating] = useState(false);
   const [picking, setPicking] = useState(false);
+  const [pickTab, setPickTab] = useState<'lib' | 'mine'>('lib');
   const [preview, setPreview] = useState<string | null>(null);
   const colors = { home: data.settings.homeColor, away: data.settings.awayColor };
   const linked = m.pre.tacticIds.map((id) => data.tactics.find((t) => t.id === id)).filter((t): t is NonNullable<typeof t> => !!t);
@@ -690,7 +692,7 @@ function MatchTactics({ m, setPre, onOpenTactic }: { m: Match; setPre: SetPre; o
             Bu kadroyla yeni taktik
           </Btn>
           <Btn icon="board" onClick={() => setPicking(true)}>
-            Kütüphaneden ekle
+            Taktik ekle (hazır / kendi)
           </Btn>
           <span className="muted small">Taktikler sunumda bu sırayla gösterilir.</span>
         </div>
@@ -745,10 +747,31 @@ function MatchTactics({ m, setPre, onOpenTactic }: { m: Match; setPre: SetPre; o
         />
       )}
       {picking && (
-        <Modal title="Kütüphaneden taktik ekle" onClose={() => setPicking(false)} wide>
+        <Modal title="Bu maça taktik ekle" onClose={() => setPicking(false)} wide>
+          <Segmented
+            id="pick-tab"
+            value={pickTab}
+            onChange={setPickTab}
+            options={[
+              { value: 'lib', label: 'Hazır taktikler' },
+              { value: 'mine', label: `Taktiklerim (${data.tactics.filter((t) => t.category !== 'Antrenman').length})` },
+            ]}
+          />
           <p className="muted">
-            <strong>Uyarla</strong> taktiğin bir kopyasını oluşturur ve oyuncuları bu maçın kadrosuyla, sahadaki konumlarına göre eşleştirir. <strong>Bağla</strong> taktiği olduğu gibi ekler.
+            <strong>Uyarla</strong> taktiğin bir kopyasını oluşturur ve oyuncuları bu maçın kadrosuyla, sahadaki konumlarına göre eşleştirir. <strong>Bağla</strong> kendi taktiğinizi olduğu gibi ekler.
           </p>
+          {pickTab === 'lib' && (
+            <LibraryPicker
+              onPick={async (x) => {
+                const c = adaptTactic(x.tactic, m, data.players);
+                await save('tactics', c);
+                setPre({ tacticIds: [...m.pre.tacticIds, c.id] });
+                toast(`${x.def.name} bu kadroya uyarlandı`);
+                setPicking(false);
+              }}
+            />
+          )}
+          {pickTab === 'mine' && (
           <div className="pick-tactics">
             {data.tactics
               .filter((t) => t.category !== 'Antrenman' && !m.pre.tacticIds.includes(t.id))
@@ -787,6 +810,7 @@ function MatchTactics({ m, setPre, onOpenTactic }: { m: Match; setPre: SetPre; o
                 </div>
               ))}
           </div>
+          )}
         </Modal>
       )}
     </div>

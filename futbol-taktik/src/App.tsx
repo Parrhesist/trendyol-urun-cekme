@@ -6,13 +6,14 @@ import { buildSample } from './sample';
 import { useStore } from './store';
 import { Btn, Icon, Toasts } from './ui';
 import { Dashboard } from './views/Dashboard';
+import { Library } from './views/Library';
 import { Matches } from './views/Matches';
 import { SettingsView } from './views/Settings';
 import { Squad } from './views/Squad';
 import { TacticBoard } from './views/TacticBoard';
 import { Training } from './views/Training';
 
-// Görünümler adres çubuğundaki #ad ile açılır: #panel, #taktik, #taktik-<id>, #antrenman, #maclar, #mac-<id>, #kadro, #ayarlar
+// Görünümler adres çubuğundaki #ad ile açılır: #panel, #taktik, #taktik-<id>, #kutuphane, #kutuphane-<id>, #antrenman, #maclar, #mac-<id>, #kadro, #ayarlar
 // TV ve sunum: #ekran (TV bekleme/yayın ekranı), #sunum-<tür>-<id> (doğrudan tam ekran sunum)
 
 const NAV = [
@@ -63,7 +64,14 @@ export function App() {
       </>
     );
 
-  const [section, id] = route.startsWith('taktik-') ? ['taktik', route.slice(7)] : route.startsWith('mac-') ? ['maclar', route.slice(4)] : [route, undefined];
+  const [section, id] = route.startsWith('taktik-')
+    ? ['taktik', route.slice(7)]
+    : route.startsWith('mac-')
+      ? ['maclar', route.slice(4)]
+      : route.startsWith('kutuphane-')
+        ? ['kutuphane', route.slice(10)]
+        : [route, undefined];
+  const navSection = section === 'kutuphane' ? 'taktik' : section;
 
   let view;
   if (mode === 'loading')
@@ -109,6 +117,9 @@ export function App() {
           />
         );
         break;
+      case 'kutuphane':
+        view = <Library openId={id} onOpen={(x) => go(x ? 'kutuphane-' + x : 'kutuphane')} onOpenTactic={(x) => go('taktik-' + x)} />;
+        break;
       case 'antrenman':
         view = <Training onOpenTactic={(x) => go('taktik-' + x)} />;
         break;
@@ -143,7 +154,7 @@ export function App() {
           </span>
         </div>
         {NAV.filter((n) => canEdit || n.id !== 'ayarlar').map((n) => (
-          <a key={n.id} href={'#' + n.id} className={'nav-item' + (section === n.id ? ' on' : '')} aria-current={section === n.id ? 'page' : undefined}>
+          <a key={n.id} href={'#' + n.id} className={'nav-item' + (navSection === n.id ? ' on' : '')} aria-current={navSection === n.id ? 'page' : undefined}>
             <Icon name={n.icon} size={22} />
             <span>{n.label}</span>
           </a>

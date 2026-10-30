@@ -16,6 +16,7 @@ export function useTacticAnimation(tactic: Tactic | undefined) {
   const raf = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const n = tactic?.frames.length ?? 0;
+  const stepMs = tactic?.stepMs ?? STEP_MS;
 
   useEffect(() => {
     if (fi >= n) setFi(Math.max(0, n - 1));
@@ -37,7 +38,7 @@ export function useTacticAnimation(tactic: Tactic | undefined) {
       const t0 = performance.now();
       const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
       const tick = (now: number) => {
-        const p = reduce ? 1 : Math.min(1, (now - t0) / STEP_MS);
+        const p = reduce ? 1 : Math.min(1, (now - t0) / stepMs);
         setProgress(p);
         if (p < 1) raf.current = requestAnimationFrame(tick);
         else if (chain && target + 1 < n) {
@@ -46,7 +47,7 @@ export function useTacticAnimation(tactic: Tactic | undefined) {
       };
       raf.current = requestAnimationFrame(tick);
     },
-    [n],
+    [n, stepMs],
   );
 
   const play = useCallback(() => {
@@ -102,12 +103,12 @@ export function useTacticAnimation(tactic: Tactic | undefined) {
 export const labelModeOf = (s: { labels?: LabelMode; showNames: boolean }): LabelMode => s.labels ?? (s.showNames ? 'name' : 'role');
 
 /** Oyuncu etiketleri: altta soyad, üstte konuma göre mevki (ayara göre) */
-export function useTokenLabels(tactic: Tactic | undefined, mode?: LabelMode) {
+export function useTokenLabels(tactic: Tactic | undefined, mode?: LabelMode, fi = 0) {
   const { data } = useStore();
   const player = usePlayer();
   const m = mode ?? labelModeOf(data.settings);
-  const f0 = tactic?.frames[0]?.pos;
-  const roles = useMemo(() => (tactic ? tokenRoles(tactic) : {}), [tactic?.tokens, f0, tactic?.category]); // eslint-disable-line react-hooks/exhaustive-deps
+  const frame = tactic?.frames[fi]?.pos;
+  const roles = useMemo(() => (tactic ? tokenRoles(tactic, fi) : {}), [tactic?.tokens, frame, tactic?.category, fi]); // eslint-disable-line react-hooks/exhaustive-deps
   const subFor = useCallback(
     (t: Token) => {
       if ((m !== 'name' && m !== 'both') || t.kind !== 'home') return undefined;
@@ -143,7 +144,7 @@ export function TacticPlayer({
 }) {
   const { data } = useStore();
   const a = useTacticAnimation(tactic);
-  const labels = useTokenLabels(tactic);
+  const labels = useTokenLabels(tactic, undefined, Math.min(a.fi, Math.max(0, a.n - 1)));
   const prevStep = useRef(step);
   const prevPlay = useRef(play);
   useEffect(() => {
@@ -178,7 +179,7 @@ export function TacticPlayer({
   const colors = { home: data.settings.homeColor, away: data.settings.awayColor };
   return (
     <div className={'tplayer' + (big ? ' big' : '')}>
-      <Pitch tokens={tactic.tokens} pos={a.pos} drawings={frame?.drawings ?? []} half={tactic.half} colors={colors} subFor={labels.subFor} roleFor={labels.roleFor} />
+      <Pitch tokens={tactic.tokens} pos={a.pos} drawings={frame?.drawings ?? []} half={tactic.half} colors={colors} subFor={labels.subFor} roleFor={labels.roleFor} tokenScale={tactic.tokenScale} />
       {a.n > 1 && (
         <div className="tplayer-bar">
           <Btn icon={a.playing ? 'pause' : 'play'} variant="primary" size={big ? 'lg' : 'sm'} onClick={togglePlay} aria-label={a.playing ? 'Durdur' : 'Oynat'} />

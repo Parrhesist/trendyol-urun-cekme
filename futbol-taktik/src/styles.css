@@ -814,13 +814,17 @@ fieldset {
   letter-spacing: 0.08em;
   color: var(--accent);
 }
-.cat-1 {
-  color: var(--them);
+/* kategori renkleri: 0 Sistem, 1 Hücum, 2 Savunma, 3 Geçiş, 4 Duran Top */
+.cat-0 {
+  color: var(--ink-2);
 }
 .cat-2 {
-  color: var(--good);
+  color: var(--them);
 }
 .cat-3 {
+  color: var(--good);
+}
+.cat-4 {
   color: var(--warn);
 }
 .pitch.mini {
@@ -3152,4 +3156,156 @@ body.no-select,
 }
 .app:has(.live-indicator) .main {
   padding-bottom: 72px;
+}
+
+/* ---------- hazır taktik kütüphanesi ---------- */
+.tabs-links {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+}
+.tabs-links a {
+  text-decoration: none;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.tabs-links a span {
+  font-size: 12px;
+  background: var(--line);
+  color: var(--ink-2);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.tabs-links a.on {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.tabs-links a.on span {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.lib-badge {
+  margin-left: 8px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.lib-intro {
+  max-width: 80ch;
+}
+.lib-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 12px;
+  max-width: 560px;
+  color: var(--muted);
+}
+.search input {
+  border: 0;
+  background: transparent;
+  padding-left: 0;
+}
+.search input:focus {
+  outline: none;
+}
+.search:focus-within {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.lib-card .tcard-body small + small {
+  color: var(--muted);
+}
+.lib-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.lib-title {
+  flex: 1;
+  min-width: 240px;
+}
+.lib-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.lib-side {
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+}
+.lib-side p {
+  line-height: 1.55;
+}
+.lib-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lib-steps button {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 9px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.lib-steps button span:first-child {
+  font: 700 14px var(--f-display);
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.lib-steps button.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.chip.static {
+  cursor: default;
+}
+.slide-points.compact {
+  font-size: clamp(15px, 1.3vw, 22px);
+  max-width: 90ch;
+}
+@media (max-width: 1100px) {
+  .lib-detail {
+    grid-template-columns: 1fr;
+  }
+  .lib-side {
+    position: static;
+    max-height: none;
+  }
 }

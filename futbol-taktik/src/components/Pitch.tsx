@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import { clamp, DRAW_COLORS, PITCH, simplify, smoothPath, uid, zigzagPath } from '../football';
 import type { DrawKind, Drawing, Pt, Token } from '../types';
 
@@ -54,6 +54,9 @@ function Stripes({ half }: { half?: boolean }) {
     </g>
   );
 }
+
+/** Görünür alan [x, y, genişlik, yükseklik] */
+const viewRect = (half?: boolean) => (half ? [PITCH.w / 2 - 3, -3, PITCH.w / 2 + 6, PITCH.h + 6] : [-3, -3, PITCH.w + 6, PITCH.h + 6]);
 
 export function viewBoxFor(half?: boolean) {
   return half ? `${PITCH.w / 2 - 3} -3 ${PITCH.w / 2 + 6} ${PITCH.h + 6}` : `-3 -3 ${PITCH.w + 6} ${PITCH.h + 6}`;
@@ -174,6 +177,7 @@ interface Props {
   colors: { home: string; away: string };
   subFor?: (t: Token) => string | undefined;
   roleFor?: (t: Token) => string | undefined;
+  tokenScale?: number;
   tool?: Tool;
   color?: string;
   editable?: boolean;
@@ -191,6 +195,8 @@ interface Props {
 export function Pitch(props: Props) {
   const { tokens, pos, drawings, half, colors, editable, tool = 'move', color = 'a' } = props;
   const svg = useRef<SVGSVGElement>(null);
+  const clipId = 'vb' + useId().replace(/:/g, '');
+  const [vx, vy, vw, vh] = viewRect(half);
   const drag = useRef<{ id: string; dx: number; dy: number } | null>(null);
   const [draft, setDraft] = useState<Drawing | null>(null);
 
@@ -272,6 +278,11 @@ export function Pitch(props: Props) {
       role="img"
       aria-label="Taktik tahtası"
     >
+      <clipPath id={clipId}>
+        <rect x={vx} y={vy} width={vw} height={vh} rx={1.5} />
+      </clipPath>
+      {/* geniş kutularda (ör. yarı saha) görünür alanın dışı çizilmesin */}
+      <g clipPath={`url(#${clipId})`}>
       <PitchSurface half={half} />
       {props.ghostDrawings?.map((d) => <DrawingShape key={'g' + d.id} d={d} faded />)}
       {drawings.map((d) => (
@@ -281,18 +292,19 @@ export function Pitch(props: Props) {
       {order.map((t) =>
         pos[t.id] ? (
           <g key={t.id} onPointerDown={(e) => startToken(e, t.id)} style={{ cursor: editable && tool === 'move' ? 'grab' : undefined }}>
-            <TokenShape t={t} p={pos[t.id]} sub={props.subFor?.(t)} role={props.roleFor?.(t)} selected={props.selected === t.id} colors={colors} />
+            <TokenShape t={t} p={pos[t.id]} sub={props.subFor?.(t)} role={props.roleFor?.(t)} selected={props.selected === t.id} colors={colors} scale={props.tokenScale} />
           </g>
         ) : null,
       )}
       {props.overlay}
+      </g>
     </svg>
   );
 }
 
 /** Küçük, etkileşimsiz önizleme */
-export function MiniPitch({ tokens, pos, drawings, half, colors }: { tokens: Token[]; pos: Record<string, Pt>; drawings: Drawing[]; half?: boolean; colors: { home: string; away: string } }) {
-  return <Pitch tokens={tokens} pos={pos} drawings={drawings} half={half} colors={colors} className="mini" />;
+export function MiniPitch({ tokens, pos, drawings, half, colors, tokenScale }: { tokens: Token[]; pos: Record<string, Pt>; drawings: Drawing[]; half?: boolean; colors: { home: string; away: string }; tokenScale?: number }) {
+  return <Pitch tokens={tokens} pos={pos} drawings={drawings} half={half} colors={colors} className="mini" tokenScale={tokenScale} />;
 }
 
 /** SVG içinde ekran koordinatını saha metresine çevirir; saha dışındaysa null */

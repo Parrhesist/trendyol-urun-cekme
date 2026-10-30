@@ -1,6 +1,6 @@
 import type { Settings } from '../types';
 
-export type DeckKind = 'mac' | 'devre' | 'taktik' | 'antrenman' | 'hafta';
+export type DeckKind = 'mac' | 'devre' | 'taktik' | 'antrenman' | 'hafta' | 'kutup';
 export type DeckTarget = { kind: DeckKind; id: string };
 
 const BUILD_APP_URL = (import.meta.env.VITE_APP_URL as string | undefined) ?? '';
@@ -35,6 +35,6 @@ export function linkFor(settings: Pick<Settings, 'appUrl'>, hash: string) {
 
 /** #sunum-mac-abc123 → { kind: 'mac', id: 'abc123' } */
 export function parseDeckHash(route: string): DeckTarget | null {
-  const m = /^sunum-(mac|devre|taktik|antrenman|hafta)-(.+)$/.exec(route);
+  const m = /^sunum-(mac|devre|taktik|antrenman|hafta|kutup)-(.+)$/.exec(route);
   return m ? { kind: m[1] as DeckKind, id: m[2] } : null;
 }

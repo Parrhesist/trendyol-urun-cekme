@@ -13,6 +13,17 @@ Tablet öncelikli (ekrana yansıtılabilir), bilgisayarda da çalışan tek tak�
   - *Rakip ve oyun planı*, soyunma odası sunumu; devre arası (hızlı değerlendirme, değişiklikler, ikinci yarı mesajı), maç sonrası (sahaya dokunarak olay girişi, şut ve ısı haritası, istatistik karşılaştırma, oyuncu puanları, antrenmana aktarılan odaklar), CSV ile veri aktarımı.
 - **Kadro**: oyuncu durumu (hazır/şüpheli/sakat/cezalı), sezon istatistikleri, CSV ile aktarım.
 
+## Hazır taktik kütüphanesi
+`src/library/` altında 60 animasyonlu taktik (Taktik → Hazır taktikler, `#kutuphane`):
+- **Sistemler (14):** 4-4-2 bölge savunması (Sacchi), elmas, 4-3-3/2-3-5, 4-2-3-1, 3-5-2, 3-4-3, 4-1-4-1, 4-2-2-2, 4-3-2-1, 3-4-2-1, 2-3-5 Piramit, WM, Catenaccio, Total futbol
+- **Oyun kurma (7):** La Volpe çıkışı, kaleciyle +1, ters bek, 3-2 kutu, kısa kale vuruşu, uzun top ve ikinci top, üçüncü adamla çıkış
+- **Hücum kalıpları (14):** bindirme, içeriden bindirme, ver-kaç, üçüncü adam, kanat değiştirme, beş koridor, sahte 9, ters kanat, geri pas, erken orta, arkaya koşu, hatlar arası, kanat rotasyonu, üçgenler
+- **Pres ve savunma (10):** adam yönelimli pres, kenara yönlendirme, gölgeleme, pres tetikleyicileri, alçak blok, adam adama, ofsayt tuzağı, ceza sahası savunması, ikili sıkıştırma
+- **Geçişler (5):** karşı pres, kontra atak, kaleciden uzun top, savunma geçişi, dinlenme savunması
+- **Duran toplar (10):** korner hücum (3) ve savunma (2), serbest vuruş (3), taç atışı (2)
+
+Her taktiğin anlatımı, adım notları, koçluk noktaları ve kaynağı vardır. Taktikler `src/library/dsl.ts` içindeki küçük bir yazım diliyle tanımlanır (oyuncu anahtarı = forma numarası, rakip `r` önekli; `run`, `pass`, `key`, `shot`, `zone`, `line`, `pair`). Kütüphane salt okunurdur: **Düzenle ve kaydet** kullanıcıya ait bir kopya oluşturur (`libId` ile kaynağa bağlı); anlatım, koçluk noktaları, kaynak, adımlar, çizimler, animasyon hızı ve oyuncu boyutu bu kopyada değiştirilir. Kütüphane taktikleri maça uyarlanabilir, sunulabilir ve TV'ye gönderilebilir (`#sunum-kutup-<id>`).
+
 ## TV ve ekranlara yansıtma
 Her sunum ekranında (taktik, maç öncesi, devre arası, antrenman seansı, haftalık plan) **Sunum** ve **Ekrana yansıt** düğmeleri var:
 - **Bağlı TV'ye gönder**: TV tarayıcısında bir kez `…#ekran` adresi açılır (bekleme ekranı: saat, sıradaki maç ve antrenman). Tabletten gönderilen sunum gelir; slayt, taktik adımı ve antrenman süresi tabletle eşzamanlı ilerler. Paylaşılan modda `live/screen` belgesi ve bağlı ekranları sayan oda varlığı (presence), yerel modda aynı cihazdaki pencereler arasında BroadcastChannel kullanılır (HDMI ile bağlı TV'deki ikinci pencere).

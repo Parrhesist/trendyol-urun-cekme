@@ -6,12 +6,14 @@ import { autoLineup, tacticFromMatch } from '../lineup';
 import { useStore } from '../store';
 import type { LabelMode, Pt, Tactic, TacticCategory, Token, TokenKind } from '../types';
 import { Btn, ConfirmBtn, Empty, Field, Icon, Modal, Segmented } from '../ui';
+import { libItem } from '../library';
 import { PresentActions } from '../present/Actions';
+import { TacticTabs } from './Library';
 import { ShareModal } from './Share';
 
 const fmtShort = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 
-const CATEGORIES: TacticCategory[] = ['Hücum', 'Savunma', 'Geçiş', 'Duran Top', 'Antrenman'];
+const CATEGORIES: TacticCategory[] = ['Sistem', 'Hücum', 'Savunma', 'Geçiş', 'Duran Top', 'Antrenman'];
 
 const TOOLS: { id: Tool; icon: string; label: string }[] = [
   { id: 'move', icon: 'move', label: 'Taşı' },
@@ -47,9 +49,10 @@ export function TacticBoard({ openId, onOpen, backLabel }: { openId?: string; on
     <div className="page">
       <header className="page-head">
         <div>
-          <p className="eyebrow">Taktik kütüphanesi</p>
+          <p className="eyebrow">Kendi taktikleriniz</p>
           <h1>Taktik Tahtası</h1>
         </div>
+        <TacticTabs active="mine" mine={data.tactics.length} />
         {canEdit && (
           <Btn variant="primary" icon="plus" size="lg" onClick={() => setCreating(true)}>
             Yeni taktik
@@ -65,7 +68,10 @@ export function TacticBoard({ openId, onOpen, backLabel }: { openId?: string; on
             <button key={t.id} type="button" className="tcard" onClick={() => onOpen(t.id)}>
               <MiniPitch tokens={t.tokens} pos={t.frames[0].pos} drawings={t.frames[t.frames.length > 1 ? 1 : 0].drawings} half={t.half} colors={colors} />
               <div className="tcard-body">
-                <span className={'cat cat-' + CATEGORIES.indexOf(t.category)}>{t.category}</span>
+                <span className={'cat cat-' + CATEGORIES.indexOf(t.category)}>
+                  {t.category}
+                  {t.libId && <span className="lib-badge">Kütüphaneden</span>}
+                </span>
                 <strong>{t.name}</strong>
                 <small>
                   {t.formation}
@@ -205,7 +211,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
   const history = useRef<Tactic[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
   const anim = useTacticAnimation(t);
-  const labels = useTokenLabels(t, labelMode);
+  const labels = useTokenLabels(t, labelMode, Math.min(anim.fi, t.frames.length - 1));
   const changeLabels = (v: LabelMode) => {
     setLabelMode(v);
     if (canEdit) saveSettings({ ...data.settings, labels: v });
@@ -407,6 +413,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
             colors={colors}
             subFor={labels.subFor}
             roleFor={labels.roleFor}
+            tokenScale={t.tokenScale}
             tool={tool}
             color={color}
             editable={editable}
@@ -427,7 +434,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
                 {labels.roleName(selTok) && (
                   <p className="role-line">
                     <span className="role-chip">{labels.roleName(selTok)!.split(' · ')[0]}</span> {labels.roleName(selTok)!.split(' · ')[1]}
-                    <small className="muted"> — ilk adımdaki konumuna göre</small>
+                    <small className="muted"> — bu adımdaki konumuna göre</small>
                   </p>
                 )}
                 {(selTok.kind === 'home' || selTok.kind === 'away') && (
@@ -495,12 +502,50 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
                         <option value="yari">Yarı saha</option>
                       </select>
                     </Field>
-                    <Field label="Açıklama">
-                      <textarea id="tac-desc" rows={3} value={t.description ?? ''} onChange={(e) => update((d) => ({ ...d, description: e.target.value }), false)} />
+                    <Field label="Anlatım">
+                      <textarea id="tac-desc" rows={5} value={t.description ?? ''} onChange={(e) => update((d) => ({ ...d, description: e.target.value }), false)} placeholder="Taktiğin amacı, ne zaman ve nasıl uygulanır" />
+                    </Field>
+                    <Field label="Koçluk noktaları (her satır bir madde)">
+                      <textarea id="tac-points" rows={4} value={t.points ?? ''} onChange={(e) => update((d) => ({ ...d, points: e.target.value }), false)} />
+                    </Field>
+                    <Field label="Kaynak / köken">
+                      <input id="tac-src" value={t.source ?? ''} onChange={(e) => update((d) => ({ ...d, source: e.target.value }), false)} placeholder="Ör. kendi çalışmamız, UEFA A lisans notları" />
+                    </Field>
+                    <Field label="Oyuncu boyutu">
+                      <select id="tac-scale" value={String(t.tokenScale ?? 1)} onChange={(e) => update((d) => ({ ...d, tokenScale: +e.target.value === 1 ? undefined : +e.target.value }))}>
+                        <option value="1">Normal</option>
+                        <option value="0.7">Küçük (kalabalık alanlar, duran toplar)</option>
+                      </select>
+                    </Field>
+                    <Field label="Animasyon hızı">
+                      <select id="tac-speed" value={String(t.stepMs ?? 1500)} onChange={(e) => update((d) => ({ ...d, stepMs: +e.target.value }))}>
+                        <option value="2400">Yavaş (anlatım için)</option>
+                        <option value="1500">Normal</option>
+                        <option value="900">Hızlı</option>
+                      </select>
                     </Field>
                   </>
                 ) : (
-                  t.description && <p className="muted">{t.description}</p>
+                  <>
+                    {t.description && <p className="muted">{t.description}</p>}
+                    {t.points && (
+                      <ul className="points">
+                        {t.points
+                          .split('\n')
+                          .filter(Boolean)
+                          .map((x) => (
+                            <li key={x}>{x}</li>
+                          ))}
+                      </ul>
+                    )}
+                    {t.source && <p className="small muted">Kaynak: {t.source}</p>}
+                  </>
+                )}
+                {t.libId && libItem(t.libId) && (
+                  <p className="hint">
+                    Bu taktik hazır kütüphanedeki <strong>{libItem(t.libId)!.def.name}</strong> taktiğinin kopyasıdır; değişiklikler yalnızca bu kopyaya kaydedilir.{' '}
+                    <a href={'#kutuphane-' + t.libId}>Orijinali aç</a>
+                  </p>
                 )}
                 <p className="hint">
                   <strong>İpucu:</strong> Oyuncuları sürükleyin, okları çizin, sonra “Adım ekle” ile bir sonraki anı kurun. Oynat tuşu adımları animasyonla gösterir. Klavye: ← → adım, boşluk oynat.

@@ -4,6 +4,7 @@ import { InstructionsPitch } from '../components/InstructionsPitch';
 import { LineupBoard } from '../components/LineupBoard';
 import { TacticPlayer } from '../components/TacticPlayer';
 import { addDays, fmtDate } from '../football';
+import { libItem } from '../library';
 import { benchOf, DEFAULT_INSTRUCTIONS, detectFormation, INSTRUCTION_LABEL, matchSlots, slotRoles, surname } from '../lineup';
 import { usePlayer, useStore } from '../store';
 import { countEvents, sessionLoad, sessionMinutes } from '../stats';
@@ -44,6 +45,7 @@ function tacticSlide(t: Tactic, kicker?: string): Slide {
       <div className="slide-tactic">
         <TacticPlayer key={t.id} tactic={t} big step={c.step} play={c.play} onStep={c.onStep} onPlay={c.onPlay} />
         {t.description && <p className="slide-desc">{t.description}</p>}
+        {t.points && <ul className="slide-points compact">{bullet(t.points)}</ul>}
       </div>
     ),
   };
@@ -72,6 +74,10 @@ export function useDeck(target: DeckTarget | null): Deck | null {
     }
     case 'hafta':
       return /^\d{4}-\d{2}-\d{2}$/.test(target.id) ? weekDeck(target.id, data) : null;
+    case 'kutup': {
+      const it = libItem(target.id);
+      return it ? { title: it.def.name, subtitle: `Hazır taktik · ${it.def.group}`, slides: [tacticSlide(it.tactic, `${it.def.group} · ${it.tactic.frames.length} adım`)] } : null;
+    }
   }
 }
 

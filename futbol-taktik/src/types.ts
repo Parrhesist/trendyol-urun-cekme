@@ -39,7 +39,7 @@ export interface Frame {
   note?: string;
 }
 
-export type TacticCategory = 'Hücum' | 'Savunma' | 'Geçiş' | 'Duran Top' | 'Antrenman';
+export type TacticCategory = 'Sistem' | 'Hücum' | 'Savunma' | 'Geçiş' | 'Duran Top' | 'Antrenman';
 
 export interface Tactic {
   id: string;
@@ -52,6 +52,11 @@ export interface Tactic {
   tokens: Token[];
   frames: Frame[];
   description?: string;
+  points?: string; // koçluk noktaları, her satır bir madde
+  source?: string; // köken / kaynak
+  stepMs?: number; // animasyonda bir adımın süresi
+  libId?: string; // hazır kütüphaneden kopyalandıysa kaynağı
+  tokenScale?: number; // oyuncu dairesi boyutu (kalabalık duran top çizimleri için küçük)
   updatedAt: number;
 }
 

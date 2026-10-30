@@ -43,12 +43,16 @@ export function classifyRoles(items: { id: string; p: Pt }[]): Record<string, st
     else if (x < 64) out[it.id] = side ? wing : 'OOS';
     else out[it.id] = side ? wing : 'FV';
   }
+  // üçlü savunmada her kanadın en gerideki oyuncusu kanat bek sayılır
   const centreBacks = Object.values(out).filter((r) => r === 'STP').length;
   if (centreBacks >= 3)
-    for (const it of items) {
-      const r = out[it.id];
-      if (it.p.x >= 22 && it.p.x < 56 && (r === 'SLB' || r === 'SLK')) out[it.id] = 'SLKB';
-      if (it.p.x >= 22 && it.p.x < 56 && (r === 'SĞB' || r === 'SĞK')) out[it.id] = 'SĞKB';
+    for (const [side, from, to] of [
+      ['L', ['SLB', 'SLK'], 'SLKB'],
+      ['R', ['SĞB', 'SĞK'], 'SĞKB'],
+    ] as const) {
+      void side;
+      const wide = items.filter((it) => (from as readonly string[]).includes(out[it.id]) && it.p.x >= 22 && it.p.x < 56).sort((a, b) => a.p.x - b.p.x)[0];
+      if (wide) out[wide.id] = to;
     }
   return out;
 }
@@ -308,10 +312,10 @@ export function adaptTactic(t: Tactic, m: Match, players: Player[]): Tactic {
   return copy;
 }
 
-/** Taktik tahtasında bizim oyuncuların mevkileri, ilk karedeki (temel diziliş) konumlarından */
-export function tokenRoles(t: Tactic): Record<string, string> {
-  if (t.category === 'Antrenman') return {};
-  const f0 = t.frames[0]?.pos ?? {};
+/** Taktik tahtasında bizim oyuncuların mevkileri, gösterilen adımdaki konumlarına göre */
+export function tokenRoles(t: Tactic, fi = 0): Record<string, string> {
+  if (t.category === 'Antrenman' || t.category === 'Duran Top') return {}; // duran topta konum mevkiyi yansıtmaz
+  const f0 = (t.frames[fi] ?? t.frames[0])?.pos ?? {};
   const items = t.tokens.filter((k) => k.kind === 'home' && f0[k.id]).map((k) => ({ id: k.id, p: f0[k.id] }));
   return items.length >= 7 ? classifyRoles(items) : {};
 }
