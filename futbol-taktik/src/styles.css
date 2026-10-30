@@ -614,7 +614,10 @@ fieldset {
   background: var(--surface);
   border-radius: 16px;
   width: min(560px, 100%);
-  max-height: calc(100% - 16px);
+  /* pencere yüksekliğini aşmasın; içerik kendi içinde kayar */
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  min-height: 0;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -631,6 +634,7 @@ fieldset {
 .modal-body {
   padding: 8px 18px 18px;
   overflow: auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -3344,4 +3348,86 @@ body.no-select,
 }
 .tplayer-bar .tplayer-step {
   margin-left: auto;
+}
+
+/* ---------- TV bağlantı durumu ---------- */
+.screen-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.screen-status.ok {
+  background: var(--good-soft);
+  color: var(--ink);
+}
+.screen-status.none {
+  background: var(--warn-soft);
+  color: var(--ink);
+}
+.live-dot.off {
+  background: var(--warn);
+  animation: none;
+}
+.cast-bar.acked small {
+  color: var(--good);
+  font-weight: 700;
+}
+.mirror-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  margin-top: 6px;
+}
+.mirror-steps .steps {
+  margin-top: 0;
+}
+.cast-card h3 .pill {
+  margin-left: 4px;
+}
+.conn-banner {
+  margin-block: 12px 0;
+  margin-left: max(24px, env(safe-area-inset-left, 0px));
+  margin-right: max(24px, env(safe-area-inset-right, 0px));
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  color: var(--ink);
+  font-size: 14px;
+}
+.tv-error {
+  justify-content: center;
+  align-items: flex-start;
+  padding-inline: max(5vw, calc((100vw - 1100px) / 2));
+}
+.tv-error h1 {
+  font-size: clamp(32px, 4.4vw, 72px);
+}
+.tv-lead {
+  font-size: clamp(18px, 1.8vw, 30px);
+  color: var(--ink-2);
+  max-width: 60ch;
+}
+.tv-steps {
+  margin: 0;
+  padding-left: 1.3em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+  font-size: clamp(17px, 1.6vw, 28px);
+}
+.tv-exit {
+  color: var(--muted);
+  font-size: 0.85em;
+}
+@media (max-width: 720px) {
+  .conn-banner {
+    margin-left: max(16px, env(safe-area-inset-left, 0px));
+    margin-right: max(16px, env(safe-area-inset-right, 0px));
+  }
 }

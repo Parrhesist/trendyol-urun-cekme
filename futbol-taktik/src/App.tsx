@@ -28,7 +28,7 @@ const NAV = [
 const readHash = () => location.hash.replace(/^#/, '') || 'panel';
 
 export function App() {
-  const { data, mode, canEdit, isEmpty, replaceAll } = useStore();
+  const { data, mode, canEdit, isEmpty, replaceAll, sharedUnavailable } = useStore();
   const [route, setRoute] = useState(readHash);
   // maçtan açılan taktikte "geri" maça döner
   const [returnTo, setReturnTo] = useState<string | null>(null);
@@ -164,7 +164,14 @@ export function App() {
           {mode === 'local' && <span className="badge" title="Veriler bu tarayıcıda saklanıyor">Bu cihaz</span>}
         </div>
       </nav>
-      <main className="main">{view}</main>
+      <main className="main">
+        {sharedUnavailable && (
+          <div className="conn-banner" role="alert">
+            <strong>Takım verilerine bağlanılamadı.</strong> Bu tarayıcıda claude.ai oturumu açık değil ya da bu hesabın uygulamaya erişimi yok. Şu an bu cihazda kayıtlı veriler gösteriliyor; burada yapılan değişiklikler takımla paylaşılmaz.
+          </div>
+        )}
+        {view}
+      </main>
       <LiveIndicator />
       <Toasts />
     </div>

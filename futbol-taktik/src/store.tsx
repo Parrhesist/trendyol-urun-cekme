@@ -33,6 +33,8 @@ interface StoreValue {
   toasts: { id: number; msg: string; tone: 'ok' | 'err' }[];
   /** Paylaşılan veritabanı ve canlı oda (TV yayını için); yerel modda null */
   handles: { db: DB | null; room: unknown | null };
+  /** claude.ai içinde açıldı ama paylaşılan veriye ulaşılamadı (oturum yok ya da erişim yok) */
+  sharedUnavailable: boolean;
 }
 
 const Ctx = createContext<StoreValue | null>(null);
@@ -74,6 +76,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [loaded, setLoaded] = useState(0);
   const [toasts, setToasts] = useState<StoreValue['toasts']>([]);
   const [handles, setHandles] = useState<StoreValue['handles']>({ db: null, room: null });
+  const [sharedUnavailable, setSharedUnavailable] = useState(false);
   const dbRef = useRef<DB | null>(null);
   const queues = useRef(new Map<string, Promise<unknown>>());
   const dirty = useRef(new Set<string>()); // yazımı henüz onaylanmamış belgeler: yerel sürüm geçerli
@@ -104,7 +107,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (async () => {
       const db = (await rt.use('db').catch(() => null)) as DB | null;
       if (cancelled) return;
-      if (!db) return startLocal();
+      if (!db) {
+        setSharedUnavailable(true);
+        return startLocal();
+      }
       dbRef.current = db;
       const user = (await rt.use('user').catch(() => null)) as { can(n: string): Promise<boolean | null> } | null;
       const can = user ? await user.can('data.write').catch(() => null) : null;
@@ -278,8 +284,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const effectiveMode: Mode = mode === 'shared' && loaded < 6 ? 'loading' : mode;
 
   const value = useMemo(
-    () => ({ data, mode: effectiveMode, canEdit, isEmpty, save, remove, saveSettings, replaceAll, toast, toasts, handles }),
-    [data, effectiveMode, canEdit, isEmpty, save, remove, saveSettings, replaceAll, toast, toasts, handles],
+    () => ({ data, mode: effectiveMode, canEdit, isEmpty, save, remove, saveSettings, replaceAll, toast, toasts, handles, sharedUnavailable }),
+    [data, effectiveMode, canEdit, isEmpty, save, remove, saveSettings, replaceAll, toast, toasts, handles, sharedUnavailable],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

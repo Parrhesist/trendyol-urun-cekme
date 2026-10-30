@@ -3,9 +3,10 @@ import { useStore } from '../store';
 import type { DeckKind } from './links';
 
 // Canlı yayın: antrenörün cihazı sunumun anlık durumunu yazar, TV ekranları izler.
-// Paylaşılan modda claude.ai veritabanındaki `live/screen` belgesi (geç açılan ekran da son durumu görür)
-// ve bağlı ekranları saymak için oda varlığı (presence) kullanılır. Yerel modda aynı cihazdaki
-// pencereler arasında BroadcastChannel (ör. HDMI ile bağlı TV'de açılmış ikinci pencere).
+// Paylaşılan modda claude.ai veritabanındaki `live/screen` belgesi (geç açılan ekran da son durumu görür).
+// Bağlı ekranlar iki yoldan bulunur: oda varlığı (presence) ve ekranın yazdığı `screens/<cihaz>` nabız belgesi
+// (TV, uygulamaya yazma yetkisi olan bir hesapla açıldıysa). Yerel modda aynı cihazdaki pencereler arasında
+// BroadcastChannel (ör. HDMI ile bağlı TV'de açılmış ikinci pencere).
 
 export interface TimerState {
   slide: number;
@@ -28,15 +29,27 @@ export interface LiveState extends DeckState {
   at: number;
 }
 
+export interface ScreenInfo {
+  device: string;
+  name: string;
+  ack?: number; // ekranın en son aldığı gönderim (live.at)
+}
+
 interface LiveValue {
   live: LiveState | null;
   send: (s: LiveState) => void;
   stop: () => void;
   /** Bağlı ekran sayısı; bilinemiyorsa null */
   screens: number | null;
+  screenList: ScreenInfo[];
+  /** Son gönderimi en az bir ekran aldı */
+  acked: boolean;
   /** TV ekranı: "ben bağlı bir ekranım" der; dönen fonksiyon bırakır */
   announceScreen: () => () => void;
+  /** TV ekranı: gelen sunumu aldığını bildirir */
+  ackScreen: (at: number) => void;
   canCast: boolean;
+  deviceName: string;
 }
 
 type Peer = { isMe: boolean; presence: Record<string, unknown> };
@@ -47,6 +60,8 @@ type Room = {
 
 const CH = 'saha-kenari-ekran';
 const LS_LIVE = 'saha-kenari-live';
+const BEAT_MS = 25000;
+const STALE_MS = 70000;
 const Ctx = createContext<LiveValue | null>(null);
 export const useLive = () => useContext(Ctx)!;
 
@@ -58,18 +73,52 @@ const channel = () => {
   }
 };
 
+const DEVICE_ID = (() => {
+  const make = () => Math.random().toString(36).slice(2, 10);
+  try {
+    let id = localStorage.getItem('saha-kenari-cihaz');
+    if (!id) {
+      id = make();
+      localStorage.setItem('saha-kenari-cihaz', id);
+    }
+    return id;
+  } catch {
+    return make();
+  }
+})();
+
+/** Ekran listesinde görünecek cihaz adı */
+export const DEVICE_NAME = (() => {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  if (/Tizen|SMART-TV.*Samsung|SamsungBrowser.*TV/i.test(ua)) return 'Samsung TV';
+  if (/Web0S|webOS|NetCast/i.test(ua)) return 'LG TV';
+  if (/Android TV|GoogleTV|BRAVIA|AFT[A-Z]|CrKey/i.test(ua)) return 'Android / Google TV';
+  if (/iPad/.test(ua) || (/Macintosh/.test(ua) && typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1)) return 'iPad';
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/Android/.test(ua)) return 'Android cihaz';
+  if (/Macintosh/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows bilgisayar';
+  return 'Tarayıcı';
+})();
+
 export function LiveProvider({ children }: { children: ReactNode }) {
   const { handles, mode, canEdit, toast } = useStore();
   const db = handles.db;
   const room = handles.room as Room | null;
   const [live, setLive] = useState<LiveState | null>(null);
-  const [screens, setScreens] = useState<number | null>(null);
+  const [roomScreens, setRoomScreens] = useState<ScreenInfo[] | null>(null);
+  const [dbScreens, setDbScreens] = useState<(ScreenInfo & { seen: number })[] | null>(null);
+  const [localScreens, setLocalScreens] = useState<ScreenInfo[]>([]);
+  const [tick, setTick] = useState(0);
   const bc = useRef<BroadcastChannel | null>(null);
   const pending = useRef<LiveState | null>(null);
   const writing = useRef(false);
-  const localScreens = useRef(new Map<string, number>());
+  const localSeen = useRef(new Map<string, ScreenInfo & { t: number }>());
+  const screenWritable = useRef(true);
+  const lastAck = useRef<number | undefined>(undefined);
+  const canCast = (mode === 'shared' && canEdit) || mode === 'local';
 
-  // Dinle
+  // Sunum durumunu dinle
   useEffect(() => {
     if (mode === 'loading') return;
     if (db) {
@@ -89,15 +138,15 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     bc.current = ch;
     if (!ch) return;
     ch.onmessage = (e) => {
-      const msg = e.data as { type: string; state?: LiveState; id?: string };
+      const msg = e.data as { type: string; state?: LiveState; id?: string; name?: string; ack?: number };
       if (msg.type === 'live' && msg.state) setLive(msg.state);
-      if (msg.type === 'screen' && msg.id) localScreens.current.set(msg.id, Date.now());
-      if (msg.type === 'screen-off' && msg.id) localScreens.current.delete(msg.id);
+      if (msg.type === 'screen' && msg.id) localSeen.current.set(msg.id, { device: msg.id, name: msg.name ?? 'Ekran', ack: msg.ack, t: Date.now() });
+      if (msg.type === 'screen-off' && msg.id) localSeen.current.delete(msg.id);
     };
     const t = setInterval(() => {
       const now = Date.now();
-      localScreens.current.forEach((v, k) => now - v > 12000 && localScreens.current.delete(k));
-      setScreens(localScreens.current.size);
+      localSeen.current.forEach((v, k) => now - v.t > 12000 && localSeen.current.delete(k));
+      setLocalScreens([...localSeen.current.values()]);
     }, 2000);
     return () => {
       clearInterval(t);
@@ -106,20 +155,52 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     };
   }, [db, mode]);
 
-  // Bağlı ekranları say (oda)
+  // Bağlı ekranlar: oda varlığı
   useEffect(() => {
     if (!room) return;
     let off: (() => void) | undefined;
     try {
       off = room.onPeers(
-        (c) => setScreens(c.peers.filter((p) => !p.isMe && p.presence?.role === 'ekran').length),
-        () => setScreens(null),
+        (c) =>
+          setRoomScreens(
+            c.peers
+              .filter((p) => !p.isMe && p.presence?.role === 'ekran')
+              .map((p) => ({ device: String(p.presence.device ?? Math.random()), name: String(p.presence.name ?? 'Ekran') })),
+          ),
+        () => setRoomScreens(null),
       );
     } catch {
-      setScreens(null);
+      setRoomScreens(null);
     }
     return () => off?.();
   }, [room]);
+
+  // Bağlı ekranlar: nabız belgeleri (yalnızca yayın yapabilen cihazda dinlenir)
+  useEffect(() => {
+    if (!db || !canCast) return;
+    return db.collection('screens').onSnapshot(
+      (snap) => setDbScreens(snap.docs.filter((d) => d.exists).map((d) => d.data() as unknown as ScreenInfo & { seen: number })),
+      () => setDbScreens(null),
+    );
+  }, [db, canCast]);
+
+  // eski nabızları düşürmek için ara sıra yeniden hesapla
+  useEffect(() => {
+    const t = setInterval(() => setTick((x) => x + 1), 10000);
+    return () => clearInterval(t);
+  }, []);
+
+  const screenList = useMemo(() => {
+    void tick;
+    const now = Date.now();
+    const map = new Map<string, ScreenInfo>();
+    (roomScreens ?? []).forEach((s) => map.set(s.device, s));
+    (dbScreens ?? []).filter((s) => now - s.seen < STALE_MS).forEach((s) => map.set(s.device, { ...map.get(s.device), ...s }));
+    localScreens.forEach((s) => map.set(s.device, s));
+    return [...map.values()];
+  }, [roomScreens, dbScreens, localScreens, tick]);
+  const screensKnown = mode === 'local' || roomScreens !== null || dbScreens !== null;
+  const acked = !!live?.active && screenList.some((s) => s.ack === live.at);
 
   const flush = useCallback(async () => {
     if (!db || writing.current) return;
@@ -156,24 +237,40 @@ export function LiveProvider({ children }: { children: ReactNode }) {
 
   const stop = useCallback(() => send({ active: false, slide: 0, step: 0, play: 0, at: Date.now() }), [send]);
 
+  const beat = useCallback(() => {
+    if (db && screenWritable.current)
+      db.doc('screens/' + DEVICE_ID)
+        .set({ device: DEVICE_ID, name: DEVICE_NAME, seen: Date.now(), ...(lastAck.current ? { ack: lastAck.current } : {}) })
+        .catch(() => {
+          screenWritable.current = false; // bu hesap yazamıyor: yalnızca oda varlığına güvenilir
+        });
+    if (!db) bc.current?.postMessage({ type: 'screen', id: DEVICE_ID, name: DEVICE_NAME, ack: lastAck.current });
+  }, [db]);
+
   const announceScreen = useCallback(() => {
-    if (room) {
-      room.presence({ role: 'ekran' }).catch(() => undefined);
-      return () => {
-        room.presence({ role: null }).catch(() => undefined);
-      };
-    }
-    const id = Math.random().toString(36).slice(2);
-    const ping = () => bc.current?.postMessage({ type: 'screen', id });
-    ping();
-    const t = setInterval(ping, 4000);
+    room?.presence({ role: 'ekran', device: DEVICE_ID, name: DEVICE_NAME }).catch(() => undefined);
+    beat();
+    const t = setInterval(beat, db ? BEAT_MS : 4000);
     return () => {
       clearInterval(t);
-      bc.current?.postMessage({ type: 'screen-off', id });
+      room?.presence({ role: null, device: null, name: null }).catch(() => undefined);
+      if (db && screenWritable.current) db.doc('screens/' + DEVICE_ID).delete().catch(() => undefined);
+      if (!db) bc.current?.postMessage({ type: 'screen-off', id: DEVICE_ID });
     };
-  }, [room]);
+  }, [room, db, beat]);
 
-  const canCast = (mode === 'shared' && canEdit) || mode === 'local';
-  const value = useMemo(() => ({ live, send, stop, screens, announceScreen, canCast }), [live, send, stop, screens, announceScreen, canCast]);
+  const ackScreen = useCallback(
+    (at: number) => {
+      if (lastAck.current === at) return;
+      lastAck.current = at;
+      beat();
+    },
+    [beat],
+  );
+
+  const value = useMemo(
+    () => ({ live, send, stop, screens: screensKnown ? screenList.length : null, screenList, acked, announceScreen, ackScreen, canCast, deviceName: DEVICE_NAME }),
+    [live, send, stop, screensKnown, screenList, acked, announceScreen, ackScreen, canCast],
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

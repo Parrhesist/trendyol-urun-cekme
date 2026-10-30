@@ -5,7 +5,7 @@ import { appBase, linkFor, SCREEN_HASH } from '../present/links';
 import { buildSample } from '../sample';
 import { DEFAULT_SETTINGS, useStore } from '../store';
 import type { LabelMode, TeamData } from '../types';
-import { Btn, ConfirmBtn, copyText, Field } from '../ui';
+import { Btn, ConfirmBtn, copyText, Field, Icon } from '../ui';
 
 export function SettingsView() {
   const { data, mode, canEdit, saveSettings, replaceAll, toast } = useStore();
@@ -67,6 +67,13 @@ export function SettingsView() {
         <p className="muted">
           Soyunma odası veya tesis TV'sinde bu bağlantıyı bir kez açıp bırakın. Taktik, maç ve antrenman sunumlarını tabletten <strong>Ekrana yansıt → TV'ye gönder</strong> ile oraya gönderirsiniz; slaytlar, taktik adımları ve süreler tabletle birlikte ilerler.
         </p>
+        <div className="row">
+          <a className="btn btn-primary btn-md" href="#ekran">
+            <Icon name="cast" />
+            <span>Bu cihazı TV ekranı yap</span>
+          </a>
+          <span className="muted small">TV’nin tarayıcısında uygulamayı açtıysanız bu düğmeye basmanız yeterli.</span>
+        </div>
         <LinkBox link={linkFor(s, SCREEN_HASH)} id="st-screen-link" />
         <ul className="tv-howto">
           <li>

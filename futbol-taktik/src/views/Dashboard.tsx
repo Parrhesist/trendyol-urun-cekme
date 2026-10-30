@@ -3,7 +3,7 @@ import { addDays, fmtDate, STATUS_META, todayISO } from '../football';
 import { surname } from '../lineup';
 import { useStore } from '../store';
 import { acwr, acwrText, acwrTone, isPlayed, result, RESULT_LABEL, sessionMinutes } from '../stats';
-import { Btn, Pill } from '../ui';
+import { Btn, Icon, Pill } from '../ui';
 
 export function Dashboard({ go }: { go: (hash: string) => void }) {
   const { data } = useStore();
@@ -28,6 +28,10 @@ export function Dashboard({ go }: { go: (hash: string) => void }) {
           <p className="eyebrow">{fmtDate(today, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
           <h1>{data.settings.teamName}</h1>
         </div>
+        <a className="btn btn-plain btn-md" href="#ekran" title="TV'de açtıysanız buna basın: bu cihaz sunumların gösterileceği ekran olur">
+          <Icon name="cast" />
+          <span>Bu cihazı TV ekranı yap</span>
+        </a>
       </header>
 
       <div className="dash">

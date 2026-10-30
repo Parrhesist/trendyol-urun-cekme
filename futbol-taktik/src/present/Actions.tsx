@@ -71,13 +71,20 @@ export function PresentOverlay({ target, startCasting, onClose }: { target: Deck
   };
 
   if (!deck) return null;
+  const status = live.acked
+    ? `TV aldı (${live.screenList.filter((x) => x.ack === live.live?.at).map((x) => x.name).join(', ') || 'ekran'})`
+    : live.screens
+      ? `${live.screens} ekran bağlı`
+      : live.screens === 0
+        ? 'bağlı ekran görünmüyor; TV açılınca sunum gelir'
+        : '';
   const castBar = live.canCast ? (
     casting ? (
-      <div className="cast-bar on">
+      <div className={'cast-bar on' + (live.acked ? ' acked' : '')}>
         <span className="live-dot" aria-hidden="true" />
         <span>
           TV'de yayında
-          {live.screens != null && <small> · {live.screens ? `${live.screens} ekran bağlı` : 'bağlı ekran görünmüyor'}</small>}
+          {status && <small> · {status}</small>}
         </span>
         <Btn size="sm" variant="ghost" onClick={stopCast}>
           Bitir
@@ -114,7 +121,42 @@ export function LinkBox({ link, id }: { link: string; id: string }) {
   );
 }
 
-/** Ekrana yansıtmanın üç yolu: bağlı TV, bu cihazı yansıtma, doğrudan bağlantı */
+type Platform = 'ios' | 'android' | 'mac' | 'windows' | 'other';
+
+const detectPlatform = (): Platform => {
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'ios';
+  if (/Android/.test(ua)) return 'android';
+  if (/Macintosh/.test(ua)) return 'mac';
+  if (/Windows/.test(ua)) return 'windows';
+  return 'other';
+};
+
+/** Cihazın kendi ekran yansıtma özelliği: TV'yi cihaz bulur, uygulamada kurulum gerekmez */
+const MIRROR: { id: Platform; device: string; steps: string[] }[] = [
+  {
+    id: "ios",
+    device: "iPad / iPhone (AirPlay)",
+    steps: ["Ekranın sağ üst köşesinden aşağı kaydırıp Denetim Merkezi'ni açın.", "Ekran Yansıtma'ya dokunun, listeden TV'nizi seçin (Apple TV ya da AirPlay destekli Samsung, LG, Sony, Philips TV'ler).", "TV'de çıkan kodu girin, sonra burada “Tam ekran başlat” deyin."],
+  },
+  {
+    id: "android",
+    device: "Android telefon / tablet",
+    steps: ["Ekranın üstünden iki kez aşağı kaydırıp hızlı ayarları açın.", "“Smart View” (Samsung), “Ekran yansıtma” ya da “Yayınla” düğmesine dokunun, TV'nizi seçin. Chromecast ve Google TV için Google Home uygulamasından “Ekranımı yayınla” da kullanılabilir.", "Yansıtma başlayınca burada “Tam ekran başlat” deyin."],
+  },
+  {
+    id: "mac",
+    device: "Mac",
+    steps: ["Menü çubuğunda Denetim Merkezi → Ekran Yansıtma → TV'nizi seçin (AirPlay).", "Ya da HDMI kablosu takın.", "Burada “Tam ekran başlat” deyin."],
+  },
+  {
+    id: "windows",
+    device: "Windows bilgisayar",
+    steps: ["Windows tuşu + K'ye basın, listeden TV'nizi seçin (Miracast). Chromecast için Chrome'da ⋮ menü → Yayınla.", "Ya da HDMI kablosu takın.", "Burada “Tam ekran başlat” deyin."],
+  },
+];
+
+/** Ekrana yansıtmanın üç yolu: cihazı yansıtma, TV tarayıcısı ile bağlı ekran, doğrudan bağlantı */
 export function CastModal({ target, onClose, onStart }: { target: DeckTarget; onClose: () => void; onStart: (cast: boolean) => void }) {
   const { data, mode } = useStore();
   const deck = useDeck(target);
@@ -122,54 +164,32 @@ export function CastModal({ target, onClose, onStart }: { target: DeckTarget; on
   const hasBase = !!appBase(data.settings);
   const screenLink = linkFor(data.settings, SCREEN_HASH);
   const deckLink = linkFor(data.settings, deckHash(target));
+  const platform = detectPlatform();
+  const mine = MIRROR.find((x) => x.id === platform);
+  const others = MIRROR.filter((x) => x.id !== platform);
   return (
     <Modal title="Ekrana yansıt" onClose={onClose} wide>
       <p className="muted">
         <strong>{deck?.title}</strong> · {deck?.slides.length} slayt
       </p>
       <div className="cast-options">
-        {live.canCast && (
-          <section className="cast-card primary">
-            <h3>
-              <Icon name="cast" /> Bağlı TV'ye gönder
-            </h3>
-            <p>
-              Sunumu siz tabletten yönetirsiniz; TV slaytı, taktik adımını ve süreyi aynı anda gösterir.{' '}
-              {live.screens != null && (
-                <strong className={live.screens ? 'tone-good' : 'tone-warn'}>{live.screens ? `${live.screens} ekran bağlı.` : 'Şu an bağlı ekran görünmüyor.'}</strong>
-              )}
-            </p>
-            <Btn variant="primary" size="lg" icon="cast" onClick={() => onStart(true)}>
-              TV'ye gönder ve sunumu başlat
-            </Btn>
-            <details open={!live.screens}>
-              <summary>TV'yi nasıl bağlarım?</summary>
-              <ol className="steps">
-                {mode === 'shared' ? (
-                  <>
-                    <li>TV'nin internet tarayıcısında bu adresi bir kez açın ve yer imlerine ekleyin:</li>
-                    <LinkBox link={screenLink} id="cast-screen-link" />
-                    <li>TV tarayıcısında claude.ai'ye, uygulamayı açabilen bir hesapla giriş yapılmış olmalı (ör. sizin hesabınız). Giriş bir kez yapılır.</li>
-                    <li>TV'de bekleme ekranı açılır. Buradan "TV'ye gönder" dediğiniz sunum otomatik gelir.</li>
-                  </>
-                ) : (
-                  <>
-                    <li>Bu bilgisayarı TV'ye HDMI ile bağlayın (genişletilmiş ekran).</li>
-                    <li>Yeni bir tarayıcı penceresinde şu adresi açıp pencereyi TV ekranına taşıyın:</li>
-                    <LinkBox link={screenLink} id="cast-screen-link" />
-                    <li>Buradan gönderdiğiniz sunum o pencerede görünür, siz bu ekrandan yönetirsiniz.</li>
-                  </>
-                )}
-              </ol>
-            </details>
-          </section>
-        )}
-        <section className="cast-card">
+        <section className="cast-card primary">
           <h3>
-            <Icon name="present" /> Bu cihazı yansıt
+            <Icon name="present" /> Bu cihazı TV'ye yansıt <span className="pill pill-good">Önerilen</span>
           </h3>
-          <p>HDMI kablosu, AirPlay (iPad → Apple TV veya AirPlay destekli TV) ya da Chromecast/ekran yansıtma kullanıyorsanız. TV'de giriş gerekmez.</p>
+          <p>TV'yi cihazınızın kendi yansıtma özelliği bulur; uygulamada kurulum ya da TV'de giriş gerekmez.</p>
+          {mine && (
+            <div className="mirror-steps">
+              <strong>{mine.device}</strong>
+              <ol className="steps">
+                {mine.steps.map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
+              </ol>
+            </div>
+          )}
           <Btn
+            variant="primary"
             size="lg"
             onClick={() => {
               toggleFullscreen();
@@ -178,18 +198,76 @@ export function CastModal({ target, onClose, onStart }: { target: DeckTarget; on
           >
             Tam ekran başlat
           </Btn>
+          <details open={!mine}>
+            <summary>{mine ? 'Diğer cihazlar' : 'Cihazınıza göre adımlar'}</summary>
+            {others.map((o) => (
+              <div key={o.id} className="mirror-steps">
+                <strong>{o.device}</strong>
+                <ol className="steps">
+                  {o.steps.map((x) => (
+                    <li key={x}>{x}</li>
+                  ))}
+                </ol>
+              </div>
+            ))}
+          </details>
         </section>
+
+        {live.canCast && (
+          <section className="cast-card">
+            <h3>
+              <Icon name="cast" /> TV'nin tarayıcısı ile bağlı ekran
+            </h3>
+            <p>Tablet kumanda olur: slayt, taktik adımı ve süre TV'de aynı anda ilerler. TV'de uygulamanın bir kez açılmış olması gerekir.</p>
+            <div className={'screen-status ' + (live.screens ? 'ok' : 'none')} role="status">
+              <span className={'live-dot' + (live.screens ? ' idle' : ' off')} aria-hidden="true" />
+              {live.screens ? (
+                <span>
+                  Bağlı ekranlar: <strong>{live.screenList.map((x) => x.name).join(', ')}</strong>
+                </span>
+              ) : (
+                <span>Şu an bağlı ekran görünmüyor. Yine de gönderebilirsiniz: TV'de ekran açıldığı an sunum gelir.</span>
+              )}
+            </div>
+            <Btn size="lg" icon="cast" onClick={() => onStart(true)}>
+              TV'ye gönder ve sunumu başlat
+            </Btn>
+            <details open={!live.screens}>
+              <summary>TV'yi bağlama (bir kez)</summary>
+              <ol className="steps">
+                {mode === 'shared' ? (
+                  <>
+                    <li>TV'nin internet tarayıcısında claude.ai'yi açın ve uygulamayı açabilen bir hesapla giriş yapın (en kolayı sizin hesabınız).</li>
+                    <li>
+                      Saha Kenarı uygulamasını açın (claude.ai'de son kullanılanlarda ya da yer imi olarak) ve ana sayfadaki <strong>Bu cihazı TV ekranı yap</strong> düğmesine basın. Ya da doğrudan bu adresi açın:
+                    </li>
+                    <LinkBox link={screenLink} id="cast-screen-link" />
+                    <li>TV'de “ekran olarak bağlı ve hazır” yazısı çıkınca burada ekranın adı görünür.</li>
+                  </>
+                ) : (
+                  <>
+                    <li>Bu bilgisayarı TV'ye HDMI ile bağlayın (genişletilmiş ekran).</li>
+                    <li>Yeni bir tarayıcı penceresinde şu adresi açıp pencereyi TV ekranına taşıyın:</li>
+                    <LinkBox link={screenLink} id="cast-screen-link" />
+                  </>
+                )}
+              </ol>
+              {mode === 'shared' && <p className="hint">TV başka bir hesapla açıldıysa listede görünmeyebilir ama gönderilen sunumu yine de gösterir. TV giriş yapamıyorsa yukarıdaki yansıtma yolunu kullanın.</p>}
+            </details>
+          </section>
+        )}
+
         <section className="cast-card">
           <h3>
             <Icon name="share" /> Doğrudan bağlantı
           </h3>
-          <p>Akıllı TV tarayıcısında, Chromecast'e yayınlanan Chrome sekmesinde veya oyuncuların telefonunda bu sunumu doğrudan, tam ekran açar.</p>
+          <p>Akıllı TV tarayıcısında, Chromecast'e yayınlanan Chrome sekmesinde ya da oyuncuların telefonunda bu sunumu doğrudan, tam ekran açar.</p>
           <div className="cast-link">
             <LinkBox link={deckLink} id="cast-deck-link" />
             {hasBase && <QR text={deckLink} size={132} label="Sunum bağlantısı QR kodu" />}
           </div>
           {!hasBase && <p className="hint">Tam adres oluşturmak için Ayarlar → TV ve ekranlar bölümüne uygulamanın bağlantısını girin.</p>}
-          {mode === 'shared' && <p className="hint">Bağlantıyı açan kişinin uygulamaya erişimi olmalı (Paylaş menüsünden verilir).</p>}
+          {mode === 'shared' && <p className="hint">Bağlantıyı açan kişinin claude.ai'de giriş yapmış olması ve uygulamaya erişimi olmalı.</p>}
         </section>
       </div>
     </Modal>

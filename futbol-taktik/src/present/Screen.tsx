@@ -14,15 +14,22 @@ import { Presenter, useNow, useWakeLock } from './Presenter';
  * sonraki değişiklik ekranı yeniden eşitler.
  */
 export function ScreenView() {
-  const { mode } = useStore();
+  const { mode, sharedUnavailable } = useStore();
   const live = useLive();
   const announce = live.announceScreen;
-  useEffect(() => announce(), [announce]);
+  useEffect(() => (sharedUnavailable ? undefined : announce()), [announce, sharedUnavailable]);
   useWakeLock(true);
   const remote = live.live;
   const target: DeckTarget | null = remote?.active && remote.kind && remote.id ? { kind: remote.kind, id: remote.id } : null;
   const deck = useDeck(target);
   const [local, setLocal] = useState<{ at: number; st: DeckState } | null>(null);
+  // gelen sunumu aldığını antrenöre bildir
+  const ack = live.ackScreen;
+  const shownAt = deck && remote?.active ? remote.at : null;
+  useEffect(() => {
+    if (shownAt) ack(shownAt);
+  }, [shownAt, ack]);
+  if (sharedUnavailable) return <NotConnected />;
   if (mode === 'loading')
     return (
       <div className="tv-root tv-idle">
@@ -38,8 +45,27 @@ export function ScreenView() {
   return <Idle />;
 }
 
+/** TV tarayıcısında oturum açık değilse ya da uygulamaya erişim yoksa */
+function NotConnected() {
+  return (
+    <div className="tv-root tv-idle tv-error">
+      <h1>Bu ekran takıma bağlanamadı</h1>
+      <p className="tv-lead">TV'nin tarayıcısında claude.ai oturumu açık değil ya da bu hesabın uygulamaya erişimi yok. Bu yüzden tabletten gönderilen sunumlar buraya gelemez.</p>
+      <ol className="tv-steps">
+        <li>Bu tarayıcıda claude.ai'ye, uygulamayı açabilen bir hesapla giriş yapın (en kolayı sizin hesabınız).</li>
+        <li>Saha Kenarı uygulamasını yeniden açın ve ana sayfadaki <strong>Bu cihazı TV ekranı yap</strong> düğmesine basın.</li>
+        <li>Giriş yapılamıyorsa tableti TV'ye yansıtın (AirPlay, Smart View, Chromecast) ve tablette <strong>Ekrana yansıt → Tam ekran başlat</strong> deyin.</li>
+      </ol>
+      <Btn size="lg" variant="primary" autoFocus onClick={() => location.reload()}>
+        Yeniden dene
+      </Btn>
+    </div>
+  );
+}
+
 function Idle() {
   const { data, mode } = useStore();
+  const live = useLive();
   const now = useNow(true, 10000);
   const today = todayISO();
   const next = [...data.matches].filter((m) => !isPlayed(m) && m.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0];
@@ -84,12 +110,15 @@ function Idle() {
       <footer className="tv-wait">
         <span className="live-dot idle" aria-hidden="true" />
         <p>
-          Ekran hazır. Tabletten bir sunumu <strong>Ekrana yansıt → TV'ye gönder</strong> ile gönderin.
+          <strong>{live.deviceName}</strong> ekran olarak bağlı ve hazır. Tabletten bir sunumu <strong>Ekrana yansıt → TV'ye gönder</strong> ile gönderin.
           {mode === 'local' && ' (Bu ekran aynı bilgisayardaki diğer pencereyi izler.)'}
         </p>
         <Btn size="lg" icon="expand" autoFocus onClick={() => toggleFullscreen()}>
           Tam ekran
         </Btn>
+        <a className="tv-exit" href="#panel">
+          Uygulamaya dön
+        </a>
       </footer>
     </div>
   );
