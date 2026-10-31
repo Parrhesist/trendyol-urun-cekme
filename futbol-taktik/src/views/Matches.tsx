@@ -10,7 +10,7 @@ import { countEvents, isPlayed, result, RESULT_LABEL } from '../stats';
 import type { EventType, Match, MatchEvent, Player, Pt } from '../types';
 import { Btn, ConfirmBtn, Empty, Field, Icon, Pill, Segmented } from '../ui';
 import { PresentActions } from '../present/Actions';
-import { MatchPrep } from './MatchPrep';
+import { MatchPrep, PrepTabs, usePrepSub } from './MatchPrep';
 import { ShareModal } from './Share';
 
 type Tab = 'once' | 'devre' | 'sonra' | 'veri';
@@ -123,6 +123,7 @@ const lastTab: Record<string, Tab> = {};
 function MatchDetail({ match, onBack, onOpenTactic }: { match: Match; onBack: () => void; onOpenTactic: (id: string) => void }) {
   const { save, remove, canEdit } = useStore();
   const [tab, setTabState] = useState<Tab>(lastTab[match.id] ?? (isPlayed(match) ? 'sonra' : 'once'));
+  const [sub, setSub] = usePrepSub(match.id);
   const setTab = (t: Tab) => {
     lastTab[match.id] = t;
     setTabState(t);
@@ -135,8 +136,8 @@ function MatchDetail({ match, onBack, onOpenTactic }: { match: Match; onBack: ()
   const setPost = (p: Partial<Match['post']>) => upd((x) => ({ ...x, post: { ...x.post, ...p } }));
 
   return (
-    <div className="page">
-      <header className="match-head">
+    <div className={'page match-page ws' + (tab === 'sonra' || (tab === 'once' && sub !== 'taktik') ? ' ws-pitch' : '')}>
+      <header className="match-head ws-head">
         <Btn variant="ghost" icon="prev" onClick={onBack} aria-label="Maçlara dön" />
         <div className="match-title">
           {canEdit ? (
@@ -179,20 +180,26 @@ function MatchDetail({ match, onBack, onOpenTactic }: { match: Match; onBack: ()
           )}
         </div>
       </header>
-      <Segmented
-        value={tab}
-        onChange={setTab}
-        options={[
-          { value: 'once', label: 'Maç öncesi' },
-          { value: 'devre', label: 'Devre arası' },
-          { value: 'sonra', label: 'Maç sonrası' },
-          { value: 'veri', label: 'Veri aktar' },
-        ]}
-      />
-      {tab === 'once' && <MatchPrep m={m} setPre={setPre} onOpenTactic={onOpenTactic} />}
-      {tab === 'devre' && <HalfPanel m={m} setHalf={setHalf} />}
-      {tab === 'sonra' && <PostPanel m={m} setPost={setPost} />}
-      {tab === 'veri' && <DataPanel m={m} setPost={setPost} />}
+      <div className="match-tabs">
+        <Segmented
+          id="match-tab"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'once', label: 'Maç öncesi' },
+            { value: 'devre', label: 'Devre arası' },
+            { value: 'sonra', label: 'Maç sonrası' },
+            { value: 'veri', label: 'Veri aktar' },
+          ]}
+        />
+        {tab === 'once' && <PrepTabs m={m} sub={sub} setSub={setSub} />}
+      </div>
+      <div className="match-body">
+        {tab === 'once' && <MatchPrep m={m} sub={sub} setPre={setPre} onOpenTactic={onOpenTactic} />}
+        {tab === 'devre' && <HalfPanel m={m} setHalf={setHalf} />}
+        {tab === 'sonra' && <PostPanel m={m} setPost={setPost} />}
+        {tab === 'veri' && <DataPanel m={m} setPost={setPost} />}
+      </div>
       {sharing && <ShareModal kind="mac" id={m.id} title={`${m.opponent} maçı`} onClose={() => setSharing(false)} />}
     </div>
   );
@@ -232,7 +239,7 @@ function HalfPanel({ m, setHalf }: { m: Match; setHalf: (p: Partial<Match['half'
       <div className="two-col">
         <section className="panel">
           <h2 className="section-title">Hızlı değerlendirme</h2>
-          <p className="muted small">Bir kez dokun: iyi gidiyor. Uzun basmak yerine sağdaki “düzelt” butonunu kullanın.</p>
+          <p className="muted small half-hint">Bir kez dokun: iyi gidiyor. Uzun basmak yerine sağdaki “düzelt” butonunu kullanın.</p>
           <div className="tag-grid">
             {tags.map((t) => (
               <div key={t} className={'tag' + (m.half.good.includes(t) ? ' good' : m.half.bad.includes(t) ? ' bad' : '')}>
@@ -360,6 +367,7 @@ function PostPanel({ m, setPost }: { m: Match; setPost: (p: Partial<Match['post'
   const [who, setWho] = useState('');
   const [minute, setMinute] = useState(1);
   const [view, setView] = useState<'sut' | 'isi' | 'hepsi'>('sut');
+  const [sideTab, setSideTab] = useState<'istatistik' | 'puan' | 'degerlendirme' | 'olaylar'>('istatistik');
   const [focus, setFocus] = useState('');
   const us = countEvents(m.post.events, 'biz');
   const them = countEvents(m.post.events, 'rakip');
@@ -431,35 +439,30 @@ function PostPanel({ m, setPost }: { m: Match; setPost: (p: Partial<Match['post'
   );
 
   return (
-    <div className="stack">
-      <div className="score-input">
-        <span>Maç sonucu</span>
-        <ScoreBox value={m.post.us} onChange={(v) => setPost({ us: v, them: m.post.them ?? 0 })} label={data.settings.shortName} disabled={!canEdit} />
-        <span className="score-dash">–</span>
-        <ScoreBox value={m.post.them} onChange={(v) => setPost({ them: v, us: m.post.us ?? 0 })} label="Rakip" disabled={!canEdit} />
-        {m.half.us != null && (
-          <span className="muted">
-            (İY {m.half.us}–{m.half.them})
-          </span>
-        )}
-      </div>
-
-      <div className="two-col wide-left">
-        <section className="panel">
-          <div className="row between">
-            <h2 className="section-title">Olay haritası</h2>
-            <Segmented
-              value={view}
-              onChange={setView}
-              options={[
-                { value: 'sut', label: 'Şutlar' },
-                { value: 'isi', label: 'Isı haritası' },
-                { value: 'hepsi', label: 'Tümü' },
-              ]}
-            />
-          </div>
-          {canEdit && (
-            <div className="logger">
+    <div className="post-ws">
+      <div className="post-top">
+        <div className="score-input compact">
+          <ScoreBox value={m.post.us} onChange={(v) => setPost({ us: v, them: m.post.them ?? 0 })} label={data.settings.shortName} disabled={!canEdit} />
+          <span className="score-dash">–</span>
+          <ScoreBox value={m.post.them} onChange={(v) => setPost({ them: v, us: m.post.us ?? 0 })} label="Rakip" disabled={!canEdit} />
+          {m.half.us != null && (
+            <span className="muted">
+              İY {m.half.us}–{m.half.them}
+            </span>
+          )}
+        </div>
+        <Segmented
+          id="post-view"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: 'sut', label: 'Şutlar' },
+            { value: 'isi', label: 'Isı haritası' },
+            { value: 'hepsi', label: 'Tümü' },
+          ]}
+        />
+        {canEdit && (
+          <div className="logger">
               <Segmented
                 value={team}
                 onChange={setTeam}
@@ -490,8 +493,13 @@ function PostPanel({ m, setPost }: { m: Match; setPost: (p: Partial<Match['post'
                 <input id="ev-min" type="number" min={1} max={130} value={minute} onChange={(e) => setMinute(+e.target.value)} className="num-input" />
               </label>
             </div>
-          )}
-          <Pitch tokens={[]} pos={{}} drawings={[]} colors={colors} overlay={overlay} onPitchTap={canEdit && view !== 'isi' ? addEvent : undefined} className="event-pitch" />
+        )}
+      </div>
+      <div className="post-body">
+        <section className="panel post-map">
+          <div className="pitch-fit">
+            <Pitch tokens={[]} pos={{}} drawings={[]} colors={colors} overlay={overlay} onPitchTap={canEdit && view !== 'isi' ? addEvent : undefined} className="event-pitch" />
+          </div>
           <div className="legend">
             <span>
               <i className="lg-dot" style={{ background: colors.home }} /> {data.settings.shortName}
@@ -501,12 +509,24 @@ function PostPanel({ m, setPost }: { m: Match; setPost: (p: Partial<Match['post'
             </span>
             <span>● isabetli · ○ isabetsiz · G gol · ◆ diğer olay</span>
             {view === 'isi' && <span>Isı: top kazanma, kayıp ve faul yoğunluğu ({data.settings.shortName})</span>}
+            {canEdit && <span>Olay türünü ve oyuncuyu seçip sahada olayın yerine dokunun.</span>}
           </div>
-          {canEdit && <p className="hint">Olay türünü ve oyuncuyu seçip sahada olayın olduğu yere dokunun. {data.settings.shortName} soldan sağa hücum eder.</p>}
         </section>
-
-        <section className="panel">
-          <h2 className="section-title">Maç istatistikleri</h2>
+        <aside className="panel post-side">
+          <Segmented
+            id="post-side"
+            value={sideTab}
+            onChange={setSideTab}
+            options={[
+              { value: 'istatistik', label: 'İstatistik' },
+              { value: 'puan', label: 'Puanlar' },
+              { value: 'degerlendirme', label: 'Değerlendirme' },
+              { value: 'olaylar', label: `Olaylar (${m.post.events.length})` },
+            ]}
+          />
+          <div className="side-scroll">
+            {sideTab === 'istatistik' && (
+              <>
           <div className="cmp">
             <div className="cmp-legend">
               <span>
@@ -566,12 +586,10 @@ function PostPanel({ m, setPost }: { m: Match; setPost: (p: Partial<Match['post'
               </table>
             </details>
           )}
-        </section>
-      </div>
-
-      <div className="two-col">
-        <section className="panel">
-          <h2 className="section-title">Oyuncu puanları</h2>
+              </>
+            )}
+            {sideTab === 'puan' && (
+              <>
           <div className="ratings">
             {playedIds.map((id) => {
               const p = player(id);
@@ -594,9 +612,10 @@ function PostPanel({ m, setPost }: { m: Match; setPost: (p: Partial<Match['post'
               );
             })}
           </div>
-        </section>
-        <section className="panel">
-          <h2 className="section-title">Değerlendirme</h2>
+              </>
+            )}
+            {sideTab === 'degerlendirme' && (
+              <>
           <Field label="Maç özeti">
             <textarea id="post-sum" rows={4} value={m.post.summary} readOnly={!canEdit} onChange={(e) => setPost({ summary: e.target.value })} />
           </Field>
@@ -636,11 +655,10 @@ function PostPanel({ m, setPost }: { m: Match; setPost: (p: Partial<Match['post'
               </Btn>
             </>
           )}
-        </section>
-      </div>
-
-      <section className="panel">
-        <h2 className="section-title">Olay listesi ({m.post.events.length})</h2>
+              </>
+            )}
+            {sideTab === 'olaylar' && (
+              <>
         <div className="table-wrap ev-table">
           <table className="table compact">
             <thead>
@@ -671,7 +689,11 @@ function PostPanel({ m, setPost }: { m: Match; setPost: (p: Partial<Match['post'
             </tbody>
           </table>
         </div>
-      </section>
+              </>
+            )}
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

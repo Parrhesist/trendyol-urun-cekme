@@ -99,6 +99,7 @@ function LibraryDetail({ it, onBack, onOpenTactic }: { it: LibItem; onBack: () =
   const [step, setStep] = useState(0);
   const [play, setPlay] = useState(0);
   const [picking, setPicking] = useState(false);
+  const [sideTab, setSideTab] = useState<'adim' | 'anlatim' | 'koc'>('adim');
   const { def, tactic } = it;
   const copies = data.tactics.filter((t) => t.libId === def.id && !t.matchId);
 
@@ -111,10 +112,10 @@ function LibraryDetail({ it, onBack, onOpenTactic }: { it: LibItem; onBack: () =
   };
 
   return (
-    <div className="page">
-      <header className="lib-head">
-        <Btn variant="ghost" icon="prev" onClick={onBack}>
-          Hazır taktikler
+    <div className="page lib-page ws">
+      <header className="lib-head ws-head">
+        <Btn variant="ghost" icon="prev" onClick={onBack} aria-label="Hazır taktiklere dön">
+          <span className="hide-narrow">Hazır taktikler</span>
         </Btn>
         <div className="lib-title">
           <p className="eyebrow">
@@ -124,35 +125,23 @@ function LibraryDetail({ it, onBack, onOpenTactic }: { it: LibItem; onBack: () =
         </div>
         <div className="row">
           {canEdit && (
-            <Btn variant="primary" icon="edit" size="lg" onClick={fork}>
+            <Btn variant="primary" icon="edit" onClick={fork}>
               Düzenle ve kaydet
             </Btn>
           )}
-          <PresentActions target={{ kind: 'kutup', id: def.id }} size="lg" />
+          <PresentActions target={{ kind: 'kutup', id: def.id }} size="md" />
           {canEdit && (
-            <Btn icon="whistle" size="lg" onClick={() => setPicking(true)}>
+            <Btn icon="whistle" onClick={() => setPicking(true)}>
               Maça ekle
             </Btn>
           )}
         </div>
       </header>
-      {copies.length > 0 && (
-        <p className="hint">
-          Bu taktiğin kopyaları:{' '}
-          {copies.map((c, i) => (
-            <span key={c.id}>
-              {i > 0 && ', '}
-              <a href={'#taktik-' + c.id}>{c.name}</a>
-            </span>
-          ))}
-          . Orijinal hep burada kalır.
-        </p>
-      )}
       <div className="lib-detail">
-        <section className="panel">
+        <section className="panel lib-player">
           <TacticPlayer
             tactic={tactic}
-            big
+            fit
             step={step}
             play={play}
             onStep={setStep}
@@ -163,35 +152,62 @@ function LibraryDetail({ it, onBack, onOpenTactic }: { it: LibItem; onBack: () =
           />
         </section>
         <aside className="panel lib-side">
-          <h2 className="section-title">Anlatım</h2>
-          <p>{def.desc}</p>
-          <h2 className="section-title">Adım adım</h2>
-          <ol className="lib-steps">
-            {tactic.frames.map((f, i) => (
-              <li key={i}>
-                <button type="button" className={i === step ? 'on' : ''} onClick={() => setStep(i)}>
-                  <span className="tabnum">{i === 0 ? 'Başlangıç' : i}</span>
-                  <span>{f.note}</span>
-                </button>
-              </li>
-            ))}
-          </ol>
-          <h2 className="section-title">Koçluk noktaları</h2>
-          <ul className="points">
-            {def.pts.map((x) => (
-              <li key={x}>{x}</li>
-            ))}
-          </ul>
-          <h2 className="section-title">Kaynak</h2>
-          <p className="small muted">{def.src}</p>
-          {def.tags && (
-            <div className="chips">
-              {def.tags.map((t) => (
-                <span key={t} className="chip static">
-                  {t}
+          {copies.length > 0 && (
+            <p className="hint">
+              Kopyalarınız:{' '}
+              {copies.map((c, i) => (
+                <span key={c.id}>
+                  {i > 0 && ', '}
+                  <a href={'#taktik-' + c.id}>{c.name}</a>
                 </span>
               ))}
-            </div>
+              . Orijinal hep burada kalır.
+            </p>
+          )}
+          <Segmented
+            id="lib-side"
+            value={sideTab}
+            onChange={setSideTab}
+            options={[
+              { value: 'adim', label: `Adımlar (${tactic.frames.length})` },
+              { value: 'anlatim', label: 'Anlatım' },
+              { value: 'koc', label: 'Koçluk' },
+            ]}
+          />
+          {sideTab === 'adim' && (
+            <ol className="lib-steps">
+              {tactic.frames.map((f, i) => (
+                <li key={i}>
+                  <button type="button" className={i === step ? 'on' : ''} onClick={() => setStep(i)}>
+                    <span className="tabnum">{i + 1}</span>
+                    <span>{f.note}</span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
+          {sideTab === 'anlatim' && (
+            <>
+              <p className="lib-desc">{def.desc}</p>
+              <h2 className="section-title">Kaynak</h2>
+              <p className="small muted">{def.src}</p>
+              {def.tags && (
+                <div className="chips">
+                  {def.tags.map((t) => (
+                    <span key={t} className="chip static">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+          {sideTab === 'koc' && (
+            <ul className="points">
+              {def.pts.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
           )}
         </aside>
       </div>

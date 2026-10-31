@@ -134,9 +134,12 @@ export function TacticPlayer({
   play,
   onStep,
   onPlay,
+  fit,
 }: {
   tactic: Tactic;
   big?: boolean;
+  /** Saha, kabın kalan alanını doldurur (yatay tek ekran düzenleri) */
+  fit?: boolean;
   step?: number;
   play?: number;
   onStep?: (n: number) => void;
@@ -178,7 +181,7 @@ export function TacticPlayer({
   const frame = tactic.frames[Math.min(a.fi, a.n - 1)];
   const colors = { home: data.settings.homeColor, away: data.settings.awayColor };
   return (
-    <div className={'tplayer' + (big ? ' big' : '')}>
+    <div className={'tplayer' + (big ? ' big' : '') + (fit ? ' fit' : '')}>
       {a.n > 1 && (
         <div className="tplayer-bar">
           <Btn icon={a.playing ? 'pause' : 'play'} variant="primary" size={big ? 'lg' : 'sm'} onClick={togglePlay} aria-label={a.playing ? 'Durdur' : 'Oynat'}>
@@ -200,7 +203,9 @@ export function TacticPlayer({
           </span>
         </div>
       )}
-      <Pitch tokens={tactic.tokens} pos={a.pos} drawings={frame?.drawings ?? []} half={tactic.half} colors={colors} subFor={labels.subFor} roleFor={labels.roleFor} tokenScale={tactic.tokenScale} />
+      <div className="pitch-fit" style={{ '--fit-ar': tactic.half ? 58.5 / 74 : 1.5 } as React.CSSProperties}>
+        <Pitch tokens={tactic.tokens} pos={a.pos} drawings={frame?.drawings ?? []} half={tactic.half} colors={colors} subFor={labels.subFor} roleFor={labels.roleFor} tokenScale={tactic.tokenScale} />
+      </div>
       {frame?.note && <p className="tplayer-note">{frame.note}</p>}
     </div>
   );

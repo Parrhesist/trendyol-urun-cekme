@@ -10,7 +10,7 @@ import { Presenter } from './Presenter';
 const FRESH: DeckState = { slide: 0, step: 0, play: 0, timer: null };
 
 /** Sunum ve Ekrana yansıt düğmeleri: taktik, maç ve antrenman ekranlarında aynı */
-export function PresentActions({ target, label = 'Sunum', size = 'lg', disabled }: { target: DeckTarget; label?: string; size?: 'sm' | 'md' | 'lg'; disabled?: boolean }) {
+export function PresentActions({ target, label = 'Sunum', size = 'lg', disabled, compact }: { target: DeckTarget; label?: React.ReactNode; size?: 'sm' | 'md' | 'lg'; disabled?: boolean; compact?: boolean }) {
   const [open, setOpen] = useState<null | { cast: boolean }>(null);
   const [modal, setModal] = useState(false);
   return (
@@ -18,8 +18,8 @@ export function PresentActions({ target, label = 'Sunum', size = 'lg', disabled 
       <Btn variant="primary" icon="present" size={size} disabled={disabled} onClick={() => setOpen({ cast: false })}>
         {label}
       </Btn>
-      <Btn icon="cast" size={size} disabled={disabled} onClick={() => setModal(true)}>
-        Ekrana yansıt
+      <Btn icon="cast" size={size} disabled={disabled} onClick={() => setModal(true)} title="Ekrana yansıt">
+        {compact ? <span className="hide-narrow">Ekrana yansıt</span> : 'Ekrana yansıt'}
       </Btn>
       {modal && (
         <CastModal

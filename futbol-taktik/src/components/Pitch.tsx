@@ -270,6 +270,7 @@ export function Pitch(props: Props) {
     <svg
       ref={svg}
       viewBox={viewBoxFor(half)}
+      style={{ '--ar': vw / vh } as React.CSSProperties}
       className={'pitch ' + (props.className ?? '') + (editable ? ` tool-${tool}` : '')}
       onPointerDown={onDown}
       onPointerMove={onMove}

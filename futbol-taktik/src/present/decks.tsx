@@ -42,10 +42,14 @@ function tacticSlide(t: Tactic, kicker?: string): Slide {
     title: t.name,
     kicker: kicker ?? `${t.category} · ${t.frames.length} adım`,
     render: (c) => (
-      <div className="slide-tactic">
-        <TacticPlayer key={t.id} tactic={t} big step={c.step} play={c.play} onStep={c.onStep} onPlay={c.onPlay} />
-        {t.description && <p className="slide-desc">{t.description}</p>}
-        {t.points && <ul className="slide-points compact">{bullet(t.points)}</ul>}
+      <div className={'slide-tactic' + (t.description || t.points ? ' with-side' : '')}>
+        <TacticPlayer key={t.id} tactic={t} big fit step={c.step} play={c.play} onStep={c.onStep} onPlay={c.onPlay} />
+        {(t.description || t.points) && (
+          <div className="slide-side">
+            {t.description && <p className="slide-desc">{t.description}</p>}
+            {t.points && <ul className="slide-points compact">{bullet(t.points)}</ul>}
+          </div>
+        )}
       </div>
     ),
   };
@@ -101,7 +105,7 @@ function matchDeck(m: Match, data: TeamData, player: PlayerFn): Deck {
       kicker: `${when} · Diziliş ${shape}`,
       render: () => (
         <div className="slide-cover">
-          <div className="slide-lineup">
+          <div className="slide-lineup pitch-fit">
             <LineupBoard slots={slots} player={player} colors={colors} captain={duties.captain} />
           </div>
           <p className="muted">Yedekler: {benchOf(m.pre).map((id) => pn(id)).join(' · ') || '—'}</p>
@@ -151,7 +155,9 @@ function matchDeck(m: Match, data: TeamData, player: PlayerFn): Deck {
       title: 'Takım talimatları',
       render: () => (
         <div className="slide-ins">
-          <InstructionsPitch ins={ins} slots={slots} color={data.settings.homeColor} />
+          <div className="pitch-fit">
+            <InstructionsPitch ins={ins} slots={slots} color={data.settings.homeColor} />
+          </div>
           <dl className="slide-dl">
             {INSTRUCTION_LABEL(ins).map((x) => (
               <div key={x.label}>
@@ -326,7 +332,7 @@ function sessionDeck(s: Session, data: TeamData, player: PlayerFn): Deck {
       timerMs: b.minutes * 60000,
       render: (c) => (
         <div className={'slide-drill' + (t ? '' : ' no-diagram')}>
-          {t && <TacticPlayer key={t.id} tactic={t} big step={c.step} play={c.play} onStep={c.onStep} onPlay={c.onPlay} />}
+          {t && <TacticPlayer key={t.id} tactic={t} big fit step={c.step} play={c.play} onStep={c.onStep} onPlay={c.onPlay} />}
           <div className="drill-info">
             {d?.objective && <p className="slide-objective">{d.objective}</p>}
             <div className="chips">

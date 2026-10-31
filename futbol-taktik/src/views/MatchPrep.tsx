@@ -26,41 +26,58 @@ import { usePlayer, useStore } from '../store';
 import type { Duties, Match, Player, Pt, TacticCategory, TeamInstructions, Token } from '../types';
 import { Btn, ConfirmBtn, Empty, Field, Icon, Modal, Pill, Segmented } from '../ui';
 
-type Sub = 'dizilis' | 'talimat' | 'taktik' | 'rakip';
+export type PrepSub = 'dizilis' | 'talimat' | 'taktik' | 'rakip';
 type SetPre = (p: Partial<Match['pre']>) => void;
 
 // Taktik tahtasından maça dönüldüğünde kalınan alt sekme hatırlanır
-const lastSub: Record<string, Sub> = {};
+const lastSub: Record<string, PrepSub> = {};
 
-export function MatchPrep({ m, setPre, onOpenTactic }: { m: Match; setPre: SetPre; onOpenTactic: (id: string) => void }) {
-  const [sub, setSub] = useState<Sub>(lastSub[m.id] ?? 'dizilis');
+export function usePrepSub(matchId: string) {
+  const [sub, setSub] = useState<PrepSub>(lastSub[matchId] ?? 'dizilis');
   useEffect(() => {
-    lastSub[m.id] = sub;
-  }, [m.id, sub]);
+    lastSub[matchId] = sub;
+  }, [matchId, sub]);
+  return [sub, setSub] as const;
+}
+
+/** Maç öncesi alt sekmeleri ve sunum düğmeleri (maç başlığındaki sekme satırında gösterilir) */
+export function PrepTabs({ m, sub, setSub }: { m: Match; sub: PrepSub; setSub: (s: PrepSub) => void }) {
   return (
-    <div className="stack">
-      <div className="row between">
-        <Segmented
-          id="prep-sub"
-          value={sub}
-          onChange={setSub}
-          options={[
-            { value: 'dizilis', label: 'Kadro ve diziliş' },
-            { value: 'talimat', label: 'Takım talimatları' },
-            { value: 'taktik', label: `Maç taktikleri (${m.pre.tacticIds.length})` },
-            { value: 'rakip', label: 'Rakip ve oyun planı' },
-          ]}
+    <>
+      <Segmented
+        id="prep-sub"
+        value={sub}
+        onChange={setSub}
+        options={[
+          { value: 'dizilis', label: 'Kadro ve diziliş' },
+          { value: 'talimat', label: 'Talimatlar' },
+          { value: 'taktik', label: `Taktikler (${m.pre.tacticIds.length})` },
+          { value: 'rakip', label: 'Rakip ve plan' },
+        ]}
+      />
+      <span className="spacer" />
+      <div className="row">
+        <PresentActions
+          target={{ kind: 'mac', id: m.id }}
+          label={
+            <>
+              <span className="hide-narrow">Soyunma odası sunumu</span>
+              <span className="show-narrow">Sunum</span>
+            </>
+          }
+          size="md"
+          compact
         />
-        <div className="row">
-          <PresentActions target={{ kind: 'mac', id: m.id }} label="Soyunma odası sunumu" />
-        </div>
       </div>
-      {sub === 'dizilis' && <LineupEditor m={m} setPre={setPre} />}
-      {sub === 'talimat' && <InstructionsEditor m={m} setPre={setPre} />}
-      {sub === 'taktik' && <MatchTactics m={m} setPre={setPre} onOpenTactic={onOpenTactic} />}
-      {sub === 'rakip' && <OpponentPlan m={m} setPre={setPre} />}
-    </div>
+    </>
   );
+}
+
+export function MatchPrep({ m, sub, setPre, onOpenTactic }: { m: Match; sub: PrepSub; setPre: SetPre; onOpenTactic: (id: string) => void }) {
+  if (sub === 'dizilis') return <LineupEditor m={m} setPre={setPre} />;
+  if (sub === 'talimat') return <InstructionsEditor m={m} setPre={setPre} />;
+  if (sub === 'rakip') return <OpponentPlan m={m} setPre={setPre} />;
+  return <MatchTactics m={m} setPre={setPre} onOpenTactic={onOpenTactic} />;
 }
 
 /* ================= Kadro ve diziliş ================= */
@@ -75,6 +92,7 @@ function LineupEditor({ m, setPre }: { m: Match; setPre: SetPre }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [placing, setPlacing] = useState<string | null>(null);
   const [showOpp, setShowOpp] = useState(false);
+  const [listTab, setListTab] = useState<'xi' | 'bench' | 'out'>('xi');
   const [drag, setDrag] = useState<{ pid: string; x: number; y: number; active: boolean; hover: string | null } | null>(null);
   const history = useRef<Snapshot[]>([]);
   const svgEl = useRef<SVGSVGElement | null>(null);
@@ -297,25 +315,32 @@ function LineupEditor({ m, setPre }: { m: Match; setPre: SetPre }) {
   return (
     <div className={'lineup-editor' + (sel ? ' has-sel' : '')}>
       <div className="lu-board" ref={boardRef}>
-        {canEdit && (
-          <div className="lu-toolbar">
-            <div className="lu-presets" role="group" aria-label="Diziliş şablonu">
-              <span className="field-label">Şablon</span>
-              {FORMATION_NAMES.map((f) => (
-                <button key={f} type="button" className={'chip' + (pre.formation === f && !Object.keys(pre.positions ?? {}).length ? ' on' : '')} onClick={() => commit(applyFormation(pre, f, data.players))} title="Oyuncular korunur, en uygun yerlere taşınır">
-                  {f}
-                </button>
-              ))}
-            </div>
-            <div className="row">
-              <Btn size="sm" variant="ghost" icon="undo" onClick={undo} disabled={!history.current.length}>
-                Geri al
+        <div className="lu-toolbar">
+          {canEdit && (
+            <>
+              <label className="inline lu-preset" title="Oyuncular korunur, en uygun yerlere taşınır">
+                <span className="hide-narrow">Şablon</span>
+                <select
+                  id="lu-preset"
+                  value={Object.keys(pre.positions ?? {}).length ? '' : pre.formation}
+                  onChange={(e) => e.target.value && commit(applyFormation(pre, e.target.value, data.players))}
+                >
+                  <option value="">Serbest</option>
+                  {FORMATION_NAMES.map((f) => (
+                    <option key={f} value={f}>
+                      {f}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Btn size="sm" variant="ghost" icon="undo" onClick={undo} disabled={!history.current.length} title="Geri al">
+                <span className="hide-narrow">Geri al</span>
               </Btn>
-              <Btn size="sm" variant="ghost" onClick={() => commit({ positions: {} })} disabled={!Object.keys(pre.positions ?? {}).length}>
-                Konumları şablona hizala
+              <Btn size="sm" variant="ghost" onClick={() => commit({ positions: {} })} disabled={!Object.keys(pre.positions ?? {}).length} title="Konumları şablona hizala">
+                Hizala
               </Btn>
-              <Btn size="sm" variant="ghost" onClick={copyLast}>
-                Son maçın kadrosu
+              <Btn size="sm" variant="ghost" onClick={copyLast} title="Son maçın kadrosunu kopyala">
+                Son maç
               </Btn>
               <ConfirmBtn
                 size="sm"
@@ -329,59 +354,53 @@ function LineupEditor({ m, setPre }: { m: Match; setPre: SetPre }) {
                 Otomatik diz
               </ConfirmBtn>
               <label className="check small">
-                <input id="lu-opp" type="checkbox" checked={showOpp} onChange={(e) => setShowOpp(e.target.checked)} /> Rakibi göster ({pre.oppFormation})
+                <input id="lu-opp" type="checkbox" checked={showOpp} onChange={(e) => setShowOpp(e.target.checked)} /> Rakip
               </label>
-            </div>
-          </div>
-        )}
-        <div className="lu-status">
-          <span>
-            Sahadaki diziliş <strong className="tabnum">{shape}</strong>
-          </span>
-          <span className={filled < 11 ? 'tone-warn' : 'muted'}>
-            İlk 11: <strong className="tabnum">{filled}/11</strong>
-          </span>
-          <span className="muted">Yedek: {bench.length}</span>
-        </div>
-        {placingPlayer && (
-          <div className="lu-banner" role="status">
+            </>
+          )}
+          <span className="spacer" />
+          <span className="lu-status" title="STP gibi rozetler konuma göre mevkidir; turuncu rozet: oyuncu doğal mevkisi dışında; K: kaptan">
             <span>
-              <strong>
-                {placingPlayer.number} {placingPlayer.name}
-              </strong>{' '}
-              — sahada bir oyuncuya dokunun (yerine girer) veya boş bir yere dokunun.
+              <span className="hide-narrow">Diziliş</span> <strong className="tabnum">{shape}</strong>
             </span>
-            <Btn size="sm" onClick={() => setPlacing(null)}>
-              Vazgeç
-            </Btn>
-          </div>
-        )}
-        <LineupBoard
-          slots={slots}
-          player={player}
-          colors={colors}
-          editable={canEdit}
-          selected={selected}
-          captain={captain}
-          opp={oppPts}
-          placing={!!placing || !!drag?.active}
-          dropHover={drag?.active ? drag.hover : null}
-          onSlotTap={onSlotTap}
-          onPitchTap={(p) => (placing ? placeAt(placing, p) : setSelected(null))}
-          onMove={move}
-          onSwap={swap}
-          svgRef={(el) => (svgEl.current = el)}
-        />
-        <p className="legend">
-          <span>
-            <span className="role-chip">STP</span> konuma göre mevki
+            {filled < 11 && (
+              <span className="tone-warn">
+                İlk 11 <strong className="tabnum">{filled}/11</strong>
+              </span>
+            )}
           </span>
-          <span>
-            <span className="role-chip warn">SLK</span> oyuncunun doğal mevkisi dışında
-          </span>
-          <span>K kaptan</span>
-          {canEdit && <span>Sürükle: taşı · başka oyuncunun üstüne bırak: yer değiştir · dokun: seç</span>}
-        </p>
+        </div>
+        <div className="lu-pitch pitch-fit">
+          {placingPlayer && (
+            <div className="lu-banner" role="status">
+              <span>
+                <strong>
+                  {placingPlayer.number} {placingPlayer.name}
+                </strong>{' '}
+                — sahada bir oyuncuya dokunun (yerine girer) ya da boş bir yere dokunun.
+              </span>
+              <Btn size="sm" onClick={() => setPlacing(null)}>
+                Vazgeç
+              </Btn>
+            </div>
+          )}
+          <LineupBoard
+            slots={slots}
+            player={player}
+            colors={colors}
+            editable={canEdit}
+            selected={selected}
+            captain={captain}
+            opp={oppPts}
+            placing={!!placing || !!drag?.active}
+            dropHover={drag?.active ? drag.hover : null}
+            onSlotTap={onSlotTap}
+            onPitchTap={(p) => (placing ? placeAt(placing, p) : setSelected(null))}
+            onMove={move}
+            onSwap={swap}
+            svgRef={(el) => (svgEl.current = el)}
+          />
+        </div>
       </div>
 
       <aside className="lu-side panel">
@@ -407,55 +426,74 @@ function LineupEditor({ m, setPre }: { m: Match; setPre: SetPre }) {
         ) : (
           <>
             <h2 className="section-title">Kadro</h2>
-            {canEdit && <p className="hint">Oyuncuyu tutamaçtan (⋮⋮) sürükleyip sahaya bırakın ya da adına dokunup sahada yerini seçin.</p>}
-            <h3 className="sq-head">
-              İlk 11 <span className="muted tabnum">{filled}/11</span>
-            </h3>
-            <ul className="sq-list">
-              {xiSorted.map((p) =>
-                row(p, undefined, () => {
-                  const s = slotOf(p.id);
-                  if (s) setSelected(s.key);
-                }),
-              )}
-            </ul>
-            <h3 className="sq-head">
-              Yedekler <span className="muted tabnum">{bench.length}</span>
-            </h3>
-            {bench.length ? (
+            {canEdit && <p className="hint">Oyuncuyu tutamaçtan (⋮⋮) sahaya sürükleyin ya da adına dokunup sahada yerini seçin. Sahada sürükle: taşı; başka oyuncunun üstüne bırak: yer değiştir.</p>}
+            <p className="legend small">
+              <span>
+                <span className="role-chip">STP</span> konuma göre mevki
+              </span>
+              <span>
+                <span className="role-chip warn">SLK</span> doğal mevkisi dışında
+              </span>
+              <span>K kaptan</span>
+            </p>
+            <Segmented
+              id="lu-list"
+              value={listTab}
+              onChange={setListTab}
+              options={[
+                { value: 'xi', label: filled < 11 ? `İlk 11 (${filled}/11)` : 'İlk 11' },
+                { value: 'bench', label: `Yedek (${bench.length})` },
+                { value: 'out', label: `Kadro dışı (${others.length})` },
+              ]}
+            />
+            {listTab === 'xi' && (
               <ul className="sq-list">
-                {bench.map((id) => {
-                  const p = player(id);
-                  return p
-                    ? row(
-                        p,
-                        canEdit && (
-                          <Btn size="sm" variant="ghost" onClick={() => toggleBench(p.id)}>
-                            Çıkar
-                          </Btn>
-                        ),
-                      )
-                    : null;
-                })}
+                {xiSorted.map((p) =>
+                  row(p, undefined, () => {
+                    const s = slotOf(p.id);
+                    if (s) setSelected(s.key);
+                  }),
+                )}
+                {!xiSorted.length && <li className="muted small">Sahada oyuncu yok. Yedek ya da kadro dışı listesinden sürükleyin.</li>}
               </ul>
-            ) : (
-              <p className="muted small">Henüz yedek seçilmedi.</p>
             )}
-            <h3 className="sq-head">
-              Kadroda değil <span className="muted tabnum">{others.length}</span>
-            </h3>
-            <ul className="sq-list">
-              {others.map((p) =>
-                row(
-                  p,
-                  canEdit && (
-                    <Btn size="sm" variant="ghost" onClick={() => toggleBench(p.id)}>
-                      Yedeğe ekle
-                    </Btn>
-                  ),
-                ),
-              )}
-            </ul>
+            {listTab === 'bench' &&
+              (bench.length ? (
+                <ul className="sq-list">
+                  {bench.map((id) => {
+                    const p = player(id);
+                    return p
+                      ? row(
+                          p,
+                          canEdit && (
+                            <Btn size="sm" variant="ghost" onClick={() => toggleBench(p.id)}>
+                              Çıkar
+                            </Btn>
+                          ),
+                        )
+                      : null;
+                  })}
+                </ul>
+              ) : (
+                <p className="muted small">Henüz yedek seçilmedi. Kadro dışı listesinden ekleyin.</p>
+              ))}
+            {listTab === 'out' &&
+              (others.length ? (
+                <ul className="sq-list">
+                  {others.map((p) =>
+                    row(
+                      p,
+                      canEdit && (
+                        <Btn size="sm" variant="ghost" onClick={() => toggleBench(p.id)}>
+                          Yedeğe ekle
+                        </Btn>
+                      ),
+                    ),
+                  )}
+                </ul>
+              ) : (
+                <p className="muted small">Tüm oyuncular kadroda.</p>
+              ))}
           </>
         )}
       </aside>
@@ -593,6 +631,7 @@ function InstructionsEditor({ m, setPre }: { m: Match; setPre: SetPre }) {
   const xi = slots.map((s) => player(s.playerId)).filter((p): p is Player => !!p);
   const duties = m.pre.duties ?? {};
   const activeStyle = STYLES.find((s) => JSON.stringify(s.ins) === JSON.stringify(ins))?.name;
+  const [grp, setGrp] = useState(INSTRUCTION_GROUPS[0].title);
   const dutySelect = (k: keyof Duties, label: string) => (
     <Field label={label}>
       <select id={'duty-' + k} value={duties[k] ?? ''} disabled={!canEdit} onChange={(e) => setPre({ duties: { ...duties, [k]: e.target.value || undefined } })}>
@@ -611,27 +650,38 @@ function InstructionsEditor({ m, setPre }: { m: Match; setPre: SetPre }) {
     </Field>
   );
   return (
-    <div className="two-col ins-layout">
-      <section className="panel">
+    <div className="ins-ws">
+      <section className="panel ins-visual">
+        <div className="row between">
+          <h2 className="section-title">Sahada görünümü</h2>
+          <span className="muted small">Sarı: pres alanı · kesikli: savunma hattı · takım boyu 35 m altı kompakt</span>
+        </div>
+        <div className="pitch-fit">
+          <InstructionsPitch ins={ins} slots={slots} color={data.settings.homeColor} />
+        </div>
+        <div className="duty-row">
+          {dutySelect('captain', 'Kaptan')}
+          {dutySelect('penalty', 'Penaltı')}
+          {dutySelect('corner', 'Korner')}
+          {dutySelect('freeKick', 'Serbest vuruş')}
+        </div>
+      </section>
+      <section className="panel ins-options">
         <h2 className="section-title">Oyun stili</h2>
         <div className="style-grid">
           {STYLES.map((s) => (
-            <button key={s.name} type="button" disabled={!canEdit} className={'style-card' + (activeStyle === s.name ? ' on' : '')} onClick={() => setPre({ instructions: s.ins })}>
+            <button key={s.name} type="button" disabled={!canEdit} className={'style-card' + (activeStyle === s.name ? ' on' : '')} onClick={() => setPre({ instructions: s.ins })} title={s.desc}>
               <strong>{s.name}</strong>
               <small>{s.desc}</small>
             </button>
           ))}
         </div>
-        <p className="muted small">Bir stil seçip aşağıdan ince ayar yapabilirsiniz.</p>
-        {INSTRUCTION_GROUPS.map((g) => (
+        <Segmented id="ins-group" value={grp} onChange={setGrp} options={INSTRUCTION_GROUPS.map((g) => ({ value: g.title, label: g.title }))} />
+        {INSTRUCTION_GROUPS.filter((g) => g.title === grp).map((g) => (
           <div key={g.title} className="ins-group">
-            <h3 className="sq-head">{g.title}</h3>
             {g.items.map((it) => (
-              <div key={it.key} className="ins-row">
-                <div>
-                  <strong>{it.label}</strong>
-                  {it.help && <small className="muted">{it.help}</small>}
-                </div>
+              <div key={it.key} className="ins-row" title={it.help || undefined}>
+                <strong>{it.label}</strong>
                 <div className="seg ins-seg">
                   {it.options.map(([v, l]) => (
                     <button key={v} type="button" disabled={!canEdit} className={ins[it.key] === v ? 'on' : ''} onClick={() => set({ [it.key]: v } as Partial<TeamInstructions>)}>
@@ -648,18 +698,6 @@ function InstructionsEditor({ m, setPre }: { m: Match; setPre: SetPre }) {
             )}
           </div>
         ))}
-      </section>
-      <section className="panel ins-visual">
-        <h2 className="section-title">Sahada görünümü</h2>
-        <InstructionsPitch ins={ins} slots={slots} color={data.settings.homeColor} />
-        <p className="muted small">Sarı alan presin başladığı bölge, kesikli çizgi savunma hattı. Takım boyu iki hat arasındaki mesafedir; 35 m altı kompakt sayılır.</p>
-        <h2 className="section-title">Görevliler</h2>
-        <div className="form-grid">
-          {dutySelect('captain', 'Kaptan')}
-          {dutySelect('penalty', 'Penaltı')}
-          {dutySelect('corner', 'Korner')}
-          {dutySelect('freeKick', 'Serbest vuruş')}
-        </div>
       </section>
     </div>
   );
@@ -869,42 +907,54 @@ function OpponentPlan({ m, setPre }: { m: Match; setPre: SetPre }) {
   const tokens: Token[] = opp.map((_, i) => ({ id: 'o' + i, kind: 'away', label: String(i + 1) }));
   const pos: Record<string, Pt> = Object.fromEntries(opp.map(([, x, y], i) => ['o' + i, mirror({ x, y })]));
   const roles = classifyRoles(opp.map(([, x, y], i) => ({ id: 'o' + i, p: { x, y } })));
+  const [tab, setTab] = useState<'rakip' | 'plan'>('rakip');
   const tf = (k: keyof Match['pre'], label: string, rows = 4, ph = '') => (
     <Field label={label}>
       <textarea id={'pre-' + k} rows={rows} value={m.pre[k] as string} placeholder={ph} readOnly={!canEdit} onChange={(e) => setPre({ [k]: e.target.value })} />
     </Field>
   );
   return (
-    <div className="stack">
-      <div className="two-col wide-left">
-        <section className="panel">
-          <div className="row between">
-            <h2 className="section-title">Rakip: {m.opponent || '—'}</h2>
-            <label className="inline">
-              Diziliş{' '}
-              <select id="pre-oppform" value={m.pre.oppFormation} disabled={!canEdit} onChange={(e) => setPre({ oppFormation: e.target.value })}>
-                {FORMATION_NAMES.map((f) => (
-                  <option key={f}>{f}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <Pitch tokens={tokens} pos={pos} drawings={[]} colors={{ home: data.settings.homeColor, away: data.settings.awayColor }} roleFor={(t) => roles[t.id]} />
-          <p className="muted small">Rakip sağdan sola hücum eder. Mevkiler rakibin kendi bakış açısından yazılır.</p>
-        </section>
-        <section className="panel">
-          {tf('oppStrengths', 'Güçlü yönleri', 5, 'Her satır bir madde')}
-          {tf('oppWeaknesses', 'Zayıf yönleri', 5, 'Her satır bir madde')}
-          {tf('oppKeyPlayers', 'Kilit oyuncular', 4, 'No — özellik')}
-        </section>
-      </div>
-      <section className="panel">
-        <h2 className="section-title">Oyun planı</h2>
-        <div className="three-col">
-          {tf('planAttack', 'Hücumda', 4)}
-          {tf('planDefence', 'Savunmada', 4)}
-          {tf('planTransition', 'Geçişlerde', 4)}
+    <div className="opp-ws">
+      <section className="panel opp-visual">
+        <div className="row between">
+          <h2 className="section-title">Rakip: {m.opponent || '—'}</h2>
+          <label className="inline">
+            Diziliş{' '}
+            <select id="pre-oppform" value={m.pre.oppFormation} disabled={!canEdit} onChange={(e) => setPre({ oppFormation: e.target.value })}>
+              {FORMATION_NAMES.map((f) => (
+                <option key={f}>{f}</option>
+              ))}
+            </select>
+          </label>
         </div>
+        <div className="pitch-fit">
+          <Pitch tokens={tokens} pos={pos} drawings={[]} colors={{ home: data.settings.homeColor, away: data.settings.awayColor }} roleFor={(t) => roles[t.id]} />
+        </div>
+        <p className="muted small">Rakip sağdan sola hücum eder; mevkiler rakibin kendi bakış açısından yazılır.</p>
+      </section>
+      <section className="panel opp-notes">
+        <Segmented
+          id="opp-tab"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'rakip', label: 'Rakip analizi' },
+            { value: 'plan', label: 'Oyun planımız' },
+          ]}
+        />
+        {tab === 'rakip' ? (
+          <div className="notes-stack">
+            {tf('oppStrengths', 'Güçlü yönleri', 4, 'Her satır bir madde')}
+            {tf('oppWeaknesses', 'Zayıf yönleri', 4, 'Her satır bir madde')}
+            {tf('oppKeyPlayers', 'Kilit oyuncular', 4, 'No — özellik')}
+          </div>
+        ) : (
+          <div className="notes-stack">
+            {tf('planAttack', 'Hücumda', 4)}
+            {tf('planDefence', 'Savunmada', 4)}
+            {tf('planTransition', 'Geçişlerde', 4)}
+          </div>
+        )}
       </section>
     </div>
   );

@@ -32,6 +32,9 @@ Her sunum ekranında (taktik, maç öncesi, devre arası, antrenman seansı, haf
 - Kumanda/klavye: ← → slayt, ↑ ↓ taktik adımı, OK/Enter oynat veya süreyi başlat, F tam ekran. TV'de kontroller birkaç saniye sonra gizlenir, ekran uykuya geçmez (tarayıcı izin verirse).
 - Bağlantılar `VITE_APP_URL` (bkz. `.env.production`) ya da Ayarlar → TV ve ekranlar → Uygulama bağlantısı ile oluşturulur.
 
+## Yatay ekran düzeni
+Yatay tablet ve bilgisayarda (en az 900 × 500 px) sahalı ekranlar — taktik tahtası, hazır taktik, maç kadrosu, talimatlar, rakip planı, maç sonrası ve sunumlar — tek ekrana sığar, sayfa aşağı kaymaz. Saha kalan alanın tamamını kullanır: araç ve adım çubukları sahanın üstünde, ayarlar sağ sütunda. Uzun içerikler (kadro listeleri, talimat grupları, rakip notları, kütüphane anlatımı) sekmelere ayrılır. Sunum/TV'de adım düğmeleri ve adım notu sağ sütuna geçer, saha tüm yüksekliği kullanır. Dikey tablet ve telefonda düzen alt alta akar.
+
 ## Altyapı
 React 18 + TypeScript + Vite, tek HTML dosyasına derlenir (`vite-plugin-singlefile`). Grafikler ve saha SVG ile çizilir, harici kütüphane yoktur.
 

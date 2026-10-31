@@ -25,7 +25,9 @@ const TOOLS: { id: Tool; icon: string; label: string }[] = [
   { id: 'erase', icon: 'eraser', label: 'Sil' },
 ];
 
-const LABEL_OPTS: { value: LabelMode; label: string }[] = [
+const ADDS: Token['kind'][] = ['home', 'away', 'ball', 'cone', 'goal'];
+
+const LABEL_OPTS:{ value: LabelMode; label: string }[] = [
   { value: 'num', label: 'No' },
   { value: 'role', label: 'Mevki' },
   { value: 'name', label: 'İsim' },
@@ -207,6 +209,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
   const [color, setColor] = useState('a');
   const [selected, setSelected] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [descOpen, setDescOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
   const history = useRef<Tactic[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -345,9 +348,11 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
 
   const players = [...data.players].sort((a, b) => a.number - b.number);
 
+  const kindLabel = (k: Token['kind']) => (k === 'home' ? 'Oyuncu' : k === 'away' ? 'Rakip' : k === 'ball' ? 'Top' : k === 'cone' ? 'Huni' : 'Kale');
+
   return (
-    <div className="editor" ref={rootRef}>
-      <header className="editor-head">
+    <div className="editor ws" ref={rootRef}>
+      <header className="editor-head ws-head">
         <Btn variant="ghost" icon="prev" onClick={onBack} aria-label={backLabel ?? 'Taktiklere dön'}>
           {backLabel}
         </Btn>
@@ -366,16 +371,16 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
               {dirty ? 'Kaydediliyor…' : 'Kaydedildi'}
             </span>
           )}
-          <Btn icon="share" onClick={() => setSharing(true)}>
-            Paylaş
+          <Btn icon="share" onClick={() => setSharing(true)} aria-label="Paylaş">
+            <span className="hide-narrow">Paylaş</span>
           </Btn>
           <PresentActions target={{ kind: 'taktik', id: t.id }} size="md" />
         </div>
       </header>
 
       {editable && (
-        <div className="toolbar" role="toolbar" aria-label="Çizim araçları">
-          <div className="tool-group">
+        <div className="toolbar ed-tools" role="toolbar" aria-label="Çizim araçları">
+          <div className="tool-group tools-main">
             {TOOLS.map((x) => (
               <button key={x.id} type="button" className={'tool' + (tool === x.id ? ' on' : '')} onClick={() => setTool(x.id)} title={x.label}>
                 <Icon name={x.icon} size={20} />
@@ -383,27 +388,26 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
               </button>
             ))}
           </div>
-          <div className="tool-group">
+          <div className="tool-group swatches">
             {['a', 'b', 'c', 'd'].map((c) => (
               <button key={c} type="button" className={'swatch' + (color === c ? ' on' : '')} style={{ background: `var(--ink-draw-${c})` }} onClick={() => setColor(c)} aria-label={`Renk ${c}`} />
             ))}
           </div>
-          <div className="tool-group">
-            <Btn size="sm" onClick={() => addToken('home')}>+ Oyuncu</Btn>
-            <Btn size="sm" onClick={() => addToken('away')}>+ Rakip</Btn>
-            <Btn size="sm" onClick={() => addToken('ball')}>+ Top</Btn>
-            <Btn size="sm" onClick={() => addToken('cone')}>+ Huni</Btn>
-            <Btn size="sm" onClick={() => addToken('goal')}>+ Kale</Btn>
-          </div>
-          <div className="tool-group">
-            <Btn size="sm" variant="ghost" onClick={undo} disabled={!history.current.length}>
-              Geri al
+          <div className="tool-group adds">
+            {ADDS.map((k) => (
+              <button key={k} type="button" className="add-tok" onClick={() => addToken(k)} title={kindLabel(k) + ' ekle'}>
+                <i className={'add-ico ' + k} aria-hidden="true" />
+                <span>+ {kindLabel(k)}</span>
+              </button>
+            ))}
+            <Btn size="sm" variant="ghost" icon="undo" onClick={undo} disabled={!history.current.length} title="Geri al">
+              <span className="hide-narrow">Geri al</span>
             </Btn>
           </div>
         </div>
       )}
 
-      <section className="frames" aria-label="Adımlar ve oynatma">
+      <section className="frames ed-frames" aria-label="Adımlar ve oynatma">
         <div className="frames-ctrl">
           <Btn icon={anim.playing ? 'pause' : 'play'} variant="primary" size="lg" onClick={anim.playing ? anim.stop : anim.play} disabled={t.frames.length < 2}>
             {anim.playing ? 'Durdur' : 'Oynat'}
@@ -422,191 +426,204 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
           {editable && (
             <li>
               <button type="button" className="add" onClick={addFrame} title="Bu adımı kopyalayıp yeni adım ekle">
-                + Adım ekle
+                + Adım
               </button>
             </li>
           )}
         </ol>
         <div className="frame-note">
           {editable ? (
-            <textarea id="frame-note" rows={2} placeholder={`Adım ${fi + 1} için koçluk notu: kim, nereye, ne zaman?`} value={frame.note ?? ''} onChange={(e) => setFrame((f) => ({ ...f, note: e.target.value }), false)} />
+            <textarea id="frame-note" rows={2} placeholder={`Adım ${fi + 1} notu: kim, nereye, ne zaman?`} value={frame.note ?? ''} onChange={(e) => setFrame((f) => ({ ...f, note: e.target.value }), false)} />
           ) : (
             <p className="note-read">{frame.note || 'Bu adım için not yok.'}</p>
           )}
-          {editable && t.frames.length > 1 && (
-            <Btn variant="ghost" size="sm" icon="trash" onClick={delFrame}>
-              Adımı sil
-            </Btn>
-          )}
+          {editable && t.frames.length > 1 && <Btn variant="ghost" size="sm" icon="trash" onClick={delFrame} aria-label="Adımı sil" title="Adımı sil" />}
         </div>
       </section>
 
-      <div className="editor-main">
-        <div className="board-wrap">
-          <Pitch
-            tokens={t.tokens}
-            pos={anim.pos}
-            drawings={frame.drawings}
-            half={t.half}
-            colors={colors}
-            subFor={labels.subFor}
-            roleFor={labels.roleFor}
-            tokenScale={t.tokenScale}
-            tool={tool}
-            color={color}
-            editable={editable}
-            selected={selected}
-            onSelect={setSelected}
-            onMove={onMove}
-            onMoveEnd={() => (moveStart.current = false)}
-            onDraw={(d) => setFrame((f) => ({ ...f, drawings: [...f.drawings, d] }))}
-            onErase={(id) => setFrame((f) => ({ ...f, drawings: f.drawings.filter((x) => x.id !== id) }))}
-            className="board"
-          />
-        </div>
-
-        <aside className="inspector">
-            {selTok && editable ? (
-              <section>
-                <h3>Seçili: {selTok.kind === 'home' ? 'Oyuncu' : selTok.kind === 'away' ? 'Rakip' : selTok.kind === 'ball' ? 'Top' : selTok.kind === 'cone' ? 'Huni' : 'Kale'}</h3>
-                {labels.roleName(selTok) && (
-                  <p className="role-line">
-                    <span className="role-chip">{labels.roleName(selTok)!.split(' · ')[0]}</span> {labels.roleName(selTok)!.split(' · ')[1]}
-                    <small className="muted"> — bu adımdaki konumuna göre</small>
-                  </p>
-                )}
-                {(selTok.kind === 'home' || selTok.kind === 'away') && (
-                  <Field label="Etiket (forma no / mevki)">
-                    <input id="tok-label" value={selTok.label} maxLength={4} onChange={(e) => updateTok({ label: e.target.value })} />
-                  </Field>
-                )}
-                {selTok.kind === 'home' && (
-                  <Field label="Kadrodan oyuncu">
-                    <select
-                      id="tok-player"
-                      value={selTok.playerId ?? ''}
-                      onChange={(e) => {
-                        const p = data.players.find((x) => x.id === e.target.value);
-                        updateTok({ playerId: p?.id, label: p ? String(p.number) : selTok.label });
-                      }}
-                    >
-                      <option value="">—</option>
-                      {players.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.number} · {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                )}
-                <Btn variant="danger" icon="trash" size="sm" onClick={() => delToken(selTok.id)}>
-                  Kaldır
-                </Btn>
-              </section>
-            ) : (
-              <section>
-                <h3>Ayarlar</h3>
-                {canEdit ? (
-                  <>
-                    <Field label="Kategori">
-                      <select id="tac-cat" value={t.category} onChange={(e) => update((d) => ({ ...d, category: e.target.value as TacticCategory }))}>
-                        {CATEGORIES.map((c) => (
-                          <option key={c}>{c}</option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field label="Bizim diziliş (bu adıma uygula)">
-                      <select id="tac-form" value={t.formation} onChange={(e) => applyFormation('home', e.target.value)}>
-                        {FORMATION_NAMES.map((f) => (
-                          <option key={f}>{f}</option>
-                        ))}
-                      </select>
-                    </Field>
-                    {t.tokens.some((k) => k.kind === 'away') && (
-                      <Field label="Rakip dizilişi">
-                        <select id="tac-away" value={t.awayFormation ?? ''} onChange={(e) => applyFormation('away', e.target.value)}>
-                          <option value="" disabled>
-                            —
-                          </option>
-                          {FORMATION_NAMES.map((f) => (
-                            <option key={f}>{f}</option>
-                          ))}
-                        </select>
-                      </Field>
-                    )}
-                    <Field label="Görünüm">
-                      <select id="tac-half" value={t.half ? 'yari' : 'tam'} onChange={(e) => update((d) => ({ ...d, half: e.target.value === 'yari' }))}>
-                        <option value="tam">Tam saha</option>
-                        <option value="yari">Yarı saha</option>
-                      </select>
-                    </Field>
-                    <Field label="Anlatım">
-                      <textarea id="tac-desc" rows={5} value={t.description ?? ''} onChange={(e) => update((d) => ({ ...d, description: e.target.value }), false)} placeholder="Taktiğin amacı, ne zaman ve nasıl uygulanır" />
-                    </Field>
-                    <Field label="Koçluk noktaları (her satır bir madde)">
-                      <textarea id="tac-points" rows={4} value={t.points ?? ''} onChange={(e) => update((d) => ({ ...d, points: e.target.value }), false)} />
-                    </Field>
-                    <Field label="Kaynak / köken">
-                      <input id="tac-src" value={t.source ?? ''} onChange={(e) => update((d) => ({ ...d, source: e.target.value }), false)} placeholder="Ör. kendi çalışmamız, UEFA A lisans notları" />
-                    </Field>
-                    <Field label="Oyuncu boyutu">
-                      <select id="tac-scale" value={String(t.tokenScale ?? 1)} onChange={(e) => update((d) => ({ ...d, tokenScale: +e.target.value === 1 ? undefined : +e.target.value }))}>
-                        <option value="1">Normal</option>
-                        <option value="0.7">Küçük (kalabalık alanlar, duran toplar)</option>
-                      </select>
-                    </Field>
-                    <Field label="Animasyon hızı">
-                      <select id="tac-speed" value={String(t.stepMs ?? 1500)} onChange={(e) => update((d) => ({ ...d, stepMs: +e.target.value }))}>
-                        <option value="2400">Yavaş (anlatım için)</option>
-                        <option value="1500">Normal</option>
-                        <option value="900">Hızlı</option>
-                      </select>
-                    </Field>
-                  </>
-                ) : (
-                  <>
-                    {t.description && <p className="muted">{t.description}</p>}
-                    {t.points && (
-                      <ul className="points">
-                        {t.points
-                          .split('\n')
-                          .filter(Boolean)
-                          .map((x) => (
-                            <li key={x}>{x}</li>
-                          ))}
-                      </ul>
-                    )}
-                    {t.source && <p className="small muted">Kaynak: {t.source}</p>}
-                  </>
-                )}
-                {t.libId && libItem(t.libId) && (
-                  <p className="hint">
-                    Bu taktik hazır kütüphanedeki <strong>{libItem(t.libId)!.def.name}</strong> taktiğinin kopyasıdır; değişiklikler yalnızca bu kopyaya kaydedilir.{' '}
-                    <a href={'#kutuphane-' + t.libId}>Orijinali aç</a>
-                  </p>
-                )}
-                <p className="hint">
-                  <strong>İpucu:</strong> Oyuncuları sürükleyin, okları çizin, sonra “Adım ekle” ile bir sonraki anı kurun. Oynat tuşu adımları animasyonla gösterir. Klavye: ← → adım, boşluk oynat.
-                </p>
-                {canEdit && (
-                  <ConfirmBtn
-                    variant="ghost"
-                    icon="trash"
-                    size="sm"
-                    label="Silmek için tekrar dokunun"
-                    onConfirm={() => {
-                      remove('tactics', t.id);
-                      onBack();
-                    }}
-                  >
-                    Taktiği sil
-                  </ConfirmBtn>
-                )}
-              </section>
-            )}
-        </aside>
+      <div className="board-wrap ed-board pitch-fit">
+        <Pitch
+          tokens={t.tokens}
+          pos={anim.pos}
+          drawings={frame.drawings}
+          half={t.half}
+          colors={colors}
+          subFor={labels.subFor}
+          roleFor={labels.roleFor}
+          tokenScale={t.tokenScale}
+          tool={tool}
+          color={color}
+          editable={editable}
+          selected={selected}
+          onSelect={setSelected}
+          onMove={onMove}
+          onMoveEnd={() => (moveStart.current = false)}
+          onDraw={(d) => setFrame((f) => ({ ...f, drawings: [...f.drawings, d] }))}
+          onErase={(id) => setFrame((f) => ({ ...f, drawings: f.drawings.filter((x) => x.id !== id) }))}
+          className="board"
+        />
       </div>
 
+      <aside className="inspector ed-side">
+        {selTok && editable ? (
+          <section>
+            <div className="row between">
+              <h3>Seçili: {kindLabel(selTok.kind)}</h3>
+              <Btn size="sm" variant="ghost" icon="close" aria-label="Seçimi kaldır" onClick={() => setSelected(null)} />
+            </div>
+            {labels.roleName(selTok) && (
+              <p className="role-line">
+                <span className="role-chip">{labels.roleName(selTok)!.split(' · ')[0]}</span> {labels.roleName(selTok)!.split(' · ')[1]}
+              </p>
+            )}
+            {(selTok.kind === 'home' || selTok.kind === 'away') && (
+              <Field label="Etiket (forma no / mevki)">
+                <input id="tok-label" value={selTok.label} maxLength={4} onChange={(e) => updateTok({ label: e.target.value })} />
+              </Field>
+            )}
+            {selTok.kind === 'home' && (
+              <Field label="Kadrodan oyuncu">
+                <select
+                  id="tok-player"
+                  value={selTok.playerId ?? ''}
+                  onChange={(e) => {
+                    const p = data.players.find((x) => x.id === e.target.value);
+                    updateTok({ playerId: p?.id, label: p ? String(p.number) : selTok.label });
+                  }}
+                >
+                  <option value="">—</option>
+                  {players.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.number} · {p.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+            <Btn variant="danger" icon="trash" size="sm" onClick={() => delToken(selTok.id)}>
+              Kaldır
+            </Btn>
+          </section>
+        ) : (
+          <section>
+            <h3>Ayarlar</h3>
+            {canEdit ? (
+              <div className="side-grid">
+                <Field label="Kategori">
+                  <select id="tac-cat" value={t.category} onChange={(e) => update((d) => ({ ...d, category: e.target.value as TacticCategory }))}>
+                    {CATEGORIES.map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Görünüm">
+                  <select id="tac-half" value={t.half ? 'yari' : 'tam'} onChange={(e) => update((d) => ({ ...d, half: e.target.value === 'yari' }))}>
+                    <option value="tam">Tam saha</option>
+                    <option value="yari">Yarı saha</option>
+                  </select>
+                </Field>
+                <Field label="Bizim diziliş">
+                  <select id="tac-form" value={t.formation} onChange={(e) => applyFormation('home', e.target.value)} title="Bu adıma uygulanır">
+                    {FORMATION_NAMES.map((f) => (
+                      <option key={f}>{f}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Rakip dizilişi">
+                  <select id="tac-away" value={t.awayFormation ?? ''} disabled={!t.tokens.some((k) => k.kind === 'away')} onChange={(e) => applyFormation('away', e.target.value)}>
+                    <option value="" disabled>
+                      —
+                    </option>
+                    {FORMATION_NAMES.map((f) => (
+                      <option key={f}>{f}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Oyuncu boyutu">
+                  <select id="tac-scale" value={String(t.tokenScale ?? 1)} onChange={(e) => update((d) => ({ ...d, tokenScale: +e.target.value === 1 ? undefined : +e.target.value }))}>
+                    <option value="1">Normal</option>
+                    <option value="0.7">Küçük</option>
+                  </select>
+                </Field>
+                <Field label="Animasyon hızı">
+                  <select id="tac-speed" value={String(t.stepMs ?? 1500)} onChange={(e) => update((d) => ({ ...d, stepMs: +e.target.value }))}>
+                    <option value="2400">Yavaş</option>
+                    <option value="1500">Normal</option>
+                    <option value="900">Hızlı</option>
+                  </select>
+                </Field>
+              </div>
+            ) : null}
+            <button type="button" className="desc-card" onClick={() => setDescOpen(true)}>
+              <span className="field-label">Anlatım ve koçluk noktaları</span>
+              <span className="desc-preview">{t.description || (canEdit ? 'Anlatım ekleyin…' : 'Anlatım yok.')}</span>
+              <span className="desc-more">{canEdit ? 'Düzenle' : 'Tümünü oku'}</span>
+            </button>
+            {t.libId && libItem(t.libId) && (
+              <p className="small muted">
+                Kütüphaneden kopya: <a href={'#kutuphane-' + t.libId}>{libItem(t.libId)!.def.name}</a>
+              </p>
+            )}
+            <p className="hint small">Sürükle: taşı · araç seç: çiz · “+ Adım”: sonraki an · ← → adım, boşluk: oynat</p>
+            {canEdit && (
+              <ConfirmBtn
+                variant="ghost"
+                icon="trash"
+                size="sm"
+                label="Silmek için tekrar dokunun"
+                onConfirm={() => {
+                  remove('tactics', t.id);
+                  onBack();
+                }}
+              >
+                Taktiği sil
+              </ConfirmBtn>
+            )}
+          </section>
+        )}
+      </aside>
+
+      {descOpen && (
+        <Modal
+          title="Anlatım ve koçluk noktaları"
+          onClose={() => setDescOpen(false)}
+          wide
+          footer={
+            <Btn variant="primary" onClick={() => setDescOpen(false)}>
+              Tamam
+            </Btn>
+          }
+        >
+          {canEdit ? (
+            <div className="form-grid">
+              <Field label="Anlatım" wide>
+                <textarea id="tac-desc" rows={6} value={t.description ?? ''} onChange={(e) => update((d) => ({ ...d, description: e.target.value }), false)} placeholder="Taktiğin amacı, ne zaman ve nasıl uygulanır" />
+              </Field>
+              <Field label="Koçluk noktaları (her satır bir madde)" wide>
+                <textarea id="tac-points" rows={5} value={t.points ?? ''} onChange={(e) => update((d) => ({ ...d, points: e.target.value }), false)} />
+              </Field>
+              <Field label="Kaynak / köken" wide>
+                <input id="tac-src" value={t.source ?? ''} onChange={(e) => update((d) => ({ ...d, source: e.target.value }), false)} placeholder="Ör. kendi çalışmamız, UEFA A lisans notları" />
+              </Field>
+            </div>
+          ) : (
+            <>
+              {t.description && <p>{t.description}</p>}
+              {t.points && (
+                <ul className="points">
+                  {t.points
+                    .split('\n')
+                    .filter(Boolean)
+                    .map((x) => (
+                      <li key={x}>{x}</li>
+                    ))}
+                </ul>
+              )}
+              {t.source && <p className="small muted">Kaynak: {t.source}</p>}
+            </>
+          )}
+        </Modal>
+      )}
       {sharing && <ShareModal kind="taktik" id={t.id} title={t.name} onClose={() => setSharing(false)} />}
     </div>
   );
