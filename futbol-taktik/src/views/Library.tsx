@@ -125,14 +125,14 @@ function LibraryDetail({ it, onBack, onOpenTactic }: { it: LibItem; onBack: () =
         </div>
         <div className="row">
           {canEdit && (
-            <Btn variant="primary" icon="edit" onClick={fork}>
-              Düzenle ve kaydet
+            <Btn variant="primary" icon="edit" onClick={fork} title="Düzenle ve kaydet">
+              <span className="hide-phone">Düzenle ve kaydet</span>
             </Btn>
           )}
-          <PresentActions target={{ kind: 'kutup', id: def.id }} size="md" />
+          <PresentActions target={{ kind: 'kutup', id: def.id }} size="md" compact />
           {canEdit && (
-            <Btn icon="whistle" onClick={() => setPicking(true)}>
-              Maça ekle
+            <Btn icon="whistle" onClick={() => setPicking(true)} title="Maça ekle">
+              <span className="hide-phone">Maça ekle</span>
             </Btn>
           )}
         </div>

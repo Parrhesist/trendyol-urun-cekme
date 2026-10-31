@@ -33,6 +33,7 @@ export function Icon({ name, size = 18 }: { name: string; size?: number }) {
     edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4',
     cast: 'M3 7V5h18v14h-7M3 11a8 8 0 018 8M3 15a4 4 0 014 4M3 19h.01',
     grip: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
+    rotate: 'M9 2h6a2 2 0 012 2v9a2 2 0 01-2 2H9a2 2 0 01-2-2V4a2 2 0 012-2zM11 12h2M3 15a9 9 0 009 7l-2-2M21 9a9 9 0 00-4-6',
     undo: 'M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3',
     up: 'M6 15l6-6 6 6',
     down: 'M6 9l6 6 6-6',

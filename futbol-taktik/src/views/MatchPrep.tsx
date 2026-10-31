@@ -49,10 +49,10 @@ export function PrepTabs({ m, sub, setSub }: { m: Match; sub: PrepSub; setSub: (
         value={sub}
         onChange={setSub}
         options={[
-          { value: 'dizilis', label: 'Kadro ve diziliş' },
-          { value: 'talimat', label: 'Talimatlar' },
-          { value: 'taktik', label: `Taktikler (${m.pre.tacticIds.length})` },
-          { value: 'rakip', label: 'Rakip ve plan' },
+          { value: 'dizilis', label: <>Kadro<span className="hide-phone"> ve diziliş</span></> },
+          { value: 'talimat', label: <>Talimat<span className="hide-phone">lar</span></> },
+          { value: 'taktik', label: <>Taktik<span className="hide-phone">ler</span> ({m.pre.tacticIds.length})</> },
+          { value: 'rakip', label: <>Rakip<span className="hide-phone"> ve plan</span></> },
         ]}
       />
       <span className="spacer" />
@@ -62,7 +62,7 @@ export function PrepTabs({ m, sub, setSub }: { m: Match; sub: PrepSub; setSub: (
           label={
             <>
               <span className="hide-narrow">Soyunma odası sunumu</span>
-              <span className="show-narrow">Sunum</span>
+              <span className="show-narrow hide-phone">Sunum</span>
             </>
           }
           size="md"
@@ -622,6 +622,8 @@ const STYLES: { name: string; desc: string; ins: TeamInstructions }[] = [
   { name: 'Kontra atak', desc: 'Alçak blok, kazanınca hızlı ve direkt', ins: { ...DEFAULT_INSTRUCTIONS, block: 'alcak', line: 'derin', press: 'az', tempo: 'hizli', passing: 'direkt', buildUp: 'uzun', onWin: 'hizli', onLose: 'geri_cekil' } },
 ];
 
+const DUTIES = 'Görevler';
+
 function InstructionsEditor({ m, setPre }: { m: Match; setPre: SetPre }) {
   const { data, canEdit } = useStore();
   const player = usePlayer();
@@ -659,12 +661,6 @@ function InstructionsEditor({ m, setPre }: { m: Match; setPre: SetPre }) {
         <div className="pitch-fit">
           <InstructionsPitch ins={ins} slots={slots} color={data.settings.homeColor} />
         </div>
-        <div className="duty-row">
-          {dutySelect('captain', 'Kaptan')}
-          {dutySelect('penalty', 'Penaltı')}
-          {dutySelect('corner', 'Korner')}
-          {dutySelect('freeKick', 'Serbest vuruş')}
-        </div>
       </section>
       <section className="panel ins-options">
         <h2 className="section-title">Oyun stili</h2>
@@ -676,7 +672,15 @@ function InstructionsEditor({ m, setPre }: { m: Match; setPre: SetPre }) {
             </button>
           ))}
         </div>
-        <Segmented id="ins-group" value={grp} onChange={setGrp} options={INSTRUCTION_GROUPS.map((g) => ({ value: g.title, label: g.title }))} />
+        <Segmented id="ins-group" value={grp} onChange={setGrp} options={[...INSTRUCTION_GROUPS.map((g) => ({ value: g.title, label: g.title })), { value: DUTIES, label: DUTIES }]} />
+        {grp === DUTIES && (
+          <div className="duty-grid">
+            {dutySelect('captain', 'Kaptan')}
+            {dutySelect('penalty', 'Penaltı')}
+            {dutySelect('corner', 'Korner')}
+            {dutySelect('freeKick', 'Serbest vuruş')}
+          </div>
+        )}
         {INSTRUCTION_GROUPS.filter((g) => g.title === grp).map((g) => (
           <div key={g.title} className="ins-group">
             {g.items.map((it) => (

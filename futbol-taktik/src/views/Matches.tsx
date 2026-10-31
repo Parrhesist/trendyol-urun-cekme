@@ -8,7 +8,7 @@ import { autoLineup, benchOf, surname } from '../lineup';
 import { usePlayer, useStore } from '../store';
 import { countEvents, isPlayed, result, RESULT_LABEL } from '../stats';
 import type { EventType, Match, MatchEvent, Player, Pt } from '../types';
-import { Btn, ConfirmBtn, Empty, Field, Icon, Pill, Segmented } from '../ui';
+import { Btn, ConfirmBtn, Empty, Field, Icon, Modal, Pill, Segmented } from '../ui';
 import { PresentActions } from '../present/Actions';
 import { MatchPrep, PrepTabs, usePrepSub } from './MatchPrep';
 import { ShareModal } from './Share';
@@ -129,12 +129,48 @@ function MatchDetail({ match, onBack, onOpenTactic }: { match: Match; onBack: ()
     setTabState(t);
   };
   const [sharing, setSharing] = useState(false);
+  // telefonda tarih, saha ve paylaşım ayrı pencerede
+  const [infoOpen, setInfoOpen] = useState(false);
   const m = match;
   const upd = (fn: (m: Match) => Match) => canEdit && save('matches', fn(m));
   const setPre = (p: Partial<Match['pre']>) => upd((x) => ({ ...x, pre: { ...x.pre, ...p } }));
   const setHalf = (p: Partial<Match['half']>) => upd((x) => ({ ...x, half: { ...x.half, ...p } }));
   const setPost = (p: Partial<Match['post']>) => upd((x) => ({ ...x, post: { ...x.post, ...p } }));
 
+  const meta = (sfx: string) =>
+    canEdit ? (
+      <>
+        <input id={'m-date' + sfx} type="date" value={m.date} onChange={(e) => upd((x) => ({ ...x, date: e.target.value }))} aria-label="Tarih" />
+        <input id={'m-time' + sfx} type="time" value={m.time ?? ''} onChange={(e) => upd((x) => ({ ...x, time: e.target.value }))} aria-label="Saat" />
+        <select id={'m-venue' + sfx} value={m.venue} onChange={(e) => upd((x) => ({ ...x, venue: e.target.value as Match['venue'] }))} aria-label="Saha">
+          <option>İç Saha</option>
+          <option>Deplasman</option>
+        </select>
+        <input id={'m-comp' + sfx} value={m.competition} onChange={(e) => upd((x) => ({ ...x, competition: e.target.value }))} aria-label="Organizasyon" />
+      </>
+    ) : (
+      <span className="muted">
+        {fmtDate(m.date, { day: 'numeric', month: 'long', weekday: 'long' })} · {m.time} · {m.venue} · {m.competition}
+      </span>
+    );
+  const actions = (
+    <>
+      <Btn icon="share" onClick={() => setSharing(true)}>
+        Paylaş
+      </Btn>
+      {canEdit && (
+        <ConfirmBtn
+          variant="ghost"
+          icon="trash"
+          label="Maçı sil?"
+          onConfirm={() => {
+            remove('matches', m.id);
+            onBack();
+          }}
+        />
+      )}
+    </>
+  );
   return (
     <div className={'page match-page ws' + (tab === 'sonra' || (tab === 'once' && sub !== 'taktik') ? ' ws-pitch' : '')}>
       <header className="match-head ws-head">
@@ -145,40 +181,10 @@ function MatchDetail({ match, onBack, onOpenTactic }: { match: Match; onBack: ()
           ) : (
             <h1>{m.opponent}</h1>
           )}
-          <div className="match-meta">
-            {canEdit ? (
-              <>
-                <input id="m-date" type="date" value={m.date} onChange={(e) => upd((x) => ({ ...x, date: e.target.value }))} aria-label="Tarih" />
-                <input id="m-time" type="time" value={m.time ?? ''} onChange={(e) => upd((x) => ({ ...x, time: e.target.value }))} aria-label="Saat" />
-                <select id="m-venue" value={m.venue} onChange={(e) => upd((x) => ({ ...x, venue: e.target.value as Match['venue'] }))} aria-label="Saha">
-                  <option>İç Saha</option>
-                  <option>Deplasman</option>
-                </select>
-                <input id="m-comp" value={m.competition} onChange={(e) => upd((x) => ({ ...x, competition: e.target.value }))} aria-label="Organizasyon" />
-              </>
-            ) : (
-              <span className="muted">
-                {fmtDate(m.date, { day: 'numeric', month: 'long', weekday: 'long' })} · {m.time} · {m.venue} · {m.competition}
-              </span>
-            )}
-          </div>
+          <div className="match-meta">{meta('')}</div>
         </div>
-        <div className="row">
-          <Btn icon="share" onClick={() => setSharing(true)}>
-            Paylaş
-          </Btn>
-          {canEdit && (
-            <ConfirmBtn
-              variant="ghost"
-              icon="trash"
-              label="Maçı sil?"
-              onConfirm={() => {
-                remove('matches', m.id);
-                onBack();
-              }}
-            />
-          )}
-        </div>
+        <div className="row match-actions">{actions}</div>
+        <Btn icon="calendar" className="phone-only" onClick={() => setInfoOpen(true)} aria-label="Maç bilgileri" title="Maç bilgileri" />
       </header>
       <div className="match-tabs">
         <Segmented
@@ -186,10 +192,10 @@ function MatchDetail({ match, onBack, onOpenTactic }: { match: Match; onBack: ()
           value={tab}
           onChange={setTab}
           options={[
-            { value: 'once', label: 'Maç öncesi' },
-            { value: 'devre', label: 'Devre arası' },
-            { value: 'sonra', label: 'Maç sonrası' },
-            { value: 'veri', label: 'Veri aktar' },
+            { value: 'once', label: <><span className="hide-phone">Maç öncesi</span><span className="show-phone">Öncesi</span></> },
+            { value: 'devre', label: <>Devre<span className="hide-phone"> arası</span></> },
+            { value: 'sonra', label: <><span className="hide-phone">Maç sonrası</span><span className="show-phone">Sonrası</span></> },
+            { value: 'veri', label: <>Veri<span className="hide-phone"> aktar</span></> },
           ]}
         />
         {tab === 'once' && <PrepTabs m={m} sub={sub} setSub={setSub} />}
@@ -200,6 +206,12 @@ function MatchDetail({ match, onBack, onOpenTactic }: { match: Match; onBack: ()
         {tab === 'sonra' && <PostPanel m={m} setPost={setPost} />}
         {tab === 'veri' && <DataPanel m={m} setPost={setPost} />}
       </div>
+      {infoOpen && (
+        <Modal title="Maç bilgileri" onClose={() => setInfoOpen(false)}>
+          <div className="meta-fields">{meta('-m')}</div>
+          <div className="row">{actions}</div>
+        </Modal>
+      )}
       {sharing && <ShareModal kind="mac" id={m.id} title={`${m.opponent} maçı`} onClose={() => setSharing(false)} />}
     </div>
   );
@@ -520,8 +532,8 @@ function PostPanel({ m, setPost }: { m: Match; setPost: (p: Partial<Match['post'
             options={[
               { value: 'istatistik', label: 'İstatistik' },
               { value: 'puan', label: 'Puanlar' },
-              { value: 'degerlendirme', label: 'Değerlendirme' },
-              { value: 'olaylar', label: `Olaylar (${m.post.events.length})` },
+              { value: 'degerlendirme', label: <><span className="hide-phone">Değerlendirme</span><span className="show-phone">Yorum</span></> },
+              { value: 'olaylar', label: <>Olaylar<span className="hide-phone"> ({m.post.events.length})</span></> },
             ]}
           />
           <div className="side-scroll">

@@ -338,6 +338,9 @@ code,
   opacity: 0.45;
   cursor: default;
 }
+a.btn {
+  text-decoration: none;
+}
 .btn-sm {
   min-height: 32px;
   padding: 0 10px;
@@ -3543,15 +3546,15 @@ body.no-select,
   font-weight: 700;
   color: var(--accent);
 }
-.duty-row {
+.meta-fields {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
 }
-.duty-row select {
-  min-height: 36px;
-  padding: 6px 8px;
-  font-size: 14px;
+.duty-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
 }
 .notes-stack {
   display: flex;
@@ -3708,7 +3711,10 @@ body.no-select,
   border-radius: 0;
 }
 
-.show-narrow {
+.show-narrow,
+.show-phone,
+.phone-only,
+.rotate-hint {
   display: none;
 }
 #lu-list,
@@ -3731,7 +3737,7 @@ body.no-select,
 }
 
 /* Yatay sunum/TV: adım çubuğu ve adım notu sağ sütuna geçer, saha tüm yüksekliği kullanır */
-@media (orientation: landscape) and (min-width: 900px) {
+@media (orientation: landscape) and (min-width: 560px) {
   .present .slide-tactic.with-side,
   .present .slide-drill:not(.no-diagram) {
     display: grid;
@@ -3808,7 +3814,7 @@ body.no-select,
 /* =====================================================================
    Yatay mod: sahalı ekranlar tek ekrana sığar, sayfa kaymaz
    ===================================================================== */
-@media (orientation: landscape) and (min-width: 900px) and (min-height: 500px) {
+@media (orientation: landscape) and (min-width: 560px) and (min-height: 280px) {
   .ws {
     height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     overflow: hidden;
@@ -4251,7 +4257,7 @@ body.no-select,
   }
 }
 /* dar yatay ekranlar (≈1024 px): yan sütunlar daralır, saha büyük kalır */
-@media (orientation: landscape) and (min-width: 900px) and (max-width: 1250px) and (min-height: 500px) {
+@media (orientation: landscape) and (min-width: 560px) and (max-width: 1250px) and (min-height: 280px) {
   .hide-narrow {
     display: none;
   }
@@ -4306,10 +4312,698 @@ body.no-select,
   }
 }
 @media (max-width: 720px) {
-  .duty-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .slide-tactic.with-side {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Dikey telefon: sahalı ekranlarda yan çevirme ipucu */
+@media (orientation: portrait) and (max-width: 600px) {
+  .main:has(.ws) .rotate-hint {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+    padding: 8px 6px 8px 12px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .rotate-hint svg {
+    flex: none;
+    color: var(--accent);
+  }
+  /* dikey telefonda saha başlığın hemen altında, araçlar başparmak altında */
+  .editor.ws .ed-board {
+    order: 1;
+  }
+  .editor.ws .ed-frames {
+    order: 2;
+  }
+  .editor.ws .ed-tools {
+    order: 3;
+  }
+  .editor.ws .ed-side {
+    order: 4;
+  }
+  .rotate-hint button {
+    flex: none;
+    margin-left: auto;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+}
+
+/* =====================================================================
+   Yatay telefon: tablettekiyle aynı tek ekran düzeni, sıkıştırılmış.
+   Yükseklik dar olduğundan denetimler sahanın yanındaki sütunlara geçer.
+   ===================================================================== */
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 499px) {
+  .phone-only {
+    display: inline-flex;
+  }
+  .show-phone {
+    display: inline;
+  }
+  .hide-phone {
+    display: none;
+  }
+
+  /* ince sol menü (dar telefonlarda alt çubuk yerine) */
+  .app {
+    grid-template-columns: calc(52px + env(safe-area-inset-left, 0px)) minmax(0, 1fr);
+    padding-bottom: 0;
+  }
+  .rail {
+    position: sticky;
+    top: 0;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    height: 100dvh;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 2px;
+    padding: 6px 4px;
+    padding-left: max(4px, env(safe-area-inset-left, 0px));
+    border-top: 0;
+    border-right: 1px solid var(--line);
+    overflow-y: auto;
+  }
+  .brand,
+  .rail-foot {
+    display: none;
+  }
+  .nav-item {
+    flex: none;
+    padding: 8px 2px;
+    gap: 0;
+  }
+  .nav-item span {
+    display: none;
+  }
+
+  /* çalışma ekranları: küçük başlık ve düğmeler */
+  .page.ws,
+  .editor.ws {
+    padding: 6px max(8px, env(safe-area-inset-right, 0px)) 6px 8px;
+    gap: 6px;
+  }
+  .ws .btn-md,
+  .ws .btn-lg {
+    min-height: 32px;
+    padding: 0 9px;
+    font-size: 13px;
+  }
+  .ws .btn-sm {
+    min-height: 28px;
+    padding: 0 7px;
+    font-size: 12px;
+  }
+  .ws h1,
+  .ws .title-input,
+  .editor.ws .title-input,
+  .match-page.ws .match-title .title-input {
+    font-size: 17px;
+  }
+  .ws .title-input {
+    min-height: 32px;
+  }
+  .ws .seg {
+    padding: 2px;
+  }
+  .ws .seg button,
+  .match-page.ws .seg button,
+  .match-page.ws .match-tabs .seg button {
+    padding: 4px 7px;
+    min-height: 28px;
+    font-size: 12.5px;
+  }
+  .ws .panel {
+    padding: 8px;
+    gap: 6px;
+    border-radius: 10px;
+  }
+  .ws .section-title,
+  .ws .panel h3 {
+    font-size: 14px;
+  }
+  .ws select,
+  .ws input:not([type='checkbox']):not([type='color']),
+  .ws textarea {
+    min-height: 32px;
+    padding: 4px 7px;
+    font-size: 13px;
+  }
+  .ws .field {
+    gap: 2px;
+  }
+  .ws .field-label {
+    font-size: 11px;
+  }
+
+  /* taktik tahtası: araçlar solda, adımlar ve ekleme sağda, ayarlar çekmecede */
+  .editor.ws {
+    position: relative;
+    grid-template-columns: 80px minmax(0, 1fr) 178px;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'head head head'
+      'tmain board frames'
+      'swatch board adds'
+      '. board .';
+  }
+  .editor.ws:not(:has(.ed-tools)) {
+    grid-template-columns: minmax(0, 1fr) 178px;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'head head'
+      'board frames'
+      'board .';
+  }
+  .editor.ws .save-state {
+    display: none;
+  }
+  .editor.ws .ed-tools {
+    display: contents;
+  }
+  .ed-tools .tool-group {
+    align-self: start;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .ed-tools .tool-group:last-child {
+    padding: 4px;
+  }
+  .ed-tools .tools-main {
+    grid-area: tmain;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+  }
+  .ed-tools .tool {
+    min-width: 0;
+    min-height: 34px;
+    padding: 2px;
+  }
+  .ed-tools .tool span {
+    display: none;
+  }
+  .ed-tools .swatches {
+    grid-area: swatch;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-items: center;
+    gap: 4px;
+  }
+  .ed-tools .swatch {
+    width: 24px;
+    height: 24px;
+  }
+  .ed-tools .adds {
+    grid-area: adds;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3px;
+  }
+  .ed-tools .add-tok {
+    position: relative;
+    min-height: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+  .ed-tools .add-tok span {
+    display: none;
+  }
+  .ed-tools .add-tok::after {
+    content: '+';
+    position: absolute;
+    top: 1px;
+    right: 3px;
+    font: 700 11px/1 var(--f-body);
+    color: var(--ink-2);
+  }
+  .ed-tools .adds .btn {
+    margin: 0;
+    min-height: 32px;
+    padding: 0;
+  }
+  .editor.ws .ed-frames {
+    align-self: start;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 6px;
+  }
+  .ed-frames .frames-ctrl {
+    display: flex;
+    gap: 2px;
+  }
+  .ed-frames .frames-ctrl .btn-primary {
+    flex: 1;
+  }
+  .ed-frames .frames-ctrl .btn-lg {
+    min-height: 34px;
+    padding: 0 8px;
+  }
+  .ed-frames .frame-list {
+    flex-wrap: wrap;
+    overflow: visible;
+    gap: 4px;
+  }
+  .ed-frames .frame-list button {
+    min-width: 32px;
+    height: 32px;
+    font-size: 15px;
+  }
+  .ed-frames .frame-list button.add {
+    padding: 0 8px;
+  }
+  .ed-frames .frame-note {
+    flex: none;
+    min-width: 0;
+    gap: 2px;
+  }
+  .ed-frames .frame-note textarea {
+    height: 48px;
+    min-height: 48px;
+    font-size: 12px;
+    padding: 4px 6px;
+  }
+  .ed-frames .note-read {
+    font-size: 12.5px;
+    max-height: 64px;
+  }
+  .editor.ws .ed-side {
+    display: none;
+    position: absolute;
+    z-index: 30;
+    top: 46px;
+    right: max(8px, env(safe-area-inset-right, 0px));
+    bottom: 6px;
+    width: min(320px, 70%);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  }
+  .editor.ws.side-open .ed-side,
+  .editor.ws.has-sel .ed-side {
+    display: block;
+  }
+  /* seçili taş paneli yalnız sağ sütunu kaplar, saha görünür kalır */
+  .editor.ws.has-sel .ed-side {
+    width: 186px;
+    padding: 8px;
+  }
+
+  /* hazır taktik: oynatma çubuğu ve adım notu sağ sütunda */
+  .lib-page.ws .lib-title .eyebrow {
+    display: none;
+  }
+  .lib-page.ws .lib-detail {
+    grid-template-columns: minmax(0, 1fr) 236px;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'pitch bar'
+      'pitch note'
+      'pitch side';
+    gap: 6px 8px;
+  }
+  .lib-page.ws .lib-player,
+  .lib-page.ws .lib-player > .tplayer.fit {
+    display: contents;
+  }
+  .lib-page.ws .tplayer-bar {
+    grid-area: bar;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .lib-page.ws .tplayer-bar > .btn-primary {
+    flex: 1 1 auto;
+  }
+  .lib-page.ws .tp-steps {
+    order: 2;
+    flex: 1 0 100%;
+  }
+  .lib-page.ws .tplayer-step {
+    display: none;
+  }
+  .lib-page.ws .tplayer.fit .pitch-fit {
+    grid-area: pitch;
+    align-self: stretch;
+    aspect-ratio: auto;
+  }
+  .lib-page.ws .tplayer.fit .tplayer-note {
+    grid-area: note;
+    max-height: 4.2em;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .lib-page.ws .lib-side {
+    grid-area: side;
+  }
+  .lib-steps button {
+    padding: 5px 7px;
+    font-size: 12.5px;
+    gap: 6px;
+  }
+
+  /* maç: başlık ve sekmeler tek satır; tarih/saha/paylaş "Maç bilgileri"nde */
+  .match-page.ws {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: center;
+  }
+  .match-page.ws .match-head {
+    grid-column: 1;
+    gap: 4px;
+    min-width: 0;
+  }
+  .match-page.ws .match-title {
+    flex: 1;
+  }
+  .match-page.ws .match-meta,
+  .match-page.ws .match-actions {
+    display: none;
+  }
+  .match-page.ws .match-title .title-input {
+    width: 100%;
+    min-width: 50px;
+    flex: 1 1 auto;
+  }
+  .match-page.ws .lu-status > span:first-child {
+    display: none;
+  }
+  .match-page.ws .match-tabs {
+    grid-column: 2;
+    gap: 4px 6px;
+  }
+  .match-page.ws .match-body {
+    grid-column: 1 / -1;
+    align-self: stretch;
+  }
+
+  /* kadro: araç çubuğu ve liste sağ sütunda */
+  .match-page.ws .lineup-editor,
+  .match-page.ws .lineup-editor.has-sel {
+    grid-template-columns: minmax(0, 1fr) 236px;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'pitch tools'
+      'pitch side';
+    gap: 6px 8px;
+  }
+  .match-page.ws .lu-board {
+    display: contents;
+  }
+  .match-page.ws .lu-toolbar {
+    grid-area: tools;
+    padding: 4px;
+    gap: 3px 4px;
+  }
+  .match-page.ws .lu-toolbar .btn-sm {
+    padding: 0 6px;
+  }
+  .match-page.ws .lu-preset select {
+    min-height: 28px;
+    width: 100px;
+  }
+  .match-page.ws .lu-pitch {
+    grid-area: pitch;
+  }
+  .match-page.ws .lineup-editor .lu-side,
+  .match-page.ws .lineup-editor.has-sel .lu-side {
+    grid-area: side;
+    padding: 6px;
+  }
+  .match-page.ws .lu-side .sq-main {
+    min-height: 32px;
+  }
+  .match-page.ws .lu-side .sq-name small {
+    display: none;
+  }
+  .match-page.ws .slot-panel h2 {
+    font-size: 15px;
+  }
+  .match-page.ws .lu-side > .section-title {
+    display: none;
+  }
+
+  /* talimatlar ve rakip: saha solda tam yükseklik */
+  .match-page.ws .ins-ws,
+  .match-page.ws .opp-ws {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 8px;
+  }
+  .match-page.ws .ins-visual > .row.between,
+  .match-page.ws .opp-visual > p {
+    display: none;
+  }
+  .match-page.ws .ins-visual .pitch-fit,
+  .match-page.ws .opp-visual .pitch-fit,
+  .match-page.ws .post-map .pitch-fit {
+    flex: 1 1 auto;
+    aspect-ratio: auto;
+  }
+  .match-page.ws .ins-options {
+    padding: 8px;
+    gap: 6px;
+  }
+  .ins-options .style-card {
+    padding: 4px 8px;
+    font-size: 12.5px;
+  }
+  #ins-group {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #lu-list button,
+  #lib-side button,
+  #post-side button,
+  #ins-group button,
+  #opp-tab button {
+    font-size: 12px;
+    padding-inline: 3px;
+  }
+  .ins-options .ins-row strong {
+    font-size: 12.5px;
+  }
+  .ins-options .ins-seg button {
+    padding: 3px 7px;
+    min-height: 26px;
+    font-size: 12px;
+  }
+  .match-page.ws .opp-visual {
+    position: relative;
+  }
+  .match-page.ws .opp-visual > .row {
+    position: absolute;
+    z-index: 2;
+    top: 14px;
+    left: 16px;
+    gap: 6px;
+    padding: 2px 4px 2px 8px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    font-size: 12px;
+  }
+  .match-page.ws .opp-visual > .row h2 {
+    display: none;
+  }
+  .match-page.ws .opp-visual > .row select {
+    min-height: 26px;
+    width: auto;
+  }
+  .match-page.ws .opp-notes {
+    padding: 8px;
+    gap: 6px;
+  }
+  .match-page.ws .notes-stack {
+    gap: 4px;
+  }
+  .match-page.ws .notes-stack textarea {
+    font-size: 12.5px;
+  }
+
+  /* maç sonrası: skor ve olay girişi sağ sütunun üstünde */
+  .match-page.ws .post-ws {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 270px;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'map top'
+      'map side';
+    gap: 6px 8px;
+  }
+  .match-page.ws .post-body {
+    display: contents;
+  }
+  .match-page.ws .post-top {
+    grid-area: top;
+    gap: 4px 6px;
+  }
+  .match-page.ws .post-map {
+    grid-area: map;
+    padding: 6px;
+    gap: 4px;
+  }
+  .match-page.ws .post-map .legend {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 11px;
+  }
+  .match-page.ws .post-side {
+    grid-area: side;
+    padding: 6px;
+  }
+  .score-input.compact .scorebox span {
+    font-size: 20px;
+    min-width: 20px;
+  }
+  .score-input.compact .scorebox button {
+    width: 28px;
+    height: 28px;
+  }
+  .match-page.ws .post-top .logger {
+    gap: 4px;
+  }
+  .match-page.ws .post-top .score-dash {
+    display: none;
+  }
+  .match-page.ws .post-top .logger select {
+    flex: 1 1 110px;
+    width: auto;
+  }
+  .match-page.ws .tag button {
+    min-height: 34px;
+    padding: 4px 8px;
+    font-size: 13px;
+  }
+
+  /* sunum: küçük başlık, saha tüm yüksekliği kullanır */
+  .present {
+    padding: 6px max(10px, env(safe-area-inset-right, 0px)) 6px max(10px, env(safe-area-inset-left, 0px));
+    gap: 6px;
+  }
+  .present-head {
+    align-items: center;
+    gap: 8px;
+  }
+  .present-head h1,
+  .present-tv .present-head h1 {
+    font-size: 18px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .present-titles .slide-kicker {
+    font-size: 11px;
+  }
+  .present-count {
+    font-size: 13px;
+  }
+  .present-body,
+  .present-tv,
+  .present-page {
+    font-size: 14px;
+  }
+  .present-foot .btn-lg,
+  .present .btn-lg {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+  .timer-val {
+    font-size: 24px;
+  }
+  .tplayer.big .tp-steps button {
+    min-width: 32px;
+    height: 32px;
+    font-size: 15px;
+  }
+  .present .slide-tactic,
+  .present .slide-tactic.with-side,
+  .present .slide-drill:not(.no-diagram) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 30%);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'pitch bar'
+      'pitch note'
+      'pitch side';
+    gap: 6px 12px;
+    align-items: start;
+  }
+  .present .slide-tactic > .tplayer.fit {
+    display: contents;
+  }
+  .present .slide-tactic .tplayer-bar {
+    grid-area: bar;
+  }
+  .present .slide-tactic .tplayer-bar > .btn-primary {
+    flex: 1 1 auto;
+  }
+  .present .slide-tactic .tp-steps {
+    order: 2;
+    flex: 1 0 100%;
+  }
+  .present .slide-tactic .tplayer-step {
+    display: none;
+  }
+  .present .slide-tactic .pitch-fit {
+    grid-area: pitch;
+    align-self: stretch;
+  }
+  .present .slide-tactic .tplayer-note,
+  .present .slide-tactic.with-side .tplayer-note,
+  .present .slide-drill .tplayer-note {
+    grid-area: note;
+    font-size: 14px;
+    max-height: none;
+  }
+  .slide-side .slide-desc,
+  .slide-points {
+    font-size: 13px;
+  }
+}
+/* çok dar yatay telefonlar (≈ 667 px): yan sütunlar daralır */
+@media (orientation: landscape) and (min-width: 560px) and (max-width: 760px) and (max-height: 499px) {
+  .editor.ws {
+    grid-template-columns: 72px minmax(0, 1fr) 150px;
+  }
+  .editor.ws:not(:has(.ed-tools)) {
+    grid-template-columns: minmax(0, 1fr) 150px;
+  }
+  .editor.ws.has-sel .ed-side {
+    width: 158px;
+  }
+  .lib-page.ws .lib-detail,
+  .match-page.ws .lineup-editor,
+  .match-page.ws .lineup-editor.has-sel {
+    grid-template-columns: minmax(0, 1fr) 200px;
+  }
+  .match-page.ws .ins-ws,
+  .match-page.ws .opp-ws {
+    grid-template-columns: minmax(0, 1fr) 220px;
+  }
+  .match-page.ws .post-ws {
+    grid-template-columns: minmax(0, 1fr) 236px;
+  }
+  .ws .seg button,
+  .match-page.ws .seg button,
+  .match-page.ws .match-tabs .seg button {
+    padding: 4px 5px;
   }
 }

@@ -170,10 +170,45 @@ export function App() {
             <strong>Takım verilerine bağlanılamadı.</strong> Bu tarayıcıda claude.ai oturumu açık değil ya da bu hesabın uygulamaya erişimi yok. Şu an bu cihazda kayıtlı veriler gösteriliyor; burada yapılan değişiklikler takımla paylaşılmaz.
           </div>
         )}
+        <RotateHint />
         {view}
       </main>
       <LiveIndicator />
       <Toasts />
+    </div>
+  );
+}
+
+const HINT_KEY = 'saha-kenari-yan-cevir';
+
+/** Dikey telefonda sahalı ekranlarda: yan çevirince tek ekran düzeni açılır */
+function RotateHint() {
+  const [off, setOff] = useState(() => {
+    try {
+      return localStorage.getItem(HINT_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  if (off) return null;
+  return (
+    <div className="rotate-hint" role="note">
+      <Icon name="rotate" size={22} />
+      <span>Telefonu yan çevirin: saha büyür, tüm araçlar kaydırmadan tek ekrana sığar.</span>
+      <button
+        type="button"
+        aria-label="İpucunu kapat"
+        onClick={() => {
+          setOff(true);
+          try {
+            localStorage.setItem(HINT_KEY, '1');
+          } catch {
+            /* özel pencere */
+          }
+        }}
+      >
+        <Icon name="close" size={16} />
+      </button>
     </div>
   );
 }

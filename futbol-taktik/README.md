@@ -33,7 +33,9 @@ Her sunum ekranında (taktik, maç öncesi, devre arası, antrenman seansı, haf
 - Bağlantılar `VITE_APP_URL` (bkz. `.env.production`) ya da Ayarlar → TV ve ekranlar → Uygulama bağlantısı ile oluşturulur.
 
 ## Yatay ekran düzeni
-Yatay tablet ve bilgisayarda (en az 900 × 500 px) sahalı ekranlar — taktik tahtası, hazır taktik, maç kadrosu, talimatlar, rakip planı, maç sonrası ve sunumlar — tek ekrana sığar, sayfa aşağı kaymaz. Saha kalan alanın tamamını kullanır: araç ve adım çubukları sahanın üstünde, ayarlar sağ sütunda. Uzun içerikler (kadro listeleri, talimat grupları, rakip notları, kütüphane anlatımı) sekmelere ayrılır. Sunum/TV'de adım düğmeleri ve adım notu sağ sütuna geçer, saha tüm yüksekliği kullanır. Dikey tablet ve telefonda düzen alt alta akar.
+Yatay tablet ve bilgisayarda (en az 900 × 500 px) sahalı ekranlar — taktik tahtası, hazır taktik, maç kadrosu, talimatlar, rakip planı, maç sonrası ve sunumlar — tek ekrana sığar, sayfa aşağı kaymaz. Saha kalan alanın tamamını kullanır: araç ve adım çubukları sahanın üstünde, ayarlar sağ sütunda. Uzun içerikler (kadro listeleri, talimat grupları, rakip notları, kütüphane anlatımı) sekmelere ayrılır. Sunum/TV'de adım düğmeleri ve adım notu sağ sütuna geçer, saha tüm yüksekliği kullanır. Dikey tablette düzen alt alta akar.
+
+Yan çevrilmiş telefonda (en az 560 px genişlik, 500 px altı yükseklik) aynı tek ekran düzeni sıkıştırılmış hâliyle açılır: menü ince bir simge sütununa iner, araçlar sahanın solunda, adımlar ve ekleme düğmeleri sağında durur; taktik ayarları dişli düğmesiyle açılan çekmecede, maçın tarih/saha bilgileri takvim düğmesiyle açılan pencerededir. Uzun listeler (kadro, istatistik) kendi sütunlarında kayar, sayfa kaymaz. Dikey telefonda sahalı ekranlarda yan çevirme ipucu çıkar ve taktik tahtasında saha başlığın hemen altına gelir.
 
 ## Altyapı
 React 18 + TypeScript + Vite, tek HTML dosyasına derlenir (`vite-plugin-singlefile`). Grafikler ve saha SVG ile çizilir, harici kütüphane yoktur.

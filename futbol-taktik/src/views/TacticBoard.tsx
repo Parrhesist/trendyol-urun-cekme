@@ -210,6 +210,8 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
   const [selected, setSelected] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [descOpen, setDescOpen] = useState(false);
+  // telefonda ayarlar paneli sahanın üstünde açılır-kapanır çekmece
+  const [sideOpen, setSideOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
   const history = useRef<Tactic[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -351,7 +353,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
   const kindLabel = (k: Token['kind']) => (k === 'home' ? 'Oyuncu' : k === 'away' ? 'Rakip' : k === 'ball' ? 'Top' : k === 'cone' ? 'Huni' : 'Kale');
 
   return (
-    <div className="editor ws" ref={rootRef}>
+    <div className={'editor ws' + (sideOpen ? ' side-open' : '') + (selTok && editable ? ' has-sel' : '')} ref={rootRef}>
       <header className="editor-head ws-head">
         <Btn variant="ghost" icon="prev" onClick={onBack} aria-label={backLabel ?? 'Taktiklere dön'}>
           {backLabel}
@@ -374,7 +376,8 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
           <Btn icon="share" onClick={() => setSharing(true)} aria-label="Paylaş">
             <span className="hide-narrow">Paylaş</span>
           </Btn>
-          <PresentActions target={{ kind: 'taktik', id: t.id }} size="md" />
+          <PresentActions target={{ kind: 'taktik', id: t.id }} size="md" compact />
+          <Btn icon="gear" className="phone-only" variant={sideOpen ? 'primary' : 'plain'} onClick={() => setSideOpen((v) => !v)} aria-label="Ayarlar ve anlatım" aria-pressed={sideOpen} />
         </div>
       </header>
 
@@ -506,7 +509,10 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
           </section>
         ) : (
           <section>
-            <h3>Ayarlar</h3>
+            <div className="row between">
+              <h3>Ayarlar</h3>
+              <Btn size="sm" variant="ghost" icon="close" className="phone-only" aria-label="Ayarları kapat" onClick={() => setSideOpen(false)} />
+            </div>
             {canEdit ? (
               <div className="side-grid">
                 <Field label="Kategori">
