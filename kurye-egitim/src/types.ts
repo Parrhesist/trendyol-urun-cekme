@@ -64,7 +64,17 @@ export type SceneEl =
   | { k: 'plate'; x: number; y: number; text: string; red?: boolean }
   | { k: 'label'; x: number; y: number; text: string; anchor?: 'start' | 'middle' | 'end' }
   | { k: 'arrow'; x: number; y: number; dir: 'r' | 'l' | 'u' | 'd' }
-  | { k: 'measure'; x1: number; y1: number; x2: number; y2: number; text: string };
+  | { k: 'measure'; x1: number; y1: number; x2: number; y2: number; text: string }
+  /** Senin van'ın (vurgu renginde) */
+  | { k: 'van'; x: number; y: number; v?: boolean; label?: string; labelY?: number }
+  /** Bisikletli, yukarıdan; x,y bisikletin sol/üst ucu */
+  | { k: 'rider'; x: number; y: number; v?: boolean }
+  /** Yaya, yukarıdan; x,y merkez */
+  | { k: 'ped'; x: number; y: number }
+  /** Bariyer (Leitplanke) */
+  | { k: 'rail'; x1: number; y1: number; x2: number; y2: number }
+  /** Köprü veya üst geçit */
+  | { k: 'bridge'; x: number; y: number; w: number; h: number; label?: string };
 
 export interface Spot {
   id: 'A' | 'B' | 'C' | 'D';
@@ -72,6 +82,9 @@ export interface Spot {
   y: number;
   /** Dikey park (sokak dikey ise) */
   v?: boolean;
+  /** Araç dışı seçenekler için boyut (ör. yaya, üçgen reflektör) */
+  w?: number;
+  h?: number;
   label: string;
   ok: boolean;
   why: string;

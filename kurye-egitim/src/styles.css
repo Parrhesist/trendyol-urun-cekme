@@ -32,6 +32,7 @@
   --sc-glass: #e8edf3;
   --sc-ink: #3d424c;
   --sc-parcel: #b98a52;
+  --sc-head: #e8c7a6;
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --radius: 14px;
   --tabbar-h: 58px;
@@ -68,6 +69,8 @@
     --sc-glass: #2a3140;
     --sc-ink: #c3c7cf;
     --sc-parcel: #a77b46;
+  --sc-head: #c9a483;
+    --sc-head: #c9a483;
     color-scheme: dark;
   }
 }
@@ -86,6 +89,7 @@
   --sc-glass: #2a3140;
   --sc-ink: #c3c7cf;
   --sc-parcel: #a77b46;
+  --sc-head: #c9a483;
   --bg: #0d0e11;
   --surface: #1b1d22;
   --surface-2: #26282e;
@@ -1031,6 +1035,16 @@ tbody tr {
 .sc-measure text { fill: var(--sc-ink); font: 600 9.5px var(--font); }
 .sc-parcel { fill: var(--sc-parcel); }
 .sc-parcel-tape { stroke: var(--surface); stroke-width: 1.2; fill: none; opacity: 0.8; }
+
+.sc-van { fill: var(--accent); }
+.sc-van-glass { fill: var(--surface); opacity: 0.6; }
+.sc-van-label { fill: var(--accent); font: 700 10px var(--font); }
+.sc-person { fill: var(--sc-ink); stroke: var(--sc-ink); }
+.sc-person .sc-head { fill: var(--sc-head); stroke: none; }
+.sc-rail line { stroke: var(--sc-ink); stroke-width: 2.5; }
+.sc-rail circle { fill: var(--sc-ink); }
+.sc-bridge { fill: var(--sc-ink); opacity: 0.45; }
+.sc-bridge-label { fill: var(--surface); font: 700 9.5px var(--font); }
 
 .sc-spot { cursor: pointer; outline: none; }
 .sc-spot[aria-disabled='true'] { cursor: default; }

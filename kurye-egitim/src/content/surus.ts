@@ -1,10 +1,12 @@
 import type { Module } from '../types';
+import { SURUS_SENARYO } from './senaryolar';
 
 export const surus: Module = {
   id: 'surus',
   title: 'Güvenli ve verimli sürüş',
   desc: 'Van kullanımı, geri manevra, yük, ekonomi, kış',
   icon: 'steering',
+  scenarios: SURUS_SENARYO,
   lessons: [
     {
       id: 'van-tanima',

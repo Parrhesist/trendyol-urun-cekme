@@ -55,7 +55,7 @@ export default function App() {
   else if (route === 'tekrar') page = <ReviewQuiz s={s} />;
   else if (route === 'hizli-test') page = <QuickQuiz />;
   else if (route === 'senaryolar') page = <ScenarioList s={s} />;
-  else if (head === 'senaryo' && SENARYOLAR.some((x) => x.id === arg)) page = <ScenarioPage key={arg} id={arg} />;
+  else if (head === 'senaryo' && SENARYOLAR.some((x) => x.sc.id === arg)) page = <ScenarioPage key={arg} id={arg} />;
   else if (route === 'isaret-testi') page = <SignQuiz />;
   else if (route === 'isaretler') (tab = 'isaretler'), (page = <SignsPage s={s} />);
   else if (route === 'hakkinda') page = <About />;
@@ -978,9 +978,9 @@ function SignsPage({ s }: { s: State }) {
 /* ---------- Senaryolar ---------- */
 
 function scenSummary(s: State) {
-  const done = SENARYOLAR.filter((x) => s.scen?.[x.id] !== undefined).length;
-  const ok = SENARYOLAR.filter((x) => s.scen?.[x.id]).length;
-  return done ? `${ok}/${SENARYOLAR.length} doğru · çizimli sokak durumları` : `${SENARYOLAR.length} çizimli sokak durumu: nereye durursun?`;
+  const done = SENARYOLAR.filter((x) => s.scen?.[x.sc.id] !== undefined).length;
+  const ok = SENARYOLAR.filter((x) => s.scen?.[x.sc.id]).length;
+  return done ? `${ok}/${SENARYOLAR.length} doğru · çizimli trafik durumları` : `${SENARYOLAR.length} çizimli trafik durumu: ne yaparsın?`;
 }
 
 function ScenarioRows({ s, list }: { s: State; list: Scenario[] }) {
@@ -1013,30 +1013,37 @@ function ScenarioRows({ s, list }: { s: State; list: Scenario[] }) {
 }
 
 function ScenarioList({ s }: { s: State }) {
-  const next = SENARYOLAR.find((x) => s.scen?.[x.id] === undefined) ?? SENARYOLAR[0];
+  const next = (SENARYOLAR.find((x) => s.scen?.[x.sc.id] === undefined) ?? SENARYOLAR[0]).sc;
+  const groups = MODULES.filter((m) => m.scenarios?.length);
   return (
     <>
       <NavBar back="" backLabel="Bugün" />
-      <LargeTitle title="Senaryolar" sub="Durma ve park · yukarıdan bakış sokak çizimleri" />
+      <LargeTitle title="Senaryolar" sub={`${SENARYOLAR.length} durum · yukarıdan bakış çizimler`} />
       <section className="card hero">
         <div className="eyebrow">Nasıl çalışır?</div>
         <p className="muted">
-          Her sahnede A, B, C ve D ile işaretli olası durma yerleri var. Sahnede bir yere ya da aşağıdaki seçeneklerden birine dokun. Sonra her seçeneğin neden doğru ya da yanlış olduğunu görürsün.
+          Her sahnede harflerle işaretli seçenekler var: bir durma yeri, bir araç ya da bir kişi. Sahnede bir harfe ya da aşağıdaki seçeneklerden birine dokun. Sonra her seçeneğin neden doğru ya da yanlış olduğunu görürsün.
         </p>
         <div className="hero-foot">
           <span className="meta">Çizimlerde yaklaşık 1 araç boyu = 4,5 m</span>
           <a className="btn primary" href={`#senaryo-${next.id}`}>Başla</a>
         </div>
       </section>
-      <ScenarioRows s={s} list={SENARYOLAR} />
+      {groups.map((m) => (
+        <section key={m.id}>
+          <h3 className="section-label">{m.title}</h3>
+          <ScenarioRows s={s} list={m.scenarios!} />
+        </section>
+      ))}
     </>
   );
 }
 
 function ScenarioPage({ id }: { id: string }) {
-  const idx = SENARYOLAR.findIndex((x) => x.id === id);
-  const sc = SENARYOLAR[idx];
-  const next = SENARYOLAR[idx + 1];
+  const idx = SENARYOLAR.findIndex((x) => x.sc.id === id);
+  const { sc, module } = SENARYOLAR[idx];
+  const inModule = module.scenarios!;
+  const next = SENARYOLAR[idx + 1]?.sc;
   const [pick, setPick] = useState<Spot['id'] | null>(null);
   const answered = pick !== null;
   const chosen = sc.spots.find((x) => x.id === pick);
@@ -1055,7 +1062,7 @@ function ScenarioPage({ id }: { id: string }) {
       <NavBar back="senaryolar" backLabel="Senaryolar" />
       <div className="scenario">
         <div className="eyebrow">
-          Senaryo {idx + 1}/{SENARYOLAR.length} · Durma ve park
+          {module.title} · Senaryo {inModule.indexOf(sc) + 1}/{inModule.length}
         </div>
         <h1>{sc.title}</h1>
         <p className="situation">{sc.situation}</p>

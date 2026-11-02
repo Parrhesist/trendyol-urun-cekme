@@ -7,7 +7,7 @@ Almanya'da van ile paket dağıtan şoförler için Türkçe, mobil öncelikli e
 - **Dersler**: 6 konu, 21 ders; her ders sonunda test. Şıklar her seferinde karıştırılır.
   - Durma ve park · Trafik kuralları · Yasal zorunluluklar · Güvenli ve verimli sürüş · Araç bakımı ve arıza · Sağlık ve teslimat pratiği
 - **İşaretler**: 35 trafik işareti ve ek tabela, 6 grupta (tehlike, öncelik, yasak, zorunlu yön, bilgi, ek tabelalar); dokununca açıklama açılır. **İşaret testi** her seferinde 12 soru üretir: işareti görüp anlamını seçme veya anlamı okuyup doğru işareti bulma.
-- **Senaryolar**: yukarıdan bakış çizilmiş 5 sokak durumu (durma ve park). Şoför sahnede A–D ile işaretli yerlerden birine dokunur; ardından her seçeneğin neden doğru ya da yanlış olduğu ve ilgili kural gösterilir. Sahneler `src/content/senaryolar.ts` içinde basit öğelerle (yol, kaldırım, ev, araç, işaret, ölçü) tanımlanır, `src/scene.tsx` çizer.
+- **Senaryolar**: yukarıdan bakış çizilmiş 12 durum: durma ve park (5), trafik (4: tabelasız kavşak, ana yol, sağa dönüş, bisikletli sollama), sürüş (1: yükseklik sınırı), arıza (2: otobanda bekleme yeri, üçgen reflektör). Şoför sahnede harfle işaretli seçeneklerden birine (durma yeri, araç veya kişi) dokunur; ardından her seçeneğin neden doğru ya da yanlış olduğu ve ilgili kural gösterilir. Sahneler `src/content/senaryolar.ts` içinde basit öğelerle (yol, kaldırım, ev, araç, işaret, ölçü) tanımlanır, `src/scene.tsx` çizer.
 - **Tekrar**: yanlış yapılan sorular; iki kez doğru bilinen soru listeden çıkar.
 - **Kontrol**: vardiya öncesi araç kontrol listesi (her gün sıfırlanır).
 - **Sözlük**: derslerdeki Almanca terimlerin aranabilir listesi.

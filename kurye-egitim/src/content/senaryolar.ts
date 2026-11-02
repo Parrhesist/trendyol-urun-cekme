@@ -20,7 +20,7 @@ const street = (opts: { to?: number; dashGap?: [number, number] } = {}): SceneEl
   ];
 };
 
-export const SENARYOLAR: Scenario[] = [
+export const PARK_SENARYO: Scenario[] = [
   {
     id: 'kose',
     title: 'Köşedeki ev',
@@ -189,5 +189,240 @@ export const SENARYOLAR: Scenario[] = [
       { id: 'D', x: 216, y: 131, label: 'Sağ tarafta, bisiklet yolunun üstünde', ok: false, why: 'Bisiklet yolunda durmak ve park etmek yasaktır. Bisikletlileri trafiğe çıkmaya zorlarsın.' },
     ],
     rule: 'Tek yönlü sokakta sol tarafta da durup park edebilirsin. İtfaiye yolu, rampa önü ve bisiklet yolu her zaman boş kalır.',
+  },
+];
+
+/* ---------- Trafik ---------- */
+
+/** Dört yönlü kavşak: yatay yol y 100–160, dikey yol x 150–210. */
+const crossing = (): SceneEl[] => [
+  { k: 'house', x: 0, y: 0, w: 134, h: 84 },
+  { k: 'house', x: 226, y: 0, w: 134, h: 84 },
+  { k: 'house', x: 0, y: 176, w: 134, h: 84 },
+  { k: 'house', x: 226, y: 176, w: 134, h: 84 },
+  { k: 'walk', x: 0, y: 84, w: 360, h: 16 },
+  { k: 'walk', x: 0, y: 160, w: 360, h: 16 },
+  { k: 'walk', x: 134, y: 0, w: 16, h: 260 },
+  { k: 'walk', x: 210, y: 0, w: 16, h: 260 },
+  { k: 'road', x: 0, y: 100, w: 360, h: 60 },
+  { k: 'road', x: 150, y: 0, w: 60, h: 260 },
+  { k: 'dash', x1: 0, y1: 130, x2: 150, y2: 130 },
+  { k: 'dash', x1: 210, y1: 130, x2: 360, y2: 130 },
+  { k: 'dash', x1: 180, y1: 0, x2: 180, y2: 100 },
+  { k: 'dash', x1: 180, y1: 160, x2: 180, y2: 260 },
+  { k: 'car', x: 236, y: 105, c: 1 },
+  { k: 'car', x: 84, y: 135, c: 2 },
+  { k: 'van', x: 184, y: 186, v: true, label: 'Sen', labelY: 252 },
+  { k: 'arrow', x: 316, y: 115, dir: 'l' },
+  { k: 'arrow', x: 44, y: 145, dir: 'r' },
+];
+
+const crossingSpots = {
+  A: { id: 'A' as const, x: 232, y: 104, label: 'Sağdan gelen araç' },
+  B: { id: 'B' as const, x: 184, y: 186, v: true, label: 'Sen' },
+  C: { id: 'C' as const, x: 80, y: 134, label: 'Soldan gelen araç' },
+};
+
+export const TRAFIK_SENARYO: Scenario[] = [
+  {
+    id: 'sagdan-gelen',
+    title: 'Tabelasız kavşak',
+    situation: 'Tabela ve trafik ışığı olmayan bir kavşağa geliyorsun, düz gideceksin. Sağdan ve soldan birer araç geliyor, onlar da düz gidecek.',
+    question: 'Kim ilk geçer?',
+    scene: crossing(),
+    spots: [
+      { ...crossingSpots.A, ok: true, why: 'Doğru. Tabela ve ışık yoksa sağdan gelen önce geçer. A senin sağında.' },
+      { ...crossingSpots.B, ok: false, why: 'Sağından A geliyor. Düz gitmen sana öncelik vermez. A geçtikten sonra sıra sende.' },
+      { ...crossingSpots.C, ok: false, why: 'C’nin sağında sen varsın. C, sen geçene kadar bekler.' },
+    ],
+    rule: 'Tabela ve ışık yoksa sağdan gelen önce geçer (rechts vor links). Yerleşim yerlerinde ve 30 km/s bölgelerinde çok sık karşına çıkar.',
+  },
+  {
+    id: 'ana-yol',
+    title: 'Ana yoldasın',
+    situation: 'Aynı kavşak, ama bu kez senin yolunda sarı karo tabela var. Sağdan ve soldan gelen araçların önünde “yol ver” tabelası duruyor.',
+    question: 'Kim ilk geçer?',
+    scene: [
+      ...crossing(),
+      { k: 'sign', x: 218, y: 206, ids: ['z306'], size: 20 },
+      { k: 'sign', x: 232, y: 98, ids: ['z205'], size: 20 },
+      { k: 'sign', x: 128, y: 174, ids: ['z205'], size: 20 },
+    ],
+    spots: [
+      { ...crossingSpots.A, ok: false, why: 'Sağdan gelse de önünde “yol ver” tabelası (205) var. Tabela, sağdan gelen kuralından önce gelir.' },
+      { ...crossingSpots.B, ok: true, why: 'Doğru. Sarı karo (306) ana yolda olduğunu gösterir. A ve C sana yol vermek zorunda.' },
+      { ...crossingSpots.C, ok: false, why: 'Önünde “yol ver” tabelası var, bekler.' },
+    ],
+    rule: 'Tabela “sağdan gelen önce geçer” kuralından önce gelir. Trafik ışığı tabeladan, trafik polisi de ışıktan önce gelir.',
+  },
+  {
+    id: 'saga-donus',
+    title: 'Sağa dönüş',
+    situation: 'Sağdaki yan sokağa döneceksin, sinyal verdin. Sağındaki bisiklet yolunda düz giden bir bisikletli var. Döneceğin sokağı bir yaya karşıya geçiyor.',
+    question: 'Kim beklemek zorunda?',
+    scene: [
+      { k: 'house', x: 0, y: 0, w: 170, h: 74, no: '1' },
+      { k: 'house', x: 176, y: 0, w: 184, h: 74, no: '3' },
+      { k: 'walk', x: 0, y: 74, w: 360, h: 16 },
+      { k: 'road', x: 0, y: 90, w: 360, h: 60 },
+      { k: 'dash', x1: 0, y1: 120, x2: 360, y2: 120 },
+      { k: 'bike', x: 0, y: 150, w: 360, h: 12 },
+      { k: 'walk', x: 0, y: 162, w: 230, h: 16 },
+      { k: 'walk', x: 290, y: 162, w: 70, h: 16 },
+      { k: 'walk', x: 214, y: 162, w: 16, h: 98 },
+      { k: 'walk', x: 290, y: 162, w: 16, h: 98 },
+      { k: 'road', x: 230, y: 162, w: 60, h: 98 },
+      { k: 'dash', x1: 260, y1: 196, x2: 260, y2: 260 },
+      { k: 'house', x: 0, y: 178, w: 214, h: 82, no: '2' },
+      { k: 'house', x: 306, y: 178, w: 54, h: 82, no: '4' },
+      { k: 'van', x: 140, y: 124, label: 'Sen', labelY: 117 },
+      { k: 'rider', x: 200, y: 156 },
+      { k: 'ped', x: 270, y: 184 },
+      { k: 'arrow', x: 245, y: 228, dir: 'd' },
+      { k: 'arrow', x: 60, y: 135, dir: 'r' },
+      { k: 'car', x: 30, y: 95, c: 1 },
+    ],
+    spots: [
+      { id: 'A', x: 194, y: 148, w: 36, h: 16, label: 'Düz giden bisikletli', ok: false, why: 'Düz giden bisikletli önceliklidir. Dönen araç ona yol verir.' },
+      { id: 'B', x: 140, y: 124, label: 'Sen', ok: true, why: 'Doğru. Önce bisikletliyi, sonra yolu geçen yayayı geçirirsin. Dönmeden önce sağ aynaya ve omzunun üstünden bak.' },
+      { id: 'C', x: 258, y: 173, w: 24, h: 22, label: 'Yan sokağı geçen yaya', ok: false, why: 'Döndüğün yolu geçen yayaya yol vermek zorundasın.' },
+    ],
+    rule: 'Dönerken aynı yönde düz giden bisikletlilere ve döndüğün yolu geçen yayalara yol verirsin. Van’ın sağında büyük bir kör nokta var.',
+  },
+  {
+    id: 'bisiklet-sollama',
+    title: 'Dar sokakta bisikletli',
+    situation: 'Dar bir şehir içi sokaktasın. Önünde aynı yönde bir bisikletli gidiyor, karşıdan araç geliyor. Şeridin yaklaşık 3 m genişliğinde, van’ın 2 m.',
+    question: 'Ne yaparsın?',
+    scene: [
+      { k: 'house', x: 0, y: 0, w: 176, h: 74 },
+      { k: 'house', x: 182, y: 0, w: 178, h: 74 },
+      { k: 'walk', x: 0, y: 74, w: 360, h: 16 },
+      { k: 'road', x: 0, y: 90, w: 360, h: 60 },
+      { k: 'dash', x1: 0, y1: 120, x2: 360, y2: 120 },
+      { k: 'walk', x: 0, y: 150, w: 360, h: 16 },
+      { k: 'house', x: 0, y: 166, w: 176, h: 94 },
+      { k: 'house', x: 182, y: 166, w: 178, h: 94 },
+      { k: 'van', x: 20, y: 124, label: 'Sen', labelY: 117 },
+      { k: 'rider', x: 174, y: 142 },
+      { k: 'car', x: 250, y: 95, c: 1 },
+      { k: 'arrow', x: 320, y: 105, dir: 'l' },
+      { k: 'measure', x1: 326, y1: 120, x2: 326, y2: 150, text: '3 m' },
+    ],
+    spots: [
+      { id: 'A', x: 150, y: 120, label: 'Şeridimde, bisikletlinin yanından geçerim', ok: false, why: 'Şehir içinde en az 1,5 m yan mesafe gerekir. 2 m genişliğindeki van’la 3 m’lik şeritte bu mesafe kalmaz.' },
+      { id: 'B', x: 100, y: 124, label: 'Bisikletlinin arkasında beklerim', ok: true, why: 'Doğru. Mesafe yetmiyorsa sollamazsın. Karşı şerit boşalınca 1,5 m mesafe bırakarak geçersin.' },
+      { id: 'C', x: 168, y: 95, label: 'Karşı şeride çıkıp sollarım', ok: false, why: 'Karşıdan araç geliyor. Kafa kafaya çarpışma riski var.' },
+    ],
+    rule: 'Bisikletliyi şehir içinde en az 1,5 m, şehir dışında en az 2 m yan mesafeyle sollarsın. Yer yoksa beklersin.',
+  },
+];
+
+/* ---------- Sürüş ---------- */
+
+export const SURUS_SENARYO: Scenario[] = [
+  {
+    id: 'yukseklik',
+    title: 'Hangi yoldan?',
+    situation: 'Paket 12 numaraya. Van’ın 2,9 m yüksekliğinde ve 3,5 ton. Önünde üç seçenek var.',
+    question: 'Hangisini seçersin?',
+    scene: [
+      { k: 'house', x: 140, y: 0, w: 60, h: 26 },
+      { k: 'house', x: 206, y: 0, w: 100, h: 26, no: '12', target: true },
+      { k: 'house', x: 312, y: 0, w: 48, h: 26 },
+      { k: 'walk', x: 140, y: 26, w: 220, h: 14 },
+      { k: 'road', x: 140, y: 40, w: 220, h: 30 },
+      { k: 'house', x: 10, y: 20, w: 118, h: 140 },
+      { k: 'label', x: 69, y: 80, text: 'Parkhaus' },
+      { k: 'road', x: 49, y: 140, w: 40, h: 40 },
+      { k: 'plate', x: 69, y: 134, text: 'max. 2,10 m' },
+      { k: 'walk', x: 144, y: 70, w: 16, h: 110 },
+      { k: 'walk', x: 210, y: 70, w: 16, h: 110 },
+      { k: 'road', x: 160, y: 70, w: 50, h: 126 },
+      { k: 'house', x: 226, y: 70, w: 38, h: 110 },
+      { k: 'walk', x: 264, y: 70, w: 16, h: 110 },
+      { k: 'walk', x: 330, y: 70, w: 16, h: 110 },
+      { k: 'road', x: 280, y: 70, w: 50, h: 126 },
+      { k: 'house', x: 346, y: 70, w: 14, h: 110 },
+      { k: 'bridge', x: 140, y: 96, w: 92, h: 22, label: 'Köprü' },
+      { k: 'sign', x: 218, y: 158, ids: ['z265'], size: 22 },
+      { k: 'sign', x: 340, y: 192, ids: ['z267'], size: 22 },
+      { k: 'walk', x: 0, y: 180, w: 49, h: 16 },
+      { k: 'walk', x: 89, y: 180, w: 71, h: 16 },
+      { k: 'walk', x: 210, y: 180, w: 70, h: 16 },
+      { k: 'walk', x: 330, y: 180, w: 30, h: 16 },
+      { k: 'road', x: 0, y: 196, w: 360, h: 64 },
+      { k: 'dash', x1: 0, y1: 228, x2: 360, y2: 228 },
+      { k: 'van', x: 14, y: 233, label: 'Sen', labelY: 226 },
+      { k: 'arrow', x: 300, y: 244, dir: 'r' },
+    ],
+    spots: [
+      { id: 'A', x: 58, y: 150, v: true, label: 'Otoparka girip park ederim', ok: false, why: 'Otoparkın giriş yüksekliği 2,10 m, van’ın 2,9 m. Tavana çarparsın.' },
+      { id: 'B', x: 174, y: 132, v: true, label: 'Köprünün altından geçerim', ok: true, why: 'Doğru. Köprünün altı 3,8 m. 2,9 m’lik van rahatça geçer.' },
+      { id: 'C', x: 294, y: 132, v: true, label: 'Sağdaki sokaktan girerim', ok: false, why: 'Girişi yok (Zeichen 267). Sokak tek yönlü, bu uçtan girilmez, teslimat için bile.' },
+    ],
+    rule: 'Van’ının yüksekliğini bil. Otopark ve köprü girişlerindeki yükseklik sınırı kesindir. Navigasyon bunu her zaman hesaba katmaz.',
+  },
+];
+
+/* ---------- Arıza ---------- */
+
+export const BAKIM_SENARYO: Scenario[] = [
+  {
+    id: 'otoban-ariza',
+    title: 'Otobanda arıza',
+    situation: 'Otobanda motor arızası. Van’ı emniyet şeridine çektin, dörtlüler yanıyor, yeleği giydin ve sağ kapıdan indin. Yol yardımını arayacaksın.',
+    question: 'Yardımı nerede beklersin?',
+    scene: [
+      { k: 'road', x: 0, y: 40, w: 360, h: 110 },
+      { k: 'line', x1: 0, y1: 42, x2: 360, y2: 42 },
+      { k: 'dash', x1: 0, y1: 81, x2: 360, y2: 81 },
+      { k: 'line', x1: 0, y1: 120, x2: 360, y2: 120 },
+      { k: 'line', x1: 0, y1: 148, x2: 360, y2: 148 },
+      { k: 'rail', x1: 0, y1: 166, x2: 360, y2: 166 },
+      { k: 'rail', x1: 0, y1: 22, x2: 360, y2: 22 },
+      { k: 'label', x: 8, y: 138, text: 'emniyet şeridi', anchor: 'start' },
+      { k: 'label', x: 8, y: 182, text: 'bariyer', anchor: 'start' },
+      { k: 'car', x: 40, y: 50 },
+      { k: 'car', x: 250, y: 90, c: 2 },
+      { k: 'arrow', x: 140, y: 61, dir: 'r' },
+      { k: 'arrow', x: 140, y: 100, dir: 'r' },
+      { k: 'van', x: 220, y: 124, label: 'Arızalı van', labelY: 160 },
+    ],
+    spots: [
+      { id: 'A', x: 228, y: 126, w: 18, h: 18, label: 'Araçta, kemerim takılı', ok: false, why: 'Emniyet şeridindeki araca arkadan çarpılabilir. Araçta kalmak hayati tehlike.' },
+      { id: 'B', x: 290, y: 126, w: 18, h: 18, label: 'Aracın önünde, emniyet şeridinde', ok: false, why: 'Trafiğin hemen yanındasın. Çarpışmada araç ileri savrulur.' },
+      { id: 'C', x: 150, y: 184, w: 18, h: 18, label: 'Bariyerin arkasında, aracın gerisinde', ok: true, why: 'Doğru. Bariyer seni trafikten korur. Aracın gerisinde durursan çarpışmada araç sana doğru savrulmaz.' },
+      { id: 'D', x: 170, y: 126, w: 18, h: 18, label: 'Aracın arkasında, emniyet şeridinde', ok: false, why: 'En tehlikeli yer burası. Araca çarpan bir araç seni de ezer.' },
+    ],
+    rule: 'Otobanda arızada: dörtlüleri yak, yeleği giy, sağdan in, üçgeni koy, bariyerin arkasında bekle.',
+  },
+  {
+    id: 'ucgen',
+    title: 'Üçgen reflektör',
+    situation: 'Şehir içinde şeritte arıza yaptın, aracı kenara çekemiyorsun. Dörtlüler yanıyor, yeleği giydin. Çizim ölçekli değildir.',
+    question: 'Üçgen reflektörü nereye koyarsın?',
+    scene: [
+      { k: 'house', x: 0, y: 0, w: 176, h: 64 },
+      { k: 'house', x: 182, y: 0, w: 178, h: 64 },
+      { k: 'walk', x: 0, y: 64, w: 360, h: 16 },
+      { k: 'road', x: 0, y: 80, w: 360, h: 70 },
+      { k: 'dash', x1: 0, y1: 115, x2: 360, y2: 115 },
+      { k: 'walk', x: 0, y: 150, w: 360, h: 26 },
+      { k: 'house', x: 0, y: 176, w: 176, h: 84 },
+      { k: 'house', x: 182, y: 176, w: 178, h: 84 },
+      { k: 'van', x: 270, y: 122, label: 'Arızalı van', labelY: 158 },
+      { k: 'arrow', x: 110, y: 133, dir: 'r' },
+      { k: 'arrow', x: 250, y: 97, dir: 'l' },
+      { k: 'car', x: 300, y: 87, c: 1 },
+      { k: 'measure', x1: 49, y1: 170, x2: 270, y2: 170, text: '≈ 50 m' },
+    ],
+    spots: [
+      { id: 'A', x: 240, y: 124, w: 18, h: 18, label: 'Aracın hemen arkasına (3 m)', ok: false, why: 'Çok yakın. Arkadan gelen sürücüler üçgeni son anda görür.' },
+      { id: 'B', x: 40, y: 124, w: 18, h: 18, label: 'Yaklaşık 50 m geriye', ok: true, why: 'Doğru. Şehir içinde trafiğin geldiği yönde yaklaşık 50 m geriye konur.' },
+      { id: 'C', x: 334, y: 124, w: 18, h: 18, label: 'Aracın önüne', ok: false, why: 'Senin şeridinde trafik arkadan geliyor. Önüne koyduğun üçgeni kimse zamanında görmez.' },
+      { id: 'D', x: 150, y: 88, w: 18, h: 18, label: 'Karşı şeride', ok: false, why: 'Üçgen, arızalı aracın arkasından gelen trafiği uyarmalı. Karşı şeritte yanlış sürücüleri uyarır.' },
+    ],
+    rule: 'Üçgen, trafiğin geldiği yönde konur: şehir içinde yaklaşık 50 m, şehir dışında 100 m, otobanda 150–400 m geriye.',
   },
 ];

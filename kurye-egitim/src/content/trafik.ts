@@ -1,10 +1,12 @@
 import type { Module } from '../types';
+import { TRAFIK_SENARYO } from './senaryolar';
 
 export const trafik: Module = {
   id: 'trafik',
   title: 'Trafik kuralları',
   desc: 'Hız, öncelik, bisikletli ve yayalar',
   icon: 'road',
+  scenarios: TRAFIK_SENARYO,
   lessons: [
     {
       id: 'isaret-turleri',

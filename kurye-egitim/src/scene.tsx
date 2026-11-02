@@ -127,6 +127,69 @@ function El({ e }: { e: SceneEl }) {
         </g>
       );
     }
+    case 'van': {
+      const w = e.v ? VAN.h : VAN.w;
+      const h = e.v ? VAN.w : VAN.h;
+      return (
+        <g>
+          <rect className="sc-van" x={e.x} y={e.y} width={w} height={h} rx="4" />
+          {e.v ? (
+            <rect className="sc-van-glass" x={e.x + 3} y={e.y + 7} width={w - 6} height={8} rx="2" />
+          ) : (
+            <rect className="sc-van-glass" x={e.x + w - 15} y={e.y + 3} width={8} height={h - 6} rx="2" />
+          )}
+          {e.label && (
+            <text className="sc-van-label" x={e.x + w / 2} y={e.labelY ?? (e.v ? e.y + h + 12 : e.y - 5)} textAnchor="middle">
+              {e.label}
+            </text>
+          )}
+        </g>
+      );
+    }
+    case 'rider':
+      return e.v ? (
+        <g className="sc-person">
+          <line x1={e.x} y1={e.y} x2={e.x} y2={e.y + 24} strokeWidth="3" strokeLinecap="round" />
+          <ellipse cx={e.x} cy={e.y + 13} rx="6" ry="3.5" />
+        </g>
+      ) : (
+        <g className="sc-person">
+          <line x1={e.x} y1={e.y} x2={e.x + 24} y2={e.y} strokeWidth="3" strokeLinecap="round" />
+          <ellipse cx={e.x + 11} cy={e.y} rx="3.5" ry="6" />
+        </g>
+      );
+    case 'ped':
+      return (
+        <g className="sc-person">
+          <ellipse cx={e.x} cy={e.y} rx="7" ry="4" />
+          <circle cx={e.x} cy={e.y} r="3.2" className="sc-head" />
+        </g>
+      );
+    case 'rail': {
+      const n = Math.floor(Math.hypot(e.x2 - e.x1, e.y2 - e.y1) / 18);
+      return (
+        <g className="sc-rail">
+          <line x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} />
+          {Array.from({ length: n + 1 }, (_, i) => {
+            const t = n ? i / n : 0;
+            const x = e.x1 + (e.x2 - e.x1) * t;
+            const y = e.y1 + (e.y2 - e.y1) * t;
+            return <circle key={i} cx={x} cy={y} r="1.8" />;
+          })}
+        </g>
+      );
+    }
+    case 'bridge':
+      return (
+        <g>
+          <rect className="sc-bridge" x={e.x} y={e.y} width={e.w} height={e.h} />
+          {e.label && (
+            <text className="sc-bridge-label" x={e.x + 6} y={e.y + e.h / 2 + 3.5}>
+              {e.label}
+            </text>
+          )}
+        </g>
+      );
   }
 }
 
@@ -140,8 +203,9 @@ function Parcel({ x, y }: { x: number; y: number }) {
 }
 
 function SpotView({ s, state, onPick, disabled }: { s: Spot; state: SpotState; onPick: () => void; disabled: boolean }) {
-  const w = s.v ? VAN.h : VAN.w;
-  const h = s.v ? VAN.w : VAN.h;
+  const w = s.w ?? (s.v ? VAN.h : VAN.w);
+  const h = s.h ?? (s.v ? VAN.w : VAN.h);
+  const big = w >= 40 || h >= 40;
   const cx = s.x + w / 2;
   const cy = s.y + h / 2;
   const solid = state === 'right' || state === 'picked-wrong';
@@ -164,6 +228,7 @@ function SpotView({ s, state, onPick, disabled }: { s: Spot; state: SpotState; o
       <rect className="sc-hit" x={s.x - 4} y={s.y - 4} width={w + 8} height={h + 8} />
       <rect className="sc-spot-box" x={s.x} y={s.y} width={w} height={h} rx="4" />
       {solid &&
+        big &&
         (s.v ? (
           <rect className="sc-spot-glass" x={s.x + 3} y={s.y + 12} width={w - 6} height={8} rx="2" />
         ) : (

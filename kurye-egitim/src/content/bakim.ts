@@ -1,10 +1,12 @@
 import type { Module } from '../types';
+import { BAKIM_SENARYO } from './senaryolar';
 
 export const bakim: Module = {
   id: 'bakim',
   title: 'Araç bakımı ve arıza',
   desc: 'Günlük kontrol, lastik, uyarı ışıkları',
   icon: 'wrench',
+  scenarios: BAKIM_SENARYO,
   lessons: [
     {
       id: 'gunluk-kontrol',

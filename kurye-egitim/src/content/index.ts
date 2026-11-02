@@ -1,4 +1,4 @@
-import type { Lesson, Module, Question } from '../types';
+import type { Lesson, Module, Question, Scenario } from '../types';
 import { trafik } from './trafik';
 import { park } from './park';
 import { yasal } from './yasal';
@@ -6,9 +6,7 @@ import { surus } from './surus';
 import { bakim } from './bakim';
 import { saglik } from './saglik';
 import { parseSignQuestion } from '../signquiz';
-import { SENARYOLAR } from './senaryolar';
 
-export { SENARYOLAR };
 
 export const MODULES: Module[] = [park, trafik, yasal, surus, bakim, saglik];
 
@@ -21,6 +19,11 @@ export const ALL_LESSONS: { lesson: Lesson; module: Module }[] = MODULES.flatMap
 
 export const ALL_QUESTIONS: { q: Question; lesson: Lesson }[] = ALL_LESSONS.flatMap(({ lesson }) =>
   lesson.quiz.map((q) => ({ q, lesson })),
+);
+
+/** Tüm senaryolar, konu sırasıyla. */
+export const SENARYOLAR: { sc: Scenario; module: Module }[] = MODULES.flatMap((module) =>
+  (module.scenarios ?? []).map((sc) => ({ sc, module })),
 );
 
 export const findLesson = (id: string) => ALL_LESSONS.find((x) => x.lesson.id === id);
