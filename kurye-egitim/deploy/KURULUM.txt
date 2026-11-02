@@ -1,0 +1,41 @@
+KURYE SÜRÜŞ AKADEMİSİ - SUNUCUYA KURULUM
+=========================================
+
+Bu klasördeki dosyalar hazır bir web uygulamasıdır. Veritabanı, PHP veya
+başka bir kurulum gerekmez. Dosyaları sunucuya kopyalamak yeterlidir.
+
+1. Klasörün içindeki tüm dosyaları sunucuna yükle (FTP veya hosting paneli
+   "Dosya Yöneticisi" ile). Gizli ".htaccess" dosyasını da yüklediğinden emin ol.
+   - Alan adının ana sayfası olacaksa: public_html (veya htdocs / www) içine.
+   - Alt klasörde olacaksa: ör. public_html/kurye içine.
+     Adres o zaman https://alanadin.de/kurye/ olur.
+
+2. Adresi tarayıcıda aç: https://alanadin.de/  (veya /kurye/)
+
+3. HTTPS (kilit simgesi) açık olmalı. Çoğu hostingde ücretsiz SSL
+   (Let's Encrypt) panelden tek tıkla açılır. HTTPS olmadan uygulama yine
+   çalışır, ama telefona kurulamaz ve internetsiz açılmaz.
+
+TELEFONA KURMA
+- iPhone (Safari): Paylaş düğmesi -> "Ana Ekrana Ekle"
+- Android (Chrome): menü (⋮) -> "Uygulamayı yükle" veya "Ana ekrana ekle"
+Bir kez açıldıktan sonra uygulama internet olmadan da açılır.
+
+GÜNCELLEME
+Yeni sürümde dosyaların üstüne yaz. Telefonlar uygulamayı bir sonraki
+internetli açılışta güncel sürüme geçirir (gerekirse uygulamayı kapatıp
+tekrar aç).
+
+ÖNEMLİ
+- Her kullanıcının ilerlemesi sadece kendi telefonunda saklanır. Sunucuya
+  hiçbir kişisel veri gönderilmez.
+- Uygulamayı alan adının kökünden alt klasöre taşırsan kullanıcıların
+  ilerlemesi sıfırlanır (tarayıcı her adresi ayrı saklar).
+
+DOSYALAR
+index.html            Uygulamanın kendisi (tek dosya)
+sw.js                 İnternetsiz çalışma (service worker)
+manifest.webmanifest  Telefona kurulum bilgileri
+icon*.png, icon.svg,
+apple-touch-icon.png  Uygulama simgeleri
+.htaccess             Apache sunucu ayarları

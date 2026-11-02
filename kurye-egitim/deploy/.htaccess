@@ -1,0 +1,23 @@
+# Kurye Sürüş Akademisi - Apache ayarları (çoğu paylaşımlı sunucu Apache kullanır)
+
+DirectoryIndex index.html
+
+# Uygulama manifestinin doğru türde gönderilmesi
+AddType application/manifest+json .webmanifest
+
+# Ana sayfa, service worker ve manifest her açılışta güncel mi diye kontrol edilsin.
+# Böylece yeni sürüm yüklediğinde telefonlar onu alır.
+<IfModule mod_headers.c>
+  <FilesMatch "^(index\.html|sw\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+
+# HTTP'den HTTPS'e yönlendirme. Telefona kurma ve internetsiz çalışma için HTTPS şart.
+# Hosting panelinde "HTTPS'e zorla" seçeneği varsa onu kullan ve bu bloğu kapalı bırak.
+# Yoksa baştaki # işaretlerini sil. Sayfa sürekli yeniden yükleniyorsa tekrar kapat.
+# <IfModule mod_rewrite.c>
+#   RewriteEngine On
+#   RewriteCond %{HTTPS} off
+#   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# </IfModule>

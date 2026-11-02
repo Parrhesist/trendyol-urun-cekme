@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build && node scripts/artifact.mjs",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "paket": "npm run build && node scripts/paket.mjs"
   },
   "dependencies": {
     "react": "18.3.1",

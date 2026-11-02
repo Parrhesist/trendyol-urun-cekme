@@ -25,6 +25,9 @@ Dersler `src/content/*.ts` dosyalarındadır. Blok türleri `src/types.ts` için
 
 GitHub Pages ile yayın: `.github/workflows/kurye-egitim-pages.yml`, `main` dalına `kurye-egitim/` altında değişiklik geldiğinde (veya elle çalıştırıldığında) derleyip yayınlar. Bir kez depo ayarlarından **Settings → Pages → Source: GitHub Actions** seçilmelidir. Adres: `https://<kullanıcı>.github.io/<depo>/`.
 
+## Paylaşımlı sunucuya kurulum
+`npm run paket` → `paket/kurye-egitim.zip`. İçindeki dosyalar herhangi bir web sunucusuna (ör. Apache'li paylaşımlı hosting) kopyalanır; veritabanı veya PHP gerekmez. Ayrıntılar zip içindeki `KURULUM.txt` dosyasında (kaynağı `deploy/`).
+
 ## Komutlar
 ```bash
 npm install
