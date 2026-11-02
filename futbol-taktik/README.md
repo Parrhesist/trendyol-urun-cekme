@@ -32,6 +32,11 @@ Her sunum ekranında (taktik, maç öncesi, devre arası, antrenman seansı, haf
 - Kumanda/klavye: ← → slayt, ↑ ↓ taktik adımı, OK/Enter oynat veya süreyi başlat, F tam ekran. TV'de kontroller birkaç saniye sonra gizlenir, ekran uykuya geçmez (tarayıcı izin verirse).
 - Bağlantılar `VITE_APP_URL` (bkz. `.env.production`) ya da Ayarlar → TV ve ekranlar → Uygulama bağlantısı ile oluşturulur.
 
+## Ders modu ve "Sadece saha"
+- **Ders modu** (taktik tahtasında): saha tüm ekranı kaplar; menü, başlık ve ayarlar kalkar. Çizim araçları (sol), adımlar ve oynatma (alt) ve adım notu (sol üst) yüzer panellerdir; sağ üstteki düğmelerle her biri açılıp kapanır, son durum hatırlanır. Çizim, taşıma ve adım ekleme ders sırasında çalışır ve kaydedilir. Esc ya da Çık ile normal görünüme dönülür.
+- **Sadece saha** (her sunumda, kısayol S): başlık, açıklama ve slayt noktaları gizlenir, saha tüm ekranı kaplar; oynatma çubuğu ve ileri/geri düğmeleri sahanın üstünde yüzer, birkaç saniye dokunulmayınca söner. Seçim hatırlanır ve bağlı TV'ye de yansır.
+- İkisi de tarayıcı tam ekranını açmayı dener. Tarayıcı ya da claude.ai sayfası izin vermezse cihaza göre yönerge çıkar (Safari: Aa → Araç Çubuğunu Gizle; bilgisayar: F11 / Ctrl+Cmd+F).
+
 ## Yatay ekran düzeni
 Yatay tablet ve bilgisayarda (en az 900 × 500 px) sahalı ekranlar — taktik tahtası, hazır taktik, maç kadrosu, talimatlar, rakip planı, maç sonrası ve sunumlar — tek ekrana sığar, sayfa aşağı kaymaz. Saha kalan alanın tamamını kullanır: araç ve adım çubukları sahanın üstünde, ayarlar sağ sütunda. Uzun içerikler (kadro listeleri, talimat grupları, rakip notları, kütüphane anlatımı) sekmelere ayrılır. Sunum/TV'de adım düğmeleri ve adım notu sağ sütuna geçer, saha tüm yüksekliği kullanır. Dikey tablette düzen alt alta akar.
 

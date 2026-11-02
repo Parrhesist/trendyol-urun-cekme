@@ -20,7 +20,25 @@ export interface DeckState {
   step: number; // taktik adımı
   play: number; // her artışta taktik baştan oynatılır
   timer?: TimerState | null;
+  focus?: boolean; // yalnız saha: başlık, yan metin ve alt çubuk gizli
 }
+
+const FOCUS_KEY = 'saha-kenari-odak';
+/** Antrenörün son seçtiği sunum görünümü (yalnız saha / ayrıntılı) */
+export const prefFocus = () => {
+  try {
+    return localStorage.getItem(FOCUS_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+export const savePrefFocus = (on: boolean) => {
+  try {
+    localStorage.setItem(FOCUS_KEY, on ? '1' : '0');
+  } catch {
+    /* özel pencere */
+  }
+};
 
 export interface LiveState extends DeckState {
   active: boolean;

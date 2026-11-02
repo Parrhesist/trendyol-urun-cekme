@@ -86,7 +86,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const toast = useCallback((msg: string, tone: 'ok' | 'err' = 'ok') => {
     const id = Date.now() + Math.random();
     setToasts((t) => [...t, { id, msg, tone }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200);
+    // uzun yönergeler okunacak kadar ekranda kalır
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), Math.max(3200, msg.length * 60));
   }, []);
 
   useEffect(() => {

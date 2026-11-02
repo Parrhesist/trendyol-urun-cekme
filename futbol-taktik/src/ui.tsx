@@ -34,6 +34,8 @@ export function Icon({ name, size = 18 }: { name: string; size?: number }) {
     cast: 'M3 7V5h18v14h-7M3 11a8 8 0 018 8M3 15a4 4 0 014 4M3 19h.01',
     grip: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
     rotate: 'M9 2h6a2 2 0 012 2v9a2 2 0 01-2 2H9a2 2 0 01-2-2V4a2 2 0 012-2zM11 12h2M3 15a9 9 0 009 7l-2-2M21 9a9 9 0 00-4-6',
+    focus: 'M4 9V5a1 1 0 011-1h4M15 4h4a1 1 0 011 1v4M20 15v4a1 1 0 01-1 1h-4M9 20H5a1 1 0 01-1-1v-4M8 12h8M12 8v8',
+    note: 'M5 6h14M5 11h14M5 16h9',
     undo: 'M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3',
     up: 'M6 15l6-6 6 6',
     down: 'M6 9l6 6 6-6',
@@ -164,14 +166,67 @@ export async function copyText(text: string, fallbackEl?: HTMLElement | null) {
   }
 }
 
-/** Ekran yansıtma / sunum için tam ekran (desteklenmezse sessizce geçer) */
-export async function toggleFullscreen(el?: HTMLElement | null) {
+type FsDoc = Document & { webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => Promise<void> | void };
+type FsEl = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
+
+export const fullscreenElement = () => document.fullscreenElement ?? (document as FsDoc).webkitFullscreenElement ?? null;
+
+/** Tarayıcı tam ekranı (Safari'nin önekli sürümü dahil); açılamazsa false döner */
+export async function enterFullscreen(el?: HTMLElement | null): Promise<boolean> {
+  if (fullscreenElement()) return true;
+  const t = (el ?? document.documentElement) as FsEl;
+  try {
+    if (t.requestFullscreen) await t.requestFullscreen({ navigationUI: 'hide' });
+    else if (t.webkitRequestFullscreen) await t.webkitRequestFullscreen();
+    else return false;
+  } catch {
+    return false;
+  }
+  // önekli API söz vermez; kısa bir bekleyişten sonra sonucu oku
+  if (!fullscreenElement()) await new Promise((r) => setTimeout(r, 250));
+  return !!fullscreenElement();
+}
+
+export async function exitFullscreen() {
+  const d = document as FsDoc;
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
-    else await (el ?? document.documentElement).requestFullscreen();
+    else if (d.webkitFullscreenElement) await d.webkitExitFullscreen?.();
   } catch {
-    /* tam ekran izni yok */
+    /* zaten çıkılmış */
   }
+}
+
+/** Ekran yansıtma / sunum için tam ekran (desteklenmezse sessizce geçer) */
+export async function toggleFullscreen(el?: HTMLElement | null) {
+  if (fullscreenElement()) await exitFullscreen();
+  else await enterFullscreen(el);
+}
+
+/** Tam ekranda mıyız (tarayıcı düğmesi veya Esc ile çıkışlar dahil) */
+export function useFullscreen() {
+  const [on, setOn] = useState(() => !!fullscreenElement());
+  useEffect(() => {
+    const h = () => setOn(!!fullscreenElement());
+    document.addEventListener('fullscreenchange', h);
+    document.addEventListener('webkitfullscreenchange', h);
+    return () => {
+      document.removeEventListener('fullscreenchange', h);
+      document.removeEventListener('webkitfullscreenchange', h);
+    };
+  }, []);
+  return on;
+}
+
+/** Tam ekran açılamadığında cihaza göre tarayıcı çerçevesini gizleme yolu */
+export function fullscreenHint() {
+  const ua = navigator.userAgent;
+  const iPad = /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  if (/iPhone|iPod/.test(ua)) return "iPhone'da tarayıcı tam ekranı yok: Safari'de adres çubuğundaki Aa → Araç Çubuğunu Gizle'ye dokunun ve telefonu yan çevirin.";
+  if (iPad) return "Tarayıcı tam ekranı açmadı: Safari'de adres çubuğundaki Aa → Araç Çubuğunu Gizle'ye dokunun.";
+  if (/Android/.test(ua)) return 'Tarayıcı tam ekranı açmadı: Chrome menüsünden (⋮) sayfayı ana ekrana ekleyip oradan açın ya da telefonu yan çevirin.';
+  if (/Mac/.test(ua)) return 'Tarayıcı tam ekranı açmadı: Ctrl+Cmd+F ile tarayıcıyı tam ekran yapın.';
+  return 'Tarayıcı tam ekranı açmadı: F11 ile tarayıcıyı tam ekran yapın.';
 }
 
 /** Metin alanı – satır listesi dönüştürücü */

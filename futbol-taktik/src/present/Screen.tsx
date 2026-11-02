@@ -5,7 +5,7 @@ import { isPlayed, sessionMinutes } from '../stats';
 import { Btn, toggleFullscreen } from '../ui';
 import { useDeck } from './decks';
 import type { DeckTarget } from './links';
-import { useLive, type DeckState } from './live';
+import { prefFocus, useLive, type DeckState } from './live';
 import { Presenter, useNow, useWakeLock } from './Presenter';
 
 /**
@@ -38,7 +38,7 @@ export function ScreenView() {
       </div>
     );
   if (deck && remote) {
-    const base: DeckState = { slide: remote.slide, step: remote.step, play: remote.play, timer: remote.timer ?? null };
+    const base: DeckState = { slide: remote.slide, step: remote.step, play: remote.play, timer: remote.timer ?? null, focus: remote.focus };
     const st = local && local.at === remote.at ? local.st : base;
     return <Presenter deck={deck} state={st} mode="tv" onChange={(p) => setLocal({ at: remote.at, st: { ...st, ...p } })} />;
   }
@@ -128,7 +128,7 @@ function Idle() {
 export function DeckPage({ target, onExit }: { target: DeckTarget; onExit: () => void }) {
   const { mode } = useStore();
   const deck = useDeck(target);
-  const [st, setSt] = useState<DeckState>({ slide: 0, step: 0, play: 0, timer: null });
+  const [st, setSt] = useState<DeckState>(() => ({ slide: 0, step: 0, play: 0, timer: null, focus: prefFocus() }));
   if (mode === 'loading')
     return (
       <div className="tv-root tv-idle">

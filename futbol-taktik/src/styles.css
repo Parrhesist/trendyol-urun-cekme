@@ -5007,3 +5007,400 @@ body.no-select,
     padding: 4px 5px;
   }
 }
+
+/* =====================================================================
+   Ders modu: saha tüm ekranı kaplar; araçlar, adımlar ve not
+   üst sağdaki düğmelerle açılıp kapanan yüzer panellerdir
+   ===================================================================== */
+.editor.ws.lesson {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  display: block;
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #10261a;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.editor.ws.lesson > .editor-head,
+.editor.ws.lesson > .ed-tools,
+.editor.ws.lesson > .ed-frames,
+.editor.ws.lesson > .ed-side {
+  display: none !important;
+}
+.editor.ws.lesson > .ed-board {
+  position: absolute;
+  inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
+.editor.ws.lesson > .ed-board > svg.pitch {
+  position: static;
+  width: min(100cqw, 100cqh * var(--ar, 1.5));
+  height: auto;
+  max-height: none;
+  min-height: 0;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+@supports not (width: 1cqh) {
+  .editor.ws.lesson > .ed-board > svg.pitch {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+}
+.lz-top,
+.lz-dock,
+.lz-steps,
+.lz-note,
+.lz-hint {
+  position: absolute;
+  z-index: 10;
+}
+.lz-top {
+  top: max(10px, env(safe-area-inset-top, 0px));
+  right: max(10px, env(safe-area-inset-right, 0px));
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(10, 22, 16, 0.62);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.lz-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 54px;
+  min-height: 48px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font: 600 11px var(--f-body);
+  cursor: pointer;
+}
+.lz-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.lz-btn.on {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.lz-dock,
+.lz-steps {
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+}
+.lz-dock {
+  left: max(10px, env(safe-area-inset-left, 0px));
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  grid-template-columns: repeat(2, 54px);
+  justify-items: stretch;
+  align-items: center;
+  gap: 3px;
+  padding: 6px;
+  max-height: calc(100% - 150px);
+  overflow-y: auto;
+}
+.lz-dock .tool {
+  min-width: 0;
+  min-height: 46px;
+  padding: 3px 2px;
+  font-size: 10px;
+  line-height: 1.1;
+}
+.lz-group {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  padding-top: 5px;
+  border-top: 1px solid var(--line);
+}
+.lz-dock .swatch {
+  justify-self: center;
+  width: 28px;
+  height: 28px;
+}
+.lz-dock .add-tok {
+  position: relative;
+  min-height: 38px;
+  padding: 0;
+  justify-content: center;
+}
+.lz-dock .add-tok span {
+  display: none;
+}
+.lz-dock .add-tok::after {
+  content: '+';
+  position: absolute;
+  top: 1px;
+  right: 4px;
+  font: 700 12px/1 var(--f-body);
+  color: var(--ink-2);
+}
+.lz-dock .btn {
+  min-height: 38px;
+}
+.lz-steps {
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: fit-content;
+  max-width: calc(100% - 20px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+}
+.lz-steps .frame-list {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 4px;
+}
+.lz-steps .frame-list button {
+  min-width: 40px;
+  height: 40px;
+  font-size: 17px;
+}
+.lz-steps .frame-list button.add {
+  padding: 0 12px;
+  font-size: 20px;
+}
+.lz-note {
+  top: max(10px, env(safe-area-inset-top, 0px));
+  left: max(10px, env(safe-area-inset-left, 0px));
+  max-width: min(760px, calc(100% - 340px));
+  padding: 8px 14px 10px;
+  border-radius: 12px;
+  background: rgba(10, 22, 16, 0.72);
+  color: #fff;
+  pointer-events: none;
+}
+.lz-note small {
+  display: block;
+  font: 700 12px var(--f-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+.lz-note p {
+  margin: 2px 0 0;
+  font: 600 clamp(15px, 1.6vw, 24px) / 1.35 var(--f-body);
+}
+.lz-hint {
+  top: calc(max(10px, env(safe-area-inset-top, 0px)) + 64px);
+  right: max(10px, env(safe-area-inset-right, 0px));
+  max-width: min(420px, calc(100% - 20px));
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 6px 10px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.35;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+}
+.lz-hint button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+/* küçük ekranlarda düğme etiketleri gizlenir, paneller sıkışır */
+@media (max-width: 760px), (max-height: 499px) {
+  .lz-btn {
+    min-width: 42px;
+    min-height: 40px;
+  }
+  .lz-btn span {
+    display: none;
+  }
+  .lz-note {
+    max-width: calc(100% - 250px);
+    padding: 6px 10px;
+  }
+  .lz-note p {
+    font-size: 13.5px;
+  }
+  .lz-dock {
+    grid-template-columns: repeat(2, 40px);
+    max-height: calc(100% - 70px);
+    top: calc(50% + 20px);
+  }
+  .lz-dock .tool {
+    min-height: 36px;
+  }
+  .lz-dock .tool span {
+    display: none;
+  }
+  .lz-dock .swatch {
+    width: 24px;
+    height: 24px;
+  }
+  .lz-dock .add-tok,
+  .lz-dock .btn {
+    min-height: 32px;
+  }
+  .lz-steps .btn-md {
+    min-height: 36px;
+    padding: 0 10px;
+  }
+  .lz-steps .frame-list button {
+    min-width: 34px;
+    height: 34px;
+    font-size: 15px;
+  }
+}
+
+/* =====================================================================
+   Sunum "Sadece saha": başlık, açıklama ve alt çubuk gizlenir;
+   saha tüm ekranı kaplar, denetimler sahanın üstünde yüzer
+   ===================================================================== */
+.present.focus {
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  gap: 0;
+  background: #10261a;
+}
+.present.focus .present-head {
+  position: absolute;
+  z-index: 6;
+  top: max(10px, env(safe-area-inset-top, 0px));
+  right: max(10px, env(safe-area-inset-right, 0px));
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(10, 22, 16, 0.62);
+  color: #fff;
+}
+.present.focus .present-count,
+.present.focus .present-titles,
+.present.focus .present-head .crest {
+  display: none;
+}
+.present.focus .present-head .btn-ghost {
+  color: #fff;
+  border-color: transparent;
+  background: transparent;
+}
+.present.focus .timer-val {
+  color: #fff;
+  font-size: 30px;
+}
+.present.focus .present-body {
+  overflow: hidden;
+  padding: 0;
+}
+.present.focus .present-foot {
+  position: absolute;
+  z-index: 6;
+  left: max(10px, env(safe-area-inset-left, 0px));
+  right: max(10px, env(safe-area-inset-right, 0px));
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+.present.focus .present-foot > * {
+  pointer-events: auto;
+}
+.present.focus .present-foot .dots {
+  display: none;
+}
+.present.focus .present-foot .btn {
+  min-height: 40px;
+  padding: 0 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+.present.focus .slide-tactic,
+.present.focus .slide-tactic.with-side,
+.present.focus .slide-drill:not(.no-diagram),
+.present.focus .slide-tactic > .tplayer.fit,
+.present.focus .slide-drill > .tplayer.fit {
+  display: block;
+  position: relative;
+  height: 100%;
+}
+.present.focus .slide-side,
+.present.focus .drill-info,
+.present.focus .tplayer-note,
+.present.focus .slide-cover > :not(.slide-lineup) {
+  display: none !important;
+}
+.present.focus .tplayer.fit .pitch-fit {
+  position: absolute;
+  inset: 0;
+}
+.present.focus .slide-cover {
+  height: 100%;
+}
+.present.focus .tplayer-bar {
+  position: absolute;
+  z-index: 5;
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: fit-content;
+  max-width: calc(100% - 300px);
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+}
+.present.focus .tplayer-bar > .btn-primary {
+  flex: none;
+}
+.present.focus .tp-steps {
+  order: 0;
+  flex: none;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+.present.focus .tplayer-step {
+  display: none;
+}
+@media (max-width: 760px), (max-height: 499px) {
+  .present.focus .tplayer-bar {
+    max-width: calc(100% - 210px);
+  }
+  .present.focus .present-foot .btn > span {
+    display: none;
+  }
+}
+/* yalnız sahada denetimler bir süre dokunulmayınca söner, dokununca geri gelir */
+.present.focus.idle .present-head:not(:has(.timer)) {
+  opacity: 0;
+  pointer-events: none;
+}

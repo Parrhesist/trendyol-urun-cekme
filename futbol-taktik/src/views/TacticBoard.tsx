@@ -5,7 +5,7 @@ import { cloneFrame, FORMATION_NAMES, FORMATIONS, makeTactic, mirror, uid } from
 import { autoLineup, tacticFromMatch } from '../lineup';
 import { useStore } from '../store';
 import type { LabelMode, Pt, Tactic, TacticCategory, Token, TokenKind } from '../types';
-import { Btn, ConfirmBtn, Empty, Field, Icon, Modal, Segmented } from '../ui';
+import { Btn, ConfirmBtn, Empty, enterFullscreen, exitFullscreen, Field, fullscreenElement, fullscreenHint, Icon, Modal, Segmented, useFullscreen } from '../ui';
 import { libItem } from '../library';
 import { PresentActions } from '../present/Actions';
 import { TacticTabs } from './Library';
@@ -27,7 +27,7 @@ const TOOLS: { id: Tool; icon: string; label: string }[] = [
 
 const ADDS: Token['kind'][] = ['home', 'away', 'ball', 'cone', 'goal'];
 
-const LABEL_OPTS:{ value: LabelMode; label: string }[] = [
+const LABEL_OPTS: { value: LabelMode; label: string }[] = [
   { value: 'num', label: 'No' },
   { value: 'role', label: 'Mevki' },
   { value: 'name', label: 'İsim' },
@@ -212,6 +212,9 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
   const [descOpen, setDescOpen] = useState(false);
   // telefonda ayarlar paneli sahanın üstünde açılır-kapanır çekmece
   const [sideOpen, setSideOpen] = useState(false);
+  // ders modu: saha tüm ekranı kaplar, diğer her şey açılır-kapanır yüzer panel
+  const [lesson, setLesson] = useState(false);
+  const [fsHint, setFsHint] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const history = useRef<Tactic[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -343,17 +346,30 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') undo();
       if ((e.key === 'Delete' || e.key === 'Backspace') && selected && editable) delToken(selected);
+      if (e.key === 'Escape' && lesson) endLesson();
     };
     window.addEventListener('keydown', k);
     return () => window.removeEventListener('keydown', k);
   });
+
+  const startLesson = async () => {
+    setLesson(true);
+    setSideOpen(false);
+    setSelected(null);
+    setFsHint((await enterFullscreen()) ? null : fullscreenHint());
+  };
+  const endLesson = () => {
+    setLesson(false);
+    setFsHint(null);
+    if (fullscreenElement()) exitFullscreen();
+  };
 
   const players = [...data.players].sort((a, b) => a.number - b.number);
 
   const kindLabel = (k: Token['kind']) => (k === 'home' ? 'Oyuncu' : k === 'away' ? 'Rakip' : k === 'ball' ? 'Top' : k === 'cone' ? 'Huni' : 'Kale');
 
   return (
-    <div className={'editor ws' + (sideOpen ? ' side-open' : '') + (selTok && editable ? ' has-sel' : '')} ref={rootRef}>
+    <div className={'editor ws' + (lesson ? ' lesson' : '') + (sideOpen ? ' side-open' : '') + (selTok && editable ? ' has-sel' : '')} ref={rootRef}>
       <header className="editor-head ws-head">
         <Btn variant="ghost" icon="prev" onClick={onBack} aria-label={backLabel ?? 'Taktiklere dön'}>
           {backLabel}
@@ -373,6 +389,9 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
               {dirty ? 'Kaydediliyor…' : 'Kaydedildi'}
             </span>
           )}
+          <Btn icon="focus" onClick={startLesson} title="Ders modu: saha tüm ekranı kaplar, araçlar açılır-kapanır">
+            <span className="hide-phone">Ders modu</span>
+          </Btn>
           <Btn icon="share" onClick={() => setSharing(true)} aria-label="Paylaş">
             <span className="hide-narrow">Paylaş</span>
           </Btn>
@@ -630,7 +649,162 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
           )}
         </Modal>
       )}
+      {lesson && (
+        <LessonUI
+          t={t}
+          fi={fi}
+          anim={anim}
+          canEdit={canEdit}
+          tool={tool}
+          setTool={setTool}
+          color={color}
+          setColor={setColor}
+          canUndo={history.current.length > 0}
+          onUndo={undo}
+          onAdd={addToken}
+          onAddFrame={addFrame}
+          kindLabel={kindLabel}
+          hint={fsHint}
+          onHint={setFsHint}
+          onExit={endLesson}
+        />
+      )}
       {sharing && <ShareModal kind="taktik" id={t.id} title={t.name} onClose={() => setSharing(false)} />}
     </div>
+  );
+}
+
+type LessonPanels = { tools: boolean; steps: boolean; note: boolean };
+const LESSON_KEY = 'saha-kenari-ders';
+const readPanels = (): LessonPanels => {
+  const all = { tools: true, steps: true, note: true };
+  try {
+    return { ...all, ...JSON.parse(localStorage.getItem(LESSON_KEY) ?? '{}') };
+  } catch {
+    return all;
+  }
+};
+
+function LzBtn({ icon, label, on, onClick }: { icon: string; label: string; on?: boolean; onClick: () => void }) {
+  return (
+    <button type="button" className={'lz-btn' + (on ? ' on' : '')} aria-pressed={on} title={label} onClick={onClick}>
+      <Icon name={icon} size={20} />
+      <span>{label}</span>
+    </button>
+  );
+}
+
+/** Ders modu yüzer panelleri: araçlar (sol), adımlar (alt), not (sol üst); her biri üst sağdaki düğmelerle açılıp kapanır */
+function LessonUI(props: {
+  t: Tactic;
+  fi: number;
+  anim: ReturnType<typeof useTacticAnimation>;
+  canEdit: boolean;
+  tool: Tool;
+  setTool: (t: Tool) => void;
+  color: string;
+  setColor: (c: string) => void;
+  canUndo: boolean;
+  onUndo: () => void;
+  onAdd: (k: TokenKind) => void;
+  onAddFrame: () => void;
+  kindLabel: (k: TokenKind) => string;
+  hint: string | null;
+  onHint: (h: string | null) => void;
+  onExit: () => void;
+}) {
+  const { t, fi, anim, canEdit, tool } = props;
+  const [panels, setPanels] = useState(readPanels);
+  const fs = useFullscreen();
+  const toggle = (k: keyof LessonPanels) =>
+    setPanels((p) => {
+      const n = { ...p, [k]: !p[k] };
+      try {
+        localStorage.setItem(LESSON_KEY, JSON.stringify(n));
+      } catch {
+        /* özel pencere */
+      }
+      return n;
+    });
+  const toggleFs = async () => {
+    if (fs) await exitFullscreen();
+    else props.onHint((await enterFullscreen()) ? null : fullscreenHint());
+  };
+  const note = t.frames[fi]?.note;
+  return (
+    <>
+      <div className="lz-top" role="toolbar" aria-label="Ders modu">
+        {canEdit && <LzBtn icon={TOOLS.find((x) => x.id === tool)?.icon ?? 'move'} label="Araçlar" on={panels.tools} onClick={() => toggle('tools')} />}
+        <LzBtn icon="play" label="Adımlar" on={panels.steps} onClick={() => toggle('steps')} />
+        <LzBtn icon="note" label="Not" on={panels.note} onClick={() => toggle('note')} />
+        <LzBtn icon="expand" label={fs ? 'Küçült' : 'Tam ekran'} on={fs} onClick={toggleFs} />
+        <LzBtn icon="close" label="Çık" onClick={props.onExit} />
+      </div>
+      {props.hint && (
+        <div className="lz-hint" role="status">
+          <span>{props.hint}</span>
+          <button type="button" aria-label="İpucunu kapat" onClick={() => props.onHint(null)}>
+            <Icon name="close" size={16} />
+          </button>
+        </div>
+      )}
+      {panels.note && (
+        <div className="lz-note">
+          <small>
+            {t.name} · Adım {fi + 1}/{t.frames.length}
+          </small>
+          {note && <p>{note}</p>}
+        </div>
+      )}
+      {canEdit && panels.tools && (
+        <div className="lz-dock" role="toolbar" aria-label="Çizim araçları">
+          {TOOLS.map((x) => (
+            <button key={x.id} type="button" className={'tool' + (tool === x.id ? ' on' : '')} onClick={() => props.setTool(x.id)} title={x.label}>
+              <Icon name={x.icon} size={20} />
+              <span>{x.label}</span>
+            </button>
+          ))}
+          <div className="lz-group lz-sw">
+            {['a', 'b', 'c', 'd'].map((c) => (
+              <button key={c} type="button" className={'swatch' + (props.color === c ? ' on' : '')} style={{ background: `var(--ink-draw-${c})` }} onClick={() => props.setColor(c)} aria-label={`Renk ${c}`} />
+            ))}
+          </div>
+          <div className="lz-group">
+            {ADDS.map((k) => (
+              <button key={k} type="button" className="add-tok" onClick={() => props.onAdd(k)} title={props.kindLabel(k) + ' ekle'}>
+                <i className={'add-ico ' + k} aria-hidden="true" />
+                <span>+ {props.kindLabel(k)}</span>
+              </button>
+            ))}
+            <Btn size="sm" variant="ghost" icon="undo" onClick={props.onUndo} disabled={!props.canUndo} title="Geri al" aria-label="Geri al" />
+          </div>
+        </div>
+      )}
+      {panels.steps && (
+        <div className="lz-steps" role="toolbar" aria-label="Adımlar ve oynatma">
+          <Btn icon={anim.playing ? 'pause' : 'play'} variant="primary" onClick={anim.playing ? anim.stop : anim.play} disabled={t.frames.length < 2}>
+            {anim.playing ? 'Durdur' : 'Oynat'}
+          </Btn>
+          <Btn icon="prev" variant="ghost" onClick={() => anim.setFi(fi - 1)} disabled={fi === 0} aria-label="Önceki adım" />
+          <ol className="frame-list">
+            {t.frames.map((_, i) => (
+              <li key={i}>
+                <button type="button" className={i === fi ? 'on' : ''} onClick={() => anim.setFi(i)}>
+                  {i + 1}
+                </button>
+              </li>
+            ))}
+            {canEdit && (
+              <li>
+                <button type="button" className="add" onClick={props.onAddFrame} title="Bu adımı kopyalayıp yeni adım ekle">
+                  +
+                </button>
+              </li>
+            )}
+          </ol>
+          <Btn icon="next" variant="ghost" onClick={() => anim.setFi(fi + 1)} disabled={fi >= t.frames.length - 1} aria-label="Sonraki adım" />
+        </div>
+      )}
+    </>
   );
 }

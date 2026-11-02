@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useStore } from '../store';
-import { Btn, toggleFullscreen } from '../ui';
+import { Btn, enterFullscreen, exitFullscreen, fullscreenElement, fullscreenHint } from '../ui';
 import type { Deck } from './decks';
-import type { DeckState, TimerState } from './live';
+import { savePrefFocus, type DeckState, type TimerState } from './live';
 
 export type PresentMode = 'overlay' | 'tv' | 'page';
 
@@ -58,8 +58,11 @@ interface Props {
   castBar?: ReactNode;
 }
 
+// tam ekran açılamadığında yönerge oturum başına bir kez gösterilir
+let fsHintShown = false;
+
 export function Presenter({ deck, state, onChange, mode, onClose, castBar }: Props) {
-  const { data } = useStore();
+  const { data, toast } = useStore();
   const root = useRef<HTMLDivElement>(null);
   const [idle, setIdle] = useState(false);
   const n = deck.slides.length;
@@ -88,6 +91,19 @@ export function Presenter({ deck, state, onChange, mode, onClose, castBar }: Pro
   const addMinute = () => {
     const left = remaining + 60000;
     onChange({ timer: timer?.running ? { slide: i, running: true, endsAt: Date.now() + left, remainingMs: left } : { slide: i, running: false, remainingMs: left } });
+  };
+  const fullscreen = async () => {
+    if (fullscreenElement()) return exitFullscreen();
+    if (!(await enterFullscreen(root.current)) && mode !== 'tv' && !fsHintShown) {
+      fsHintShown = true;
+      toast(fullscreenHint(), 'err');
+    }
+  };
+  const toggleFocus = () => {
+    savePrefFocus(!state.focus);
+    onChange({ focus: !state.focus });
+    // yalnız saha görünümü tarayıcı çerçevesini de gizlemeyi dener
+    if (!state.focus && !fullscreenElement()) fullscreen();
   };
   const ctx = {
     step: state.step,
@@ -127,10 +143,15 @@ export function Presenter({ deck, state, onChange, mode, onClose, castBar }: Pro
         break;
       case 'f':
       case 'F':
-        toggleFullscreen(root.current);
+        fullscreen();
+        break;
+      case 's':
+      case 'S':
+        if (mode !== 'tv') toggleFocus();
+        else used = false;
         break;
       case 'Escape':
-        if (mode === 'overlay' && !document.fullscreenElement) onClose?.();
+        if (mode === 'overlay' && !fullscreenElement()) onClose?.();
         else used = false;
         break;
       default:
@@ -150,7 +171,7 @@ export function Presenter({ deck, state, onChange, mode, onClose, castBar }: Pro
 
   // TV'de kontroller birkaç saniye sonra gizlenir
   useEffect(() => {
-    if (mode !== 'tv' || idle) return;
+    if ((mode !== 'tv' && !state.focus) || idle) return;
     const t = setTimeout(() => setIdle(true), 4500);
     return () => clearTimeout(t);
   }, [mode, idle, state]);
@@ -159,7 +180,7 @@ export function Presenter({ deck, state, onChange, mode, onClose, castBar }: Pro
   return (
     <div
       ref={root}
-      className={`present present-${mode}${mode === 'tv' ? ' tv-root' : ''}${idle ? ' idle' : ''}`}
+      className={`present present-${mode}${mode === 'tv' ? ' tv-root' : ''}${idle ? ' idle' : ''}${state.focus ? ' focus' : ''}`}
       onPointerMove={() => idle && setIdle(false)}
       onPointerDown={() => setIdle(false)}
       role="dialog"
@@ -196,13 +217,18 @@ export function Presenter({ deck, state, onChange, mode, onClose, castBar }: Pro
         ) : null}
         <div className="present-tools">
           {castBar}
-          <Btn icon="expand" variant="ghost" onClick={() => toggleFullscreen(root.current)} aria-label="Tam ekran" />
+          {mode !== 'tv' && (
+            <Btn icon="focus" variant={state.focus ? 'primary' : 'ghost'} onClick={toggleFocus} aria-pressed={!!state.focus} title={state.focus ? 'Başlık ve açıklamaları göster (S)' : 'Yalnız saha: başlık ve açıklamaları gizle (S)'}>
+              <span className="hide-narrow">{state.focus ? 'Ayrıntılar' : 'Sadece saha'}</span>
+            </Btn>
+          )}
+          <Btn icon="expand" variant="ghost" onClick={fullscreen} aria-label="Tam ekran" />
           {onClose && (
             <Btn
               icon="close"
               variant="ghost"
               onClick={() => {
-                if (document.fullscreenElement) toggleFullscreen();
+                if (fullscreenElement()) exitFullscreen();
                 onClose();
               }}
               aria-label="Kapat"

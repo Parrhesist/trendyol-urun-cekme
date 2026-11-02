@@ -4,7 +4,7 @@ import { useStore } from '../store';
 import { Btn, copyText, Icon, Modal, toggleFullscreen } from '../ui';
 import { useDeck } from './decks';
 import { appBase, deckHash, linkFor, SCREEN_HASH, type DeckTarget } from './links';
-import { useLive, type DeckState } from './live';
+import { prefFocus, useLive, type DeckState } from './live';
 import { Presenter } from './Presenter';
 
 const FRESH: DeckState = { slide: 0, step: 0, play: 0, timer: null };
@@ -41,7 +41,7 @@ export function PresentOverlay({ target, startCasting, onClose }: { target: Deck
   const deck = useDeck(target);
   const live = useLive();
   const resuming = !!(live.live?.active && live.live.kind === target.kind && live.live.id === target.id);
-  const initial: DeckState = resuming && live.live ? { slide: live.live.slide, step: live.live.step, play: 0, timer: live.live.timer ?? null } : FRESH;
+  const initial: DeckState = resuming && live.live ? { slide: live.live.slide, step: live.live.step, play: 0, timer: live.live.timer ?? null, focus: live.live.focus } : { ...FRESH, focus: prefFocus() };
   const [st, setSt] = useState<DeckState>(initial);
   const stRef = useRef(st);
   const [casting, setCasting] = useState(startCasting || resuming);
