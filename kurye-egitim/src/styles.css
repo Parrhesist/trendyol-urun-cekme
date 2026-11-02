@@ -294,6 +294,10 @@ h3 {
   background: var(--good-soft);
   color: var(--good);
 }
+.tile.tint-amber {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
 .tile.big {
   width: 60px;
   height: 60px;
@@ -701,8 +705,10 @@ tbody tr {
   font-weight: 600;
 }
 .q-sign {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   padding: 16px;
   background: var(--surface);
   border-radius: var(--radius);
@@ -861,6 +867,71 @@ tbody tr {
   max-width: 36ch;
 }
 
+.sign-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.sign-options .option {
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-height: 140px;
+  padding: 10px;
+  position: relative;
+}
+.sign-options .opt-letter {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+}
+.opt-sign {
+  display: grid;
+  place-items: center;
+  min-height: 100px;
+}
+
+/* ---------- İşaret kataloğu ---------- */
+.cat-hint {
+  margin: 4px 4px 2px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.sign-row {
+  align-items: flex-start;
+  min-height: 72px;
+}
+.list li + li .row.sign-row::before {
+  left: 98px;
+}
+.sign-cell {
+  flex: none;
+  width: 72px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+}
+.sign-row .row-main {
+  padding-top: 4px;
+}
+.sign-desc {
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--fg);
+}
+.disclosure {
+  flex: none;
+  align-self: center;
+  color: var(--faint);
+  transition: transform 0.2s;
+}
+.disclosure.on {
+  transform: rotate(90deg);
+}
+
 /* ---------- Kontrol ---------- */
 .check-head {
   padding: 14px 16px;
@@ -982,9 +1053,10 @@ tbody tr {
   margin: 0 auto;
   height: var(--tabbar-h);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
 }
 .tab {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;

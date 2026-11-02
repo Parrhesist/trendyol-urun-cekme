@@ -16,8 +16,11 @@ export type Block =
 export interface Question {
   id: string;
   q: string;
-  sign?: SignId;
+  /** Soruda gösterilen işaret(ler); ikincisi genelde ek tabela */
+  sign?: SignId | SignId[];
   options: string[];
+  /** Şıklar işaret olarak gösterilir (options metinleri ekran okuyucu içindir) */
+  optionSigns?: SignId[];
   /** Doğru şıkkın sırası (0'dan başlar) */
   answer: number;
   why: string;
@@ -43,4 +46,4 @@ export interface Module {
 export type IconName =
   | 'road' | 'parking' | 'law' | 'steering' | 'wrench' | 'heart'
   | 'home' | 'book' | 'check' | 'dict' | 'gear' | 'chevron' | 'back'
-  | 'clock' | 'repeat' | 'bolt' | 'close' | 'flame' | 'info';
+  | 'clock' | 'repeat' | 'bolt' | 'close' | 'flame' | 'info' | 'sign';

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ALL_LESSONS, ALL_QUESTIONS, CHECKLIST, CONTENT_REVIEWED, GLOSSARY, MODULES, findLesson, findModule, findQuestion } from './content';
 import { Icon } from './icons';
-import { Sign, SIGN_NAMES } from './signs';
+import { CATEGORIES, SIGNS, Sign, isWide, SIGN_NAMES, type SignId } from './signs';
+import { signTest } from './signquiz';
 import {
-  answerReview, dueReviews, markRead, resetAll, resetCheck, saveQuiz, streak, todaysCheck, toggleCheck, useAppState,
+  answerReview, dueReviews, markRead, resetAll, resetCheck, saveQuiz, saveSignTest, streak, todaysCheck, toggleCheck, useAppState,
   type State,
 } from './store';
 import type { Block, IconName, Lesson, Module, Question } from './types';
@@ -29,10 +30,11 @@ function useRoute() {
   return route;
 }
 
-type Tab = 'bugun' | 'dersler' | 'kontrol' | 'sozluk';
+type Tab = 'bugun' | 'dersler' | 'isaretler' | 'kontrol' | 'sozluk';
 const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: 'bugun', label: 'Bugün', icon: 'home' },
   { id: 'dersler', label: 'Dersler', icon: 'book' },
+  { id: 'isaretler', label: 'İşaretler', icon: 'sign' },
   { id: 'kontrol', label: 'Kontrol', icon: 'check' },
   { id: 'sozluk', label: 'Sözlük', icon: 'dict' },
 ];
@@ -51,6 +53,8 @@ export default function App() {
   else if (head === 'test' && findLesson(arg)) page = <LessonQuiz id={arg} />;
   else if (route === 'tekrar') page = <ReviewQuiz s={s} />;
   else if (route === 'hizli-test') page = <QuickQuiz />;
+  else if (route === 'isaret-testi') page = <SignQuiz />;
+  else if (route === 'isaretler') (tab = 'isaretler'), (page = <SignsPage s={s} />);
   else if (route === 'hakkinda') page = <About />;
   else if (route === 'dersler') (tab = 'dersler'), (page = <ModulesPage s={s} />);
   else if (route === 'kontrol') (tab = 'kontrol'), (page = <CheckPage s={s} />);
@@ -210,6 +214,16 @@ function Home({ s }: { s: State }) {
             <span className="row-main">
               <span className="row-title">Hızlı test</span>
               <span className="row-sub">Tüm konulardan 10 karışık soru</span>
+            </span>
+            <Icon name="chevron" size={18} />
+          </a>
+        </li>
+        <li>
+          <a href="#isaret-testi" className="row">
+            <span className="tile tint-amber"><Icon name="sign" size={20} /></span>
+            <span className="row-main">
+              <span className="row-title">İşaret testi</span>
+              <span className="row-sub">{s.signBest ? `En iyi sonuç ${s.signBest.best}/${s.signBest.total}` : `${SIGNS.length} işaretten karışık 12 soru`}</span>
             </span>
             <Icon name="chevron" size={18} />
           </a>
@@ -522,10 +536,12 @@ function Quiz({
         <h2 className="question">{cur.q.q}</h2>
         {cur.q.sign && (
           <div className="q-sign">
-            <Sign id={cur.q.sign} size={112} />
+            {(Array.isArray(cur.q.sign) ? cur.q.sign : [cur.q.sign]).map((id, n) => (
+              <Sign key={id} id={id} size={n === 0 ? 112 : 104} />
+            ))}
           </div>
         )}
-        <div className="options" role="list">
+        <div className={cur.q.optionSigns ? 'options sign-options' : 'options'} role="list">
           {cur.opts.map((o, k) => {
             let cls = 'option';
             if (answered) {
@@ -536,7 +552,13 @@ function Quiz({
             return (
               <button key={k} className={cls} onClick={() => choose(k)} disabled={answered} role="listitem">
                 <span className="opt-letter">{String.fromCharCode(65 + k)}</span>
-                <span>{o.text}</span>
+                {cur.q.optionSigns ? (
+                  <span className="opt-sign">
+                    <Sign id={cur.q.optionSigns[o.orig]} size={84} />
+                  </span>
+                ) : (
+                  <span>{o.text}</span>
+                )}
               </button>
             );
           })}
@@ -613,7 +635,7 @@ function LessonQuiz({ id }: { id: string }) {
 function ReviewQuiz({ s }: { s: State }) {
   // Oturum başındaki listeyi sabitle; cevaplandıkça liste değişse de test bozulmasın.
   const [ids] = useState(() => dueReviews(s));
-  const qs = useMemo(() => ids.map((id) => findQuestion(id)?.q).filter((q): q is Question => !!q), [ids]);
+  const qs = useMemo(() => ids.map((id) => findQuestion(id)).filter((q): q is Question => !!q), [ids]);
   if (!qs.length)
     return (
       <>
@@ -847,6 +869,89 @@ function About() {
           </button>
         )}
       </section>
+    </>
+  );
+}
+
+/* ---------- İşaretler ---------- */
+
+function SignQuiz() {
+  const [round, setRound] = useState(0);
+  return <SignRound key={round} onAgain={() => { setRound(round + 1); window.scrollTo(0, 0); }} />;
+}
+
+function SignRound({ onAgain }: { onAgain: () => void }) {
+  const [qs] = useState(() => signTest(12));
+  return (
+    <Quiz
+      questions={qs}
+      title="İşaret testi"
+      back="isaretler"
+      backLabel="İşaretler"
+      onFinish={(r, w) => saveSignTest(r.length, qs.length, w)}
+      finish={(right, total) => (
+        <>
+          <NavBar back="isaretler" backLabel="İşaretler" />
+          <Result right={right} total={total}>
+            <button className="btn primary wide" onClick={onAgain}>
+              Yeni işaret testi
+            </button>
+            <a className="btn wide" href="#isaretler">Tüm işaretlere bak</a>
+          </Result>
+        </>
+      )}
+    />
+  );
+}
+
+function SignsPage({ s }: { s: State }) {
+  const [open, setOpen] = useState<SignId | null>(null);
+  return (
+    <>
+      <LargeTitle title="İşaretler" sub={`${SIGNS.length} işaret · teslimatta en sık karşılaşılanlar`} />
+      <section className="card hero">
+        <div className="eyebrow">İşaret testi</div>
+        <h2>Her seferinde karışık 12 soru</h2>
+        <p className="muted">
+          Bazen işareti görüp anlamını seçersin, bazen anlamı okuyup doğru işareti bulursun.
+          {s.signBest ? ` En iyi sonucun ${s.signBest.best}/${s.signBest.total}.` : ''}
+        </p>
+        <div className="hero-foot">
+          <span className="meta">
+            <Icon name="clock" size={16} /> yaklaşık 3 dk
+          </span>
+          <a className="btn primary" href="#isaret-testi">Teste başla</a>
+        </div>
+      </section>
+      {CATEGORIES.map((c) => (
+        <section key={c.id}>
+          <h3 className="section-label">{c.title}</h3>
+          <p className="cat-hint">{c.hint}</p>
+          <ul className="list card">
+            {SIGNS.filter((x) => x.cat === c.id).map((x) => {
+              const on = open === x.id;
+              return (
+                <li key={x.id}>
+                  <button className="row sign-row" onClick={() => setOpen(on ? null : x.id)} aria-expanded={on}>
+                    <span className="sign-cell">
+                      <Sign id={x.id} size={isWide(x.id) ? 72 : 52} />
+                    </span>
+                    <span className="row-main">
+                      <span className="row-title">{x.tr}</span>
+                      <span className="row-sub" lang="de">{x.de}</span>
+                      {on && <span className="sign-desc">{x.desc}</span>}
+                    </span>
+                    <span className={on ? 'disclosure on' : 'disclosure'}>
+                      <Icon name="chevron" size={18} />
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+      <p className="footnote">Çizimler sadeleştirilmiştir. Yoldaki gerçek tabelalar ayrıntıda biraz farklı görünebilir.</p>
     </>
   );
 }

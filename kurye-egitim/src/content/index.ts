@@ -5,6 +5,7 @@ import { yasal } from './yasal';
 import { surus } from './surus';
 import { bakim } from './bakim';
 import { saglik } from './saglik';
+import { parseSignQuestion } from '../signquiz';
 
 export const MODULES: Module[] = [park, trafik, yasal, surus, bakim, saglik];
 
@@ -21,7 +22,9 @@ export const ALL_QUESTIONS: { q: Question; lesson: Lesson }[] = ALL_LESSONS.flat
 
 export const findLesson = (id: string) => ALL_LESSONS.find((x) => x.lesson.id === id);
 export const findModule = (id: string) => MODULES.find((m) => m.id === id);
-export const findQuestion = (id: string) => ALL_QUESTIONS.find((x) => x.q.id === id);
+/** Ders sorusu veya otomatik üretilen işaret sorusu. */
+export const findQuestion = (id: string): Question | undefined =>
+  ALL_QUESTIONS.find((x) => x.q.id === id)?.q ?? parseSignQuestion(id);
 
 export interface Term {
   de: string;

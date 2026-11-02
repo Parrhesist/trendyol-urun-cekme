@@ -23,6 +23,8 @@ export interface State {
   /** Uygulamanın kullanıldığı günler (YYYY-AA-GG), en fazla 90 */
   days: string[];
   check: { date: string; done: string[]; finishedAt?: string };
+  /** İşaret testindeki en iyi sonuç */
+  signBest?: { best: number; total: number };
 }
 
 const KEY = 'kurye-egitim:v1';
@@ -105,6 +107,16 @@ export function answerReview(qid: string, ok: boolean) {
     else if (!cur || cur.box >= 1) delete review[qid];
     else review[qid] = { box: 1, due: Date.now() + 2 * DAY };
     return touchDay({ ...s, review });
+  });
+}
+
+export function saveSignTest(correct: number, total: number, wrongIds: string[]) {
+  set((s) => {
+    const review = { ...s.review };
+    for (const id of wrongIds) review[id] = { box: 0, due: Date.now() };
+    const prev = s.signBest;
+    const better = !prev || correct / total > prev.best / prev.total;
+    return touchDay({ ...s, review, signBest: better ? { best: correct, total } : prev });
   });
 }
 
