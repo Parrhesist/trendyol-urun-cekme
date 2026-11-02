@@ -25,6 +25,8 @@ export interface State {
   check: { date: string; done: string[]; finishedAt?: string };
   /** İşaret testindeki en iyi sonuç */
   signBest?: { best: number; total: number };
+  /** Senaryoların son sonucu (ilk seçim doğru muydu) */
+  scen?: Record<string, boolean>;
 }
 
 const KEY = 'kurye-egitim:v1';
@@ -118,6 +120,10 @@ export function saveSignTest(correct: number, total: number, wrongIds: string[])
     const better = !prev || correct / total > prev.best / prev.total;
     return touchDay({ ...s, review, signBest: better ? { best: correct, total } : prev });
   });
+}
+
+export function saveScenario(id: string, ok: boolean) {
+  set((s) => touchDay({ ...s, scen: { ...s.scen, [id]: ok } }));
 }
 
 export function toggleCheck(id: string, totalItems: number) {

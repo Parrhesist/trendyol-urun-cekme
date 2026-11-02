@@ -56,6 +56,12 @@ const PATHS: Record<IconName, JSX.Element> = {
       <path d="M12 10v4m0 2.5v.5" />
     </>
   ),
+  map: (
+    <>
+      <path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20V6.5Z" />
+      <path d="M9 4v13.5M15 6.5V20" />
+    </>
+  ),
   info: (
     <>
       <circle cx="12" cy="12" r="9" />

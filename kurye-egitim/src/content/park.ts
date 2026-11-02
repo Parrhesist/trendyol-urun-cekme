@@ -1,10 +1,12 @@
 import type { Module } from '../types';
+import { SENARYOLAR } from './senaryolar';
 
 export const park: Module = {
   id: 'park',
   title: 'Durma ve park',
   desc: 'Teslimat sırasında nerede durabilirsin?',
   icon: 'parking',
+  scenarios: SENARYOLAR,
   lessons: [
     {
       id: 'halten-parken',

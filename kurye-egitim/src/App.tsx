@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ALL_LESSONS, ALL_QUESTIONS, CHECKLIST, CONTENT_REVIEWED, GLOSSARY, MODULES, findLesson, findModule, findQuestion } from './content';
+import { ALL_LESSONS, ALL_QUESTIONS, CHECKLIST, SENARYOLAR, CONTENT_REVIEWED, GLOSSARY, MODULES, findLesson, findModule, findQuestion } from './content';
 import { Icon } from './icons';
 import { CATEGORIES, SIGNS, Sign, isWide, SIGN_NAMES, type SignId } from './signs';
 import { signTest } from './signquiz';
+import { Scene, type SpotState } from './scene';
 import {
-  answerReview, dueReviews, markRead, resetAll, resetCheck, saveQuiz, saveSignTest, streak, todaysCheck, toggleCheck, useAppState,
+  answerReview, dueReviews, markRead, resetAll, resetCheck, saveQuiz, saveScenario, saveSignTest, streak, todaysCheck, toggleCheck, useAppState,
   type State,
 } from './store';
-import type { Block, IconName, Lesson, Module, Question } from './types';
+import type { Block, IconName, Lesson, Module, Question, Scenario, Spot } from './types';
 
 /* ---------- Yönlendirme (adres çubuğundaki #) ---------- */
 
@@ -53,6 +54,8 @@ export default function App() {
   else if (head === 'test' && findLesson(arg)) page = <LessonQuiz id={arg} />;
   else if (route === 'tekrar') page = <ReviewQuiz s={s} />;
   else if (route === 'hizli-test') page = <QuickQuiz />;
+  else if (route === 'senaryolar') page = <ScenarioList s={s} />;
+  else if (head === 'senaryo' && SENARYOLAR.some((x) => x.id === arg)) page = <ScenarioPage key={arg} id={arg} />;
   else if (route === 'isaret-testi') page = <SignQuiz />;
   else if (route === 'isaretler') (tab = 'isaretler'), (page = <SignsPage s={s} />);
   else if (route === 'hakkinda') page = <About />;
@@ -198,6 +201,16 @@ function Home({ s }: { s: State }) {
       <h3 className="section-label">Pratik</h3>
       <ul className="list card">
         <li>
+          <a href="#senaryolar" className="row">
+            <span className="tile"><Icon name="map" size={20} /></span>
+            <span className="row-main">
+              <span className="row-title">Senaryolar</span>
+              <span className="row-sub">{scenSummary(s)}</span>
+            </span>
+            <Icon name="chevron" size={18} />
+          </a>
+        </li>
+        <li>
           <a href="#tekrar" className="row">
             <span className="tile tint-red"><Icon name="repeat" size={20} /></span>
             <span className="row-main">
@@ -320,6 +333,12 @@ function ModulePage({ m, s }: { m: Module; s: State }) {
           </li>
         ))}
       </ul>
+      {m.scenarios && (
+        <>
+          <h3 className="section-label">Senaryolar</h3>
+          <ScenarioRows s={s} list={m.scenarios} />
+        </>
+      )}
     </>
   );
 }
@@ -952,6 +971,148 @@ function SignsPage({ s }: { s: State }) {
         </section>
       ))}
       <p className="footnote">Çizimler sadeleştirilmiştir. Yoldaki gerçek tabelalar ayrıntıda biraz farklı görünebilir.</p>
+    </>
+  );
+}
+
+/* ---------- Senaryolar ---------- */
+
+function scenSummary(s: State) {
+  const done = SENARYOLAR.filter((x) => s.scen?.[x.id] !== undefined).length;
+  const ok = SENARYOLAR.filter((x) => s.scen?.[x.id]).length;
+  return done ? `${ok}/${SENARYOLAR.length} doğru · çizimli sokak durumları` : `${SENARYOLAR.length} çizimli sokak durumu: nereye durursun?`;
+}
+
+function ScenarioRows({ s, list }: { s: State; list: Scenario[] }) {
+  return (
+    <ul className="list card">
+      {list.map((x, i) => {
+        const r = s.scen?.[x.id];
+        return (
+          <li key={x.id}>
+            <a href={`#senaryo-${x.id}`} className="row">
+              <span className="num">{i + 1}</span>
+              <span className="row-main">
+                <span className="row-title">{x.title}</span>
+                <span className="row-sub">{x.situation}</span>
+              </span>
+              {r === undefined ? (
+                <span className="status" aria-label="Çözülmedi" />
+              ) : (
+                <span className={r ? 'status full' : 'status done'} aria-label={r ? 'İlk denemede doğru' : 'İlk denemede yanlış'}>
+                  {r ? '✓' : '✗'}
+                </span>
+              )}
+              <Icon name="chevron" size={18} />
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function ScenarioList({ s }: { s: State }) {
+  const next = SENARYOLAR.find((x) => s.scen?.[x.id] === undefined) ?? SENARYOLAR[0];
+  return (
+    <>
+      <NavBar back="" backLabel="Bugün" />
+      <LargeTitle title="Senaryolar" sub="Durma ve park · yukarıdan bakış sokak çizimleri" />
+      <section className="card hero">
+        <div className="eyebrow">Nasıl çalışır?</div>
+        <p className="muted">
+          Her sahnede A, B, C ve D ile işaretli olası durma yerleri var. Sahnede bir yere ya da aşağıdaki seçeneklerden birine dokun. Sonra her seçeneğin neden doğru ya da yanlış olduğunu görürsün.
+        </p>
+        <div className="hero-foot">
+          <span className="meta">Çizimlerde yaklaşık 1 araç boyu = 4,5 m</span>
+          <a className="btn primary" href={`#senaryo-${next.id}`}>Başla</a>
+        </div>
+      </section>
+      <ScenarioRows s={s} list={SENARYOLAR} />
+    </>
+  );
+}
+
+function ScenarioPage({ id }: { id: string }) {
+  const idx = SENARYOLAR.findIndex((x) => x.id === id);
+  const sc = SENARYOLAR[idx];
+  const next = SENARYOLAR[idx + 1];
+  const [pick, setPick] = useState<Spot['id'] | null>(null);
+  const answered = pick !== null;
+  const chosen = sc.spots.find((x) => x.id === pick);
+
+  const choose = (spotId: Spot['id']) => {
+    if (answered) return;
+    setPick(spotId);
+    saveScenario(sc.id, !!sc.spots.find((x) => x.id === spotId)?.ok);
+  };
+
+  const states: Record<string, SpotState> = {};
+  for (const sp of sc.spots) states[sp.id] = !answered ? 'idle' : sp.ok ? 'right' : sp.id === pick ? 'picked-wrong' : 'wrong';
+
+  return (
+    <>
+      <NavBar back="senaryolar" backLabel="Senaryolar" />
+      <div className="scenario">
+        <div className="eyebrow">
+          Senaryo {idx + 1}/{SENARYOLAR.length} · Durma ve park
+        </div>
+        <h1>{sc.title}</h1>
+        <p className="situation">{sc.situation}</p>
+        <div className="scene-card">
+          <Scene els={sc.scene} spots={sc.spots} states={states} onPick={choose} label={`Sokak çizimi: ${sc.situation}`} />
+        </div>
+        <h2 className="question">{sc.question}</h2>
+        {!answered ? (
+          <div className="options">
+            {sc.spots.map((sp) => (
+              <button key={sp.id} className="option" onClick={() => choose(sp.id)}>
+                <span className="opt-letter">{sp.id}</span>
+                <span>{sp.label}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <>
+            <div className={chosen?.ok ? 'feedback ok' : 'feedback no'} role="status">
+              <strong>{chosen?.ok ? 'Doğru' : 'Yanlış'}</strong>
+              <p>
+                {chosen?.ok
+                  ? chosen.why
+                  : `Doğru cevap ${sc.spots.find((x) => x.ok)?.id}: ${sc.spots.find((x) => x.ok)?.label.toLocaleLowerCase('tr')}. Her seçeneğin açıklaması aşağıda.`}
+              </p>
+            </div>
+            <ul className="verdicts card">
+              {sc.spots.map((sp) => (
+                <li key={sp.id} className={sp.ok ? 'ok' : ''}>
+                  <span className={sp.ok ? 'verdict-badge ok' : 'verdict-badge'}>{sp.id}</span>
+                  <div>
+                    <strong>{sp.label}</strong>
+                    <p>{sp.why}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <aside className="callout law">
+              <div className="callout-label">Kural</div>
+              <p>{sc.rule}</p>
+            </aside>
+          </>
+        )}
+      </div>
+      {answered && (
+        <div className="bottom-action">
+          {next ? (
+            <a className="btn primary wide" href={`#senaryo-${next.id}`}>
+              Sonraki senaryo
+            </a>
+          ) : (
+            <a className="btn primary wide" href="#senaryolar">
+              Bitir
+            </a>
+          )}
+        </div>
+      )}
     </>
   );
 }

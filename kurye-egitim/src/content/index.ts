@@ -6,6 +6,9 @@ import { surus } from './surus';
 import { bakim } from './bakim';
 import { saglik } from './saglik';
 import { parseSignQuestion } from '../signquiz';
+import { SENARYOLAR } from './senaryolar';
+
+export { SENARYOLAR };
 
 export const MODULES: Module[] = [park, trafik, yasal, surus, bakim, saglik];
 
