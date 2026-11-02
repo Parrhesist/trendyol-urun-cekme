@@ -1,0 +1,148 @@
+import type { Module } from '../types';
+
+export const bakim: Module = {
+  id: 'bakim',
+  title: 'Araç bakımı ve arıza',
+  desc: 'Günlük kontrol, lastik, uyarı ışıkları',
+  icon: 'wrench',
+  lessons: [
+    {
+      id: 'gunluk-kontrol',
+      title: 'Vardiya öncesi kontrol',
+      minutes: 4,
+      summary: 'Her sabah 5 dakikada yapılan kontrol ve neden zorunlu olduğu.',
+      blocks: [
+        { t: 'p', text: 'Şirket araçları için iş güvenliği kuralları (DGUV Vorschrift 70) geçerlidir. Araç yılda en az bir kez uzman tarafından kontrol edilir. Sürücü de her vardiyadan önce aracın işletme güvenliğini kontrol etmek zorundadır.' },
+        { t: 'steps', items: ['Aracın etrafında bir tur at, yeni hasar var mı bak ve fotoğrafla.', 'Lastiklere bak: hava, kesik, şişlik.', 'Işıkları dene: far, fren, sinyal, geri vites.', 'Camlar ve aynalar temiz ve sağlam mı?', 'Motoru çalıştır: uyarı ışıkları sönüyor mu?', 'Frenleri ve el frenini dene.', 'Yakıt veya şarj seviyesi rotaya yetiyor mu?', 'Yelek, üçgen reflektör ve ilk yardım çantası yerinde mi?'] },
+        { t: 'warn', text: 'Hasarı vardiyadan önce bildirmezsen, sonradan sana ait sayılabilir. Fotoğraf, tarih ve saat seni korur.' },
+        { t: 'tip', text: 'Uygulamadaki “Kontrol” sekmesinde her gün işaretleyebileceğin bir liste var.' },
+        { t: 'terms', items: [['Abfahrtskontrolle', 'Yola çıkış kontrolü'], ['Schaden', 'Hasar'], ['UVV-Prüfung', 'Yıllık iş güvenliği muayenesi'], ['Betriebssicherheit', 'İşletme güvenliği']] },
+      ],
+      quiz: [
+        {
+          id: 'gk-1',
+          q: 'Vardiya öncesi araçta yeni bir çizik gördün. Ne yaparsın?',
+          options: ['Görmezden gelirim', 'Fotoğraflar ve yola çıkmadan bildiririm', 'Akşam söylerim', 'Kendim boyarım'],
+          answer: 1,
+          why: 'Önceden bildirilen hasar sana yüklenmez. Fotoğraf kanıttır.',
+        },
+        {
+          id: 'gk-2',
+          q: 'Kontrolü kim yapmak zorundadır?',
+          options: ['Sadece tamirci', 'Sürücü, her vardiyadan önce', 'Sadece filo sorumlusu', 'Polis'],
+          answer: 1,
+          why: 'Sürücü yola çıkmadan aracın güvenli olduğundan emin olmak zorundadır.',
+        },
+        {
+          id: 'gk-3',
+          q: 'Araçta mutlaka bulunması gereken üç ekipman hangisi?',
+          options: ['Yelek, üçgen reflektör, ilk yardım çantası', 'Kriko, pompa, bez', 'Şarj kablosu, harita, kalem', 'Yangın tüpü, zincir, çekme halatı'],
+          answer: 0,
+          why: 'Almanya’da yelek, üçgen reflektör ve ilk yardım çantası zorunludur.',
+        },
+      ],
+    },
+    {
+      id: 'lastik',
+      title: 'Lastikler',
+      minutes: 4,
+      summary: 'Basınç, diş derinliği ve hasar belirtileri.',
+      blocks: [
+        { t: 'p', text: 'Lastikler araçla yol arasındaki tek bağlantıdır. Teslimatta sık sık kaldırıma sürtmek lastiğin yan duvarına zarar verir.' },
+        { t: 'table', head: ['Konu', 'Bilgi'], rows: [['Yasal en az diş derinliği', '1,6 mm'], ['Önerilen (yaz)', 'En az 3 mm'], ['Önerilen (kış)', 'En az 4 mm'], ['Doğru basınç', 'Sürücü kapısı içi veya yakıt kapağındaki etiket']] },
+        { t: 'list', items: ['Basıncı lastikler soğukken ölç.', 'Yüklü araç için etiketteki “yüklü” değeri kullan.', 'Yan duvarda şişlik veya derin kesik varsa aracı kullanma ve bildir.', 'Lastik basınç uyarı ışığı yanarsa ilk fırsatta kontrol et.'] },
+        { t: 'warn', text: 'Kaldırıma dik açıyla ve hızlı çıkma. Yan duvardaki hasar dışarıdan görünmeyebilir ve lastik sonradan aniden patlayabilir.' },
+        { t: 'terms', items: [['Reifendruck', 'Lastik basıncı'], ['Profiltiefe', 'Diş derinliği'], ['Reifenpanne', 'Lastik patlaması'], ['Bordstein', 'Kaldırım taşı']] },
+      ],
+      quiz: [
+        {
+          id: 'ls-1',
+          q: 'Almanya’da yasal en az diş derinliği nedir?',
+          options: ['1 mm', '1,6 mm', '3 mm', '4 mm'],
+          answer: 1,
+          why: 'Yasal sınır 1,6 mm’dir. Güvenlik için yazın 3, kışın 4 mm önerilir.',
+        },
+        {
+          id: 'ls-2',
+          q: 'Lastik basıncı ne zaman ölçülmelidir?',
+          options: ['Uzun sürüşten hemen sonra', 'Lastikler soğukken', 'Sadece kışın', 'Fark etmez'],
+          answer: 1,
+          why: 'Isınan lastikte basınç yüksek görünür.',
+        },
+        {
+          id: 'ls-3',
+          q: 'Lastiğin yan duvarında şişlik gördün. Ne yaparsın?',
+          options: ['Vardiyayı bitiririm', 'Aracı kullanmam ve bildiririm', 'Hava basarım', 'Hızımı düşürürüm'],
+          answer: 1,
+          why: 'Şişlik iç yapının hasar gördüğünü gösterir. Lastik her an patlayabilir.',
+        },
+      ],
+    },
+    {
+      id: 'uyari-isiklari',
+      title: 'Gösterge paneli uyarı ışıkları',
+      minutes: 4,
+      summary: 'Kırmızı, sarı ve yeşil ışıklar ne demek?',
+      blocks: [
+        { t: 'table', head: ['Renk', 'Anlamı'], rows: [['Kırmızı', 'Ciddi sorun. Güvenli bir yerde hemen dur, motoru kapat.'], ['Sarı / turuncu', 'Kontrol gerekiyor. Dikkatli devam et, en kısa sürede bildir.'], ['Yeşil / mavi', 'Bilgi. Bir sistem çalışıyor (ör. uzun far, sinyal).']] },
+        { t: 'h', text: 'Hemen durman gereken kırmızı ışıklar' },
+        { t: 'list', items: ['Yağ basıncı (yağdanlık): Motor yağsız kalabilir. Devam etmek motoru bozar.', 'Motor sıcaklığı (termometre): Motor aşırı ısınıyor.', 'Fren sistemi (daire içinde ünlem): Fren hidroliği veya fren arızası.', 'Şarj (akü sembolü): Alternatör şarj etmiyor.'] },
+        { t: 'h', text: 'Sık görülen sarı ışıklar' },
+        { t: 'list', items: ['Motor arıza ışığı: Servise bildir. Yanıp sönüyorsa yavaşla ve dur.', 'Lastik basıncı: Lastikleri kontrol et.', 'AdBlue: Dizel van’larda AdBlue azalıyor. Bittiğinde motor tekrar çalışmayabilir.', 'ABS / ESP: Fren veya denge sisteminde sorun.'] },
+        { t: 'tip', text: 'Herhangi bir uyarı ışığını gördüğünde fotoğrafını çek ve filo sorumlusuna gönder. Işık sönse bile hata kaydı tamirciye yardım eder.' },
+        { t: 'terms', items: [['Kontrollleuchte', 'Uyarı ışığı'], ['Öldruck', 'Yağ basıncı'], ['Kühlmittel', 'Soğutma suyu'], ['Bremsflüssigkeit', 'Fren hidroliği'], ['AdBlue', 'Dizel egzoz sıvısı']] },
+      ],
+      quiz: [
+        {
+          id: 'ui-1',
+          q: 'Sürüş sırasında kırmızı yağ basıncı ışığı yandı. Ne yaparsın?',
+          options: ['Vardiyayı bitiririm', 'Güvenli yerde hemen durur, motoru kapatırım', 'Radyoyu kısarım', 'Daha hızlı giderim'],
+          answer: 1,
+          why: 'Yağ basıncı olmadan motor kısa sürede ağır hasar görür.',
+        },
+        {
+          id: 'ui-2',
+          q: 'Sarı uyarı ışığı genelde ne anlama gelir?',
+          options: ['Hemen dur', 'Kontrol gerekiyor, en kısa sürede bildir', 'Her şey normal', 'Uzun far açık'],
+          answer: 1,
+          why: 'Sarı ışık acil değildir ama ihmal edilmemelidir.',
+        },
+        {
+          id: 'ui-3',
+          q: 'Dizel van’da AdBlue tamamen biterse ne olabilir?',
+          options: ['Hiçbir şey', 'Motor yeniden çalışmayabilir', 'Araç daha hızlı olur', 'Sadece klima kapanır'],
+          answer: 1,
+          why: 'AdBlue bitince birçok araç motoru yeniden çalıştırmaya izin vermez.',
+        },
+      ],
+    },
+    {
+      id: 'ariza',
+      title: 'Yolda arıza',
+      minutes: 4,
+      summary: 'Arızada güvenli durmak ve otobanda doğru davranış.',
+      blocks: [
+        { t: 'steps', items: ['Dörtlü flaşörü yak ve mümkünse sağ şeride, emniyet şeridine veya bir cebe geç.', 'Tekerlekleri yoldan uzağa çevir.', 'Araçtan inmeden önce yeleği giy, sağ kapıdan in.', 'Üçgen reflektörü koy.', 'Otobanda bariyerin arkasına geç. Araçta bekleme.', 'Filo sorumlusunu veya şirketin yol yardım numarasını ara.'] },
+        { t: 'warn', text: 'Otobanda emniyet şeridinde araçta veya aracın yanında beklemek hayati tehlikedir. Bariyerin arkasında, trafikten uzakta bekle.' },
+        { t: 'tip', text: 'Yol yardım ve filo numarasını telefonuna kaydet. Otobanda konumunu kilometre tabelalarından veya turuncu acil telefon direklerindeki oklardan bulabilirsin.' },
+        { t: 'terms', items: [['Panne', 'Arıza'], ['Pannenhilfe', 'Yol yardımı'], ['Standstreifen', 'Emniyet şeridi'], ['Leitplanke', 'Bariyer'], ['Notrufsäule', 'Acil telefon direği']] },
+      ],
+      quiz: [
+        {
+          id: 'ar-1',
+          q: 'Otobanda arıza yaptın. Yardımı nerede beklersin?',
+          options: ['Araçta, kemerim takılı', 'Aracın önünde', 'Bariyerin arkasında', 'Emniyet şeridinde yürüyerek'],
+          answer: 2,
+          why: 'Bariyerin arkası trafikten korunan en güvenli yerdir.',
+        },
+        {
+          id: 'ar-2',
+          q: 'Emniyet şeridinde araçtan hangi kapıdan inersin?',
+          options: ['Sol kapıdan', 'Sağ (yolcu) kapıdan', 'Arka kapıdan', 'Fark etmez'],
+          answer: 1,
+          why: 'Sağ taraftan inersen trafiğe doğru adım atmazsın.',
+        },
+      ],
+    },
+  ],
+};
