@@ -4,7 +4,7 @@ import { SURUS_PKW_SENARYO, SURUS_SENARYO } from './senaryolar';
 export const surus: Module = {
   id: 'surus',
   title: 'Güvenli ve verimli sürüş',
-  desc: 'Aracı tanımak, geri manevra, yük, ekonomi, kış',
+  desc: 'Aracı tanımak, geri manevra, yük, kış',
   icon: 'steering',
   scenarios: [...SURUS_SENARYO, ...SURUS_PKW_SENARYO],
   lessons: [
@@ -93,43 +93,6 @@ export const surus: Module = {
           options: ['Hiçbir şey', 'Fren mesafesi uzar ve para cezası gelir', 'Araç daha hızlı gider', 'Sadece yakıt artar'],
           answer: 1,
           why: 'Aşırı yük frenleri ve lastikleri zorlar. Kontrolde para cezası ve puan gelebilir.',
-        },
-      ],
-    },
-    {
-      id: 'ekonomi',
-      title: 'Ekonomik sürüş ve elektrikli araç',
-      minutes: 4,
-      summary: 'Dur-kalk trafiğinde yakıt ve menzil tasarrufu.',
-      blocks: [
-        { t: 'p', text: 'Teslimatta günde yüzlerce kez durup kalkarsın. Küçük alışkanlıklar gün sonunda büyük fark yaratır: daha az yakıt, daha uzun menzil, daha az fren ve lastik aşınması.' },
-        { t: 'list', items: ['Öngörülü sür: kırmızı ışığı uzaktan gör, gazı erken bırak.', 'Hafif hızlan, sert frenden kaçın.', 'Manuel vitesse erken büyük vitese geç (yaklaşık 2.000 devir).', 'Gereksiz yükü araçta taşıma.', 'Lastik basıncını haftada bir kontrol et. Düşük basınç tüketimi artırır.', 'Rotayı planla. Aynı sokağa ikinci kez dönme.'] },
-        { t: 'h', text: 'Elektrikli araç' },
-        { t: 'list', items: ['Gaz pedalını bırakınca araç enerji geri kazanır (rekuperasyon). Erken bırakırsan frene daha az basarsın.', 'Soğukta menzil belirgin şekilde düşer. Araç şarjdayken ön ısıtma (Vorklimatisierung) yap.', 'Klima ve ısıtma en büyük tüketicilerdir. Koltuk ısıtması daha az enerji harcar.', 'Elektrikli araç sessizdir. Yayalar ve bisikletliler seni duymayabilir.'] },
-        { t: 'tip', text: 'Menzil göstergesi %20’nin altına düştüğünde rotanın geri kalanını ve depoya dönüşü hesapla. Gerekirse filo sorumlusuna erken haber ver.' },
-        { t: 'terms', items: [['Rekuperation', 'Enerji geri kazanımı'], ['Reichweite', 'Menzil'], ['Ladestation', 'Şarj istasyonu'], ['vorausschauend fahren', 'Öngörülü sürmek']] },
-      ],
-      quiz: [
-        {
-          id: 'ek-1',
-          q: 'Elektrikli araçta menzili en çok ne uzatır?',
-          options: ['Sert hızlanıp sert fren yapmak', 'Gazı erken bırakıp rekuperasyonla yavaşlamak', 'Klimayı sonuna kadar açmak', 'Lastik basıncını düşürmek'],
-          answer: 1,
-          why: 'Rekuperasyon frenleme enerjisini bataryaya geri kazandırır.',
-        },
-        {
-          id: 'ek-2',
-          q: 'Düşük lastik basıncının etkisi nedir?',
-          options: ['Daha az tüketim', 'Daha fazla tüketim ve aşınma', 'Daha kısa fren mesafesi', 'Etkisi yok'],
-          answer: 1,
-          why: 'Düşük basınç yuvarlanma direncini, tüketimi ve aşınmayı artırır.',
-        },
-        {
-          id: 'ek-3',
-          q: 'Kışın elektrikli aracı ısıtmanın en verimli yolu nedir?',
-          options: ['Yolda tam güçte ısıtmak', 'Şarjdayken ön ısıtma yapmak', 'Hiç ısıtmamak', 'Camları açmak'],
-          answer: 1,
-          why: 'Şarjdayken ısıtma enerjisi şebekeden gelir, batarya menzili korunur.',
         },
       ],
     },

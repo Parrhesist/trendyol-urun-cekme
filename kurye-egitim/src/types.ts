@@ -55,7 +55,7 @@ export interface Module {
 export type IconName =
   | 'road' | 'parking' | 'law' | 'steering' | 'wrench' | 'heart'
   | 'home' | 'book' | 'check' | 'dict' | 'gear' | 'chevron' | 'back'
-  | 'clock' | 'repeat' | 'bolt' | 'close' | 'flame' | 'info' | 'sign' | 'map' | 'van' | 'car';
+  | 'clock' | 'repeat' | 'bolt' | 'close' | 'flame' | 'info' | 'sign' | 'map' | 'van' | 'car' | 'gauge';
 
 /* ---------- Senaryolar (yukarıdan bakış sokak sahneleri) ---------- */
 // Sahne koordinatları: 360 × 260 birim. Yaklaşık 10 birim = 1 metre.

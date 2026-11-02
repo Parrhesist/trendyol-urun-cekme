@@ -7,8 +7,8 @@ Almanya'da van veya otomobil (PKW) ile paket dağıtan şoförler için Türkçe
 
 ## Bölümler
 - **Bugün**: sıradaki ders, ilerleme, art arda kullanım günleri, tekrar ve hızlı test.
-- **Dersler**: 6 konu, 21 ders; her ders sonunda test. Şıklar her seferinde karıştırılır.
-  - Durma ve park · Trafik kuralları · Yasal zorunluluklar · Güvenli ve verimli sürüş · Araç bakımı ve arıza · Sağlık ve teslimat pratiği
+- **Dersler**: 7 konu (van için 25, otomobil için 26 ders); her ders sonunda test. Şıklar her seferinde karıştırılır.
+  - Durma ve park · Trafik kuralları · Yasal zorunluluklar · Güvenli ve verimli sürüş · Sürüş tekniği (devir ve vites, yakıt tasarrufu, fren ve duruş mesafesi, oturuş ve direksiyon hakimiyeti, ıslak yol, gece, hayvan) · Araç bakımı ve arıza · Sağlık ve teslimat pratiği
 - **İşaretler**: 35 trafik işareti ve ek tabela, 6 grupta (tehlike, öncelik, yasak, zorunlu yön, bilgi, ek tabelalar); dokununca açıklama açılır. **İşaret testi** her seferinde 12 soru üretir: işareti görüp anlamını seçme veya anlamı okuyup doğru işareti bulma.
 - **Senaryolar**: çizimli durumlar: durma ve park (5), trafik (4: tabelasız kavşak, ana yol, sağa dönüş, bisikletli sollama), yasal (kaza sonrası adımları sıraya koyma), sürüş (van: yükseklik sınırı; otomobil: ağır paketin yeri), arıza (otobanda bekleme yeri, üçgen reflektör), sağlık (bahçede köpek). Şoför sahnede harfle işaretli seçeneklerden birine (durma yeri, araç veya kişi) dokunur; ardından her seçeneğin neden doğru ya da yanlış olduğu ve ilgili kural gösterilir. Sahneler `src/content/senaryolar.ts` içinde basit öğelerle (yol, kaldırım, ev, araç, işaret, ölçü) tanımlanır, `src/scene.tsx` çizer.
 - **Tekrar**: yanlış yapılan sorular; iki kez doğru bilinen soru listeden çıkar.

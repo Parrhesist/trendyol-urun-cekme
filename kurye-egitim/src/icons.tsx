@@ -77,6 +77,14 @@ const PATHS: Record<IconName, JSX.Element> = {
       <circle cx="17" cy="16.5" r="1.8" />
     </>
   ),
+  gauge: (
+    <>
+      <path d="M4.2 17.5a9 9 0 1 1 15.6 0" />
+      <path d="m12 14 4-5" />
+      <circle cx="12" cy="14" r="1.6" />
+      <path d="M12 5v1.5M6.5 8.5l1 1M17.5 8.5l-1 1M4.5 13.5H6M18 13.5h1.5" />
+    </>
+  ),
   info: (
     <>
       <circle cx="12" cy="12" r="9" />

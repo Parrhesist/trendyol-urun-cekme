@@ -525,3 +525,48 @@ export const SAGLIK_SENARYO: Scenario[] = [
     rule: 'Bağlı olmayan köpek varken bahçeye girme. Dışarıda kal, sahibine haber ver. Isırılırsan yarayı yıka, doktora git, iş kazası olarak bildir.',
   },
 ];
+
+/* ---------- Sürüş tekniği: sıralama ---------- */
+
+export const TEKNIK_SENARYO: Scenario[] = [
+  {
+    kind: 'order',
+    id: 'su-kaymasi',
+    title: 'Su kayması',
+    situation: 'Yağmurda şehir dışı yolda 80 km/s ile gidiyorsun. Yolda su birikintisi var; direksiyon aniden hafifledi, motor sesi değişti.',
+    question: 'Yapacaklarına doğru sırayla dokun.',
+    steps: [
+      'Fren yapma, direksiyonu çevirme',
+      'Debriyaja bas (otomatikte gazı bırak)',
+      'Direksiyonu düz tut, lastiklerin tutunmasını bekle',
+      'Tutunma gelince hızını düşür, mesafeyi açarak devam et',
+    ],
+    notes: [
+      'Su üstünde fren ve direksiyon etki etmez. Tutunma geri geldiğinde araç çevrilen yöne savrulur.',
+      'Tekerleklerin itişini keser, araç kendiliğinden yavaşlar.',
+      'Lastikler yeniden yola değdiğinde araç düz gider.',
+      'Islak yolda hızın düşük, takip mesafen iki kat olmalı.',
+    ],
+    rule: 'Su kaymasında: fren yok, direksiyon düz, debriyaja bas (veya gazı bırak), tutunmayı bekle. En iyisi ıslak yolda baştan yavaş gitmek.',
+  },
+  {
+    kind: 'order',
+    id: 'hayvan',
+    title: 'Yola hayvan çıktı',
+    situation: 'Akşam karanlığında orman kenarındaki yolda uzun farla gidiyorsun. 80 m ileride yolun kenarında bir geyik duruyor.',
+    question: 'Yapacaklarına doğru sırayla dokun.',
+    steps: [
+      'Uzun farı kapat',
+      'Korna çal',
+      'Kontrollü fren yap, direksiyonu sıkı tut, şeridinde kal',
+      'Durunca dörtlüleri yak; çarptıysan yeri güvene al ve polisi ara',
+    ],
+    notes: [
+      'Uzun far hayvanın gözünü kamaştırır, yerinde donup kalır.',
+      'Ses hayvanı yoldan uzaklaştırabilir.',
+      'Ani direksiyon kırmak ağaca veya karşı şeride çarpmana yol açar. Bu, hayvana çarpmaktan çok daha tehlikelidir.',
+      'Arkadan gelenleri uyar. Hayvanla çarpışmayı polise bildirmen gerekir, sigorta da bu kaydı ister.',
+    ],
+    rule: 'Hayvan görünce: uzun far kapalı, korna, kontrollü fren, şeritte kal. Ani kaçış yok.',
+  },
+];

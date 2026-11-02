@@ -5,11 +5,12 @@ import { yasal } from './yasal';
 import { surus } from './surus';
 import { bakim } from './bakim';
 import { saglik } from './saglik';
+import { teknik } from './teknik';
 import { parseSignQuestion } from '../signquiz';
 
 
 /** Tüm konular, araç türünden bağımsız (filtrelenmemiş). */
-const ALL_MODULES: Module[] = [park, trafik, yasal, surus, bakim, saglik];
+const ALL_MODULES: Module[] = [park, trafik, yasal, surus, teknik, bakim, saglik];
 
 /** İçeriğin en son gözden geçirildiği tarih (ayarlar ekranında gösterilir). */
 export const CONTENT_REVIEWED = 'Kasım 2026';
