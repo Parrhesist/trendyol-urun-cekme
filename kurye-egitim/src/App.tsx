@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ALL_LESSONS, ALL_QUESTIONS, CHECKLIST, SENARYOLAR, CONTENT_REVIEWED, GLOSSARY, MODULES, findLesson, findModule, findQuestion } from './content';
+import { ALL_LESSONS, ALL_QUESTIONS, CHECKLIST, SENARYOLAR, applyVehicle, CONTENT_REVIEWED, GLOSSARY, MODULES, findLesson, findModule, findQuestion } from './content';
 import { Icon } from './icons';
 import { CATEGORIES, SIGNS, Sign, isWide, SIGN_NAMES, type SignId } from './signs';
 import { signTest } from './signquiz';
 import { Scene, type SpotState } from './scene';
 import {
-  answerReview, dueReviews, markRead, resetAll, resetCheck, saveQuiz, saveScenario, saveSignTest, streak, todaysCheck, toggleCheck, useAppState,
+  answerReview, dueReviews, markRead, resetAll, resetCheck, saveQuiz, saveScenario, saveSignTest, setVehicle, streak, todaysCheck, toggleCheck, useAppState,
   type State,
 } from './store';
-import type { Block, IconName, Lesson, Module, Question, Scenario, Spot } from './types';
+import type { Block, IconName, Lesson, Module, OrderScenario, Question, Scenario, Spot, SpotScenario, Vehicle } from './types';
 
 /* ---------- Yönlendirme (adres çubuğundaki #) ---------- */
 
@@ -43,7 +43,17 @@ const TABS: { id: Tab; label: string; icon: IconName }[] = [
 export default function App() {
   const route = useRoute();
   const s = useAppState();
+  // İçeriği seçili araca göre süz (content/index.ts içindeki dışa aktarımlar güncellenir).
+  applyVehicle(s.vehicle ?? 'van');
   const [head, ...rest] = route.split('-');
+  if (!s.vehicle)
+    return (
+      <div className="app">
+        <main className="page">
+          <Welcome />
+        </main>
+      </div>
+    );
   const arg = rest.join('-');
 
   let page: JSX.Element;
@@ -55,10 +65,10 @@ export default function App() {
   else if (route === 'tekrar') page = <ReviewQuiz s={s} />;
   else if (route === 'hizli-test') page = <QuickQuiz />;
   else if (route === 'senaryolar') page = <ScenarioList s={s} />;
-  else if (head === 'senaryo' && SENARYOLAR.some((x) => x.sc.id === arg)) page = <ScenarioPage key={arg} id={arg} />;
+  else if (head === 'senaryo' && SENARYOLAR.some((x) => x.sc.id === arg)) page = <ScenarioPage key={arg} id={arg} vehicle={s.vehicle} />;
   else if (route === 'isaret-testi') page = <SignQuiz />;
   else if (route === 'isaretler') (tab = 'isaretler'), (page = <SignsPage s={s} />);
-  else if (route === 'hakkinda') page = <About />;
+  else if (route === 'hakkinda') page = <About vehicle={s.vehicle} />;
   else if (route === 'dersler') (tab = 'dersler'), (page = <ModulesPage s={s} />);
   else if (route === 'kontrol') (tab = 'kontrol'), (page = <CheckPage s={s} />);
   else if (route === 'sozluk') (tab = 'sozluk'), (page = <GlossaryPage />);
@@ -141,7 +151,9 @@ function Home({ s }: { s: State }) {
   const scored = Object.values(s.lessons).filter((l) => l.total);
   const avg = scored.length ? Math.round((scored.reduce((a, l) => a + (l.best ?? 0) / (l.total ?? 1), 0) / scored.length) * 100) : null;
   const check = todaysCheck(s);
-  const checkTotal = CHECKLIST.reduce((n, g) => n + g.items.length, 0);
+  const checkIds = CHECKLIST.flatMap((g) => g.items.map((i) => i.id));
+  const checkTotal = checkIds.length;
+  const checkDone = check.done.filter((id) => checkIds.includes(id)).length;
   const dateLabel = new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
@@ -150,8 +162,9 @@ function Home({ s }: { s: State }) {
         title="Bugün"
         sub={dateLabel}
         action={
-          <a href="#hakkinda" className="round-btn" aria-label="Hakkında">
-            <Icon name="info" size={22} />
+          <a href="#hakkinda" className="vehicle-chip" aria-label={`Araç: ${VEHICLES[s.vehicle ?? 'van'].label}. Ayarları aç`}>
+            <Icon name={VEHICLES[s.vehicle ?? 'van'].icon} size={20} />
+            <span>{VEHICLES[s.vehicle ?? 'van'].label}</span>
           </a>
         }
       />
@@ -247,7 +260,7 @@ function Home({ s }: { s: State }) {
             <span className="row-main">
               <span className="row-title">Vardiya öncesi kontrol</span>
               <span className="row-sub">
-                {check.done.length === checkTotal ? `Bugün tamamlandı${'finishedAt' in check && check.finishedAt ? ` · ${check.finishedAt}` : ''}` : `${check.done.length}/${checkTotal} madde`}
+                {checkDone === checkTotal ? `Bugün tamamlandı${'finishedAt' in check && check.finishedAt ? ` · ${check.finishedAt}` : ''}` : `${checkDone}/${checkTotal} madde`}
               </span>
             </span>
             <Icon name="chevron" size={18} />
@@ -720,7 +733,8 @@ function QuickRound({ onAgain }: { onAgain: () => void }) {
 function CheckPage({ s }: { s: State }) {
   const check = todaysCheck(s);
   const total = CHECKLIST.reduce((n, g) => n + g.items.length, 0);
-  const done = check.done.length;
+  const ids = CHECKLIST.flatMap((g) => g.items.map((i) => i.id));
+  const done = check.done.filter((id) => ids.includes(id)).length;
   const finishedAt = 'finishedAt' in check ? check.finishedAt : undefined;
   return (
     <>
@@ -740,7 +754,7 @@ function CheckPage({ s }: { s: State }) {
               const on = check.done.includes(it.id);
               return (
                 <li key={it.id}>
-                  <button className={on ? 'row check on' : 'row check'} onClick={() => toggleCheck(it.id, total)} aria-pressed={on}>
+                  <button className={on ? 'row check on' : 'row check'} onClick={() => toggleCheck(it.id, ids)} aria-pressed={on}>
                     <span className="checkbox" aria-hidden="true">
                       <svg viewBox="0 0 24 24" width="16" height="16">
                         <path d="m6 12.5 4 4 8-9" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -818,16 +832,20 @@ function GlossaryPage() {
 
 /* ---------- Hakkında ---------- */
 
-function About() {
+function About({ vehicle }: { vehicle: Vehicle }) {
   const [confirm, setConfirm] = useState(false);
   const [cleared, setCleared] = useState(false);
   return (
     <>
       <NavBar back="" backLabel="Bugün" />
-      <LargeTitle title="Hakkında" />
+      <LargeTitle title="Ayarlar" />
+      <h3 className="section-label">Aracım</h3>
+      <VehiclePicker value={vehicle} />
+      <p className="footnote">Dersler, testler, senaryolar ve kontrol listesi seçtiğin araca göre uyarlanır.</p>
+      <h3 className="section-label">Hakkında</h3>
       <section className="card prose">
         <p>
-          Bu uygulama Almanya’da van ile paket dağıtan şoförler için hazırlanmış bağımsız bir eğitim aracıdır. Herhangi bir kargo veya e-ticaret şirketiyle bağlantısı yoktur.
+          Bu uygulama Almanya’da van veya otomobil ile paket dağıtan şoförler için hazırlanmış bağımsız bir eğitim aracıdır. Herhangi bir kargo veya e-ticaret şirketiyle bağlantısı yoktur.
         </p>
         <p>İlerlemen sadece bu cihazdaki tarayıcıda saklanır. Bağlantıyı açan herkes kendi ilerlemesiyle bağımsız olarak kullanır. Hesap gerekmez.</p>
       </section>
@@ -1039,11 +1057,44 @@ function ScenarioList({ s }: { s: State }) {
   );
 }
 
-function ScenarioPage({ id }: { id: string }) {
+function ScenarioPage({ id, vehicle }: { id: string; vehicle: Vehicle }) {
   const idx = SENARYOLAR.findIndex((x) => x.sc.id === id);
   const { sc, module } = SENARYOLAR[idx];
   const inModule = module.scenarios!;
   const next = SENARYOLAR[idx + 1]?.sc;
+  const head = (
+    <>
+      <div className="eyebrow">
+        {module.title} · Senaryo {inModule.indexOf(sc) + 1}/{inModule.length}
+      </div>
+      <h1>{sc.title}</h1>
+      <p className="situation">{sc.situation}</p>
+    </>
+  );
+  return sc.kind === 'order' ? (
+    <OrderScenarioView sc={sc} head={head} next={next} />
+  ) : (
+    <SpotScenarioView sc={sc} head={head} next={next} vehicle={vehicle} />
+  );
+}
+
+function ScenarioFooter({ next }: { next?: Scenario }) {
+  return (
+    <div className="bottom-action">
+      {next ? (
+        <a className="btn primary wide" href={`#senaryo-${next.id}`}>
+          Sonraki senaryo
+        </a>
+      ) : (
+        <a className="btn primary wide" href="#senaryolar">
+          Bitir
+        </a>
+      )}
+    </div>
+  );
+}
+
+function SpotScenarioView({ sc, head, next, vehicle }: { sc: SpotScenario; head: JSX.Element; next?: Scenario; vehicle: Vehicle }) {
   const [pick, setPick] = useState<Spot['id'] | null>(null);
   const answered = pick !== null;
   const chosen = sc.spots.find((x) => x.id === pick);
@@ -1061,13 +1112,9 @@ function ScenarioPage({ id }: { id: string }) {
     <>
       <NavBar back="senaryolar" backLabel="Senaryolar" />
       <div className="scenario">
-        <div className="eyebrow">
-          {module.title} · Senaryo {inModule.indexOf(sc) + 1}/{inModule.length}
-        </div>
-        <h1>{sc.title}</h1>
-        <p className="situation">{sc.situation}</p>
+        {head}
         <div className="scene-card">
-          <Scene els={sc.scene} spots={sc.spots} states={states} onPick={choose} label={`Sokak çizimi: ${sc.situation}`} />
+          <Scene vehicle={vehicle} els={sc.scene} spots={sc.spots} states={states} onPick={choose} label={`Sokak çizimi: ${sc.situation}`} />
         </div>
         <h2 className="question">{sc.question}</h2>
         {!answered ? (
@@ -1107,19 +1154,128 @@ function ScenarioPage({ id }: { id: string }) {
           </>
         )}
       </div>
-      {answered && (
+      {answered && <ScenarioFooter next={next} />}
+    </>
+  );
+}
+
+/* ---------- Sıralama senaryosu ---------- */
+
+function OrderScenarioView({ sc, head, next }: { sc: OrderScenario; head: JSX.Element; next?: Scenario }) {
+  // Adımlar karışık sırayla gösterilir; doğru sıradaki indeksleri tutulur.
+  const [pool] = useState(() => shuffle(sc.steps.map((_, i) => i)));
+  const [seq, setSeq] = useState<number[]>([]);
+  const [checked, setChecked] = useState(false);
+  const full = seq.length === sc.steps.length;
+  const correct = seq.filter((x, i) => x === i).length;
+
+  const tap = (i: number) => {
+    if (checked) return;
+    setSeq((cur) => (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i]));
+  };
+  const check = () => {
+    setChecked(true);
+    saveScenario(sc.id, correct === sc.steps.length);
+    window.scrollTo(0, 0);
+  };
+
+  return (
+    <>
+      <NavBar back="senaryolar" backLabel="Senaryolar" />
+      <div className="scenario">
+        {head}
+        <h2 className="question">{sc.question}</h2>
+        {!checked ? (
+          <>
+            <p className="muted order-hint">Yanlış dokunduysan adıma tekrar dokunarak geri al.</p>
+            <div className="options">
+              {pool.map((i) => {
+                const pos = seq.indexOf(i);
+                return (
+                  <button key={i} className={pos >= 0 ? 'option picked' : 'option'} onClick={() => tap(i)} aria-pressed={pos >= 0}>
+                    <span className="opt-letter">{pos >= 0 ? pos + 1 : ''}</span>
+                    <span>{sc.steps[i]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className={correct === sc.steps.length ? 'feedback ok' : 'feedback no'} role="status">
+              <strong>{correct === sc.steps.length ? 'Sıra doğru' : `${correct}/${sc.steps.length} adım doğru yerde`}</strong>
+              <p>Doğru sıra ve nedenleri aşağıda. Senin sıranda yanlış yerdeki adımlar kırmızı.</p>
+            </div>
+            <ol className="verdicts card order-result">
+              {sc.steps.map((step, i) => (
+                <li key={i}>
+                  <span className={seq[i] === i ? 'verdict-badge ok' : 'verdict-badge'}>{i + 1}</span>
+                  <div>
+                    <strong>{step}</strong>
+                    <p>{sc.notes[i]}</p>
+                    {seq[i] !== i && <p className="your-pick">Senin {i + 1}. adımın: {sc.steps[seq[i]]}</p>}
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <aside className="callout law">
+              <div className="callout-label">Kural</div>
+              <p>{sc.rule}</p>
+            </aside>
+          </>
+        )}
+      </div>
+      {!checked && full && (
         <div className="bottom-action">
-          {next ? (
-            <a className="btn primary wide" href={`#senaryo-${next.id}`}>
-              Sonraki senaryo
-            </a>
-          ) : (
-            <a className="btn primary wide" href="#senaryolar">
-              Bitir
-            </a>
-          )}
+          <button className="btn primary wide" onClick={check}>
+            Sırayı kontrol et
+          </button>
         </div>
       )}
+      {checked && <ScenarioFooter next={next} />}
     </>
+  );
+}
+
+/* ---------- Araç seçimi ---------- */
+
+const VEHICLES: Record<Vehicle, { label: string; icon: IconName; desc: string }> = {
+  van: { label: 'Van', icon: 'van', desc: 'Teslimat van’ı (Sprinter, Transit, e-Vito gibi), 3,5 tona kadar' },
+  pkw: { label: 'Otomobil', icon: 'car', desc: 'Binek otomobil (PKW), şirketin veya kendi aracın' },
+};
+
+function VehiclePicker({ value }: { value?: Vehicle }) {
+  return (
+    <ul className="list card" role="radiogroup" aria-label="Araç türü">
+      {(Object.keys(VEHICLES) as Vehicle[]).map((v) => (
+        <li key={v}>
+          <button className="row vehicle-row" role="radio" aria-checked={value === v} onClick={() => setVehicle(v)}>
+            <span className="tile"><Icon name={VEHICLES[v].icon} size={22} /></span>
+            <span className="row-main">
+              <span className="row-title">{VEHICLES[v].label}</span>
+              <span className="row-sub">{VEHICLES[v].desc}</span>
+            </span>
+            <span className={value === v ? 'radio on' : 'radio'} aria-hidden="true" />
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Welcome() {
+  return (
+    <div className="welcome">
+      <div className="welcome-mark" aria-hidden="true">
+        <Sign id="z306" size={56} />
+      </div>
+      <h1>Kurye Sürüş Akademisi</h1>
+      <p className="muted">
+        Almanya’da paket dağıtan şoförler için kısa dersler, testler, trafik işaretleri ve çizimli senaryolar. Hesap gerekmez, ilerlemen bu cihazda saklanır.
+      </p>
+      <h3 className="section-label">Hangi araçla dağıtım yapıyorsun?</h3>
+      <VehiclePicker />
+      <p className="footnote">Bunu daha sonra Ayarlar’dan değiştirebilirsin.</p>
+    </div>
   );
 }

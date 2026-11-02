@@ -33,6 +33,7 @@
   --sc-ink: #3d424c;
   --sc-parcel: #b98a52;
   --sc-head: #e8c7a6;
+  --sc-grass: #d3e2c4;
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --radius: 14px;
   --tabbar-h: 58px;
@@ -69,8 +70,8 @@
     --sc-glass: #2a3140;
     --sc-ink: #c3c7cf;
     --sc-parcel: #a77b46;
-  --sc-head: #c9a483;
     --sc-head: #c9a483;
+    --sc-grass: #22301c;
     color-scheme: dark;
   }
 }
@@ -90,6 +91,7 @@
   --sc-ink: #c3c7cf;
   --sc-parcel: #a77b46;
   --sc-head: #c9a483;
+  --sc-grass: #22301c;
   --bg: #0d0e11;
   --surface: #1b1d22;
   --surface-2: #26282e;
@@ -1043,6 +1045,13 @@ tbody tr {
 .sc-person .sc-head { fill: var(--sc-head); stroke: none; }
 .sc-rail line { stroke: var(--sc-ink); stroke-width: 2.5; }
 .sc-rail circle { fill: var(--sc-ink); }
+.sc-box.body { fill: var(--sc-house); }
+.sc-box.seat { fill: var(--sc-car1); }
+.sc-box.trunk { fill: var(--sc-walk); }
+.sc-box.grass { fill: var(--sc-grass); }
+.sc-box.wheel { fill: var(--sc-ink); }
+.sc-dog { fill: var(--sc-parcel); stroke: var(--sc-parcel); }
+.sc-fence { stroke: var(--sc-ink); stroke-width: 2; stroke-dasharray: 2 3; }
 .sc-bridge { fill: var(--sc-ink); opacity: 0.45; }
 .sc-bridge-label { fill: var(--surface); font: 700 9.5px var(--font); }
 
@@ -1109,6 +1118,75 @@ tbody tr {
 .verdict-badge.ok {
   background: var(--good);
   color: var(--surface);
+}
+
+/* ---------- Araç seçimi ---------- */
+.vehicle-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px 0 10px;
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 600;
+}
+.radio {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.8px solid var(--faint);
+}
+.radio.on {
+  border: 7px solid var(--accent);
+}
+.welcome {
+  padding: 40px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.welcome-mark {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  margin: 0 4px;
+}
+.welcome h1 {
+  margin: 8px 4px 0;
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.welcome > p {
+  margin: 0 4px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.option.picked {
+  border-color: var(--accent);
+}
+.option.picked .opt-letter {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.order-hint {
+  margin: -6px 0 0;
+  font-size: 14px;
+}
+.order-result {
+  counter-reset: none;
+}
+.your-pick {
+  color: var(--bad) !important;
+  font-size: 14px !important;
 }
 
 /* ---------- Kontrol ---------- */

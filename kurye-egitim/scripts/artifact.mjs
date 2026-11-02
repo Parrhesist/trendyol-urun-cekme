@@ -11,4 +11,8 @@ const styles = pick(/<style[^>]*>[\s\S]*?<\/style>/g);
 const scripts = pick(/<script[^>]*>[\s\S]*?<\/script>/g);
 const out = [...title, ...metas, ...links, ...styles, '<div id="root"></div>', ...scripts].join('\n');
 writeFileSync('dist/artifact.html', out);
+
+// Service worker önbellek sürümü: her derlemede yeni değer, eski önbellek silinir.
+const sw = readFileSync('dist/sw.js', 'utf8');
+writeFileSync('dist/sw.js', sw.replace('__BUILD__', String(Date.now())));
 console.log(`artifact.html: ${(out.length / 1024).toFixed(0)} KB`);

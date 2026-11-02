@@ -1,4 +1,4 @@
-import type { Lesson, Module, Question, Scenario } from '../types';
+import type { Lesson, Module, Question, Scenario, Vehicle } from '../types';
 import { trafik } from './trafik';
 import { park } from './park';
 import { yasal } from './yasal';
@@ -8,29 +8,11 @@ import { saglik } from './saglik';
 import { parseSignQuestion } from '../signquiz';
 
 
-export const MODULES: Module[] = [park, trafik, yasal, surus, bakim, saglik];
+/** Tüm konular, araç türünden bağımsız (filtrelenmemiş). */
+const ALL_MODULES: Module[] = [park, trafik, yasal, surus, bakim, saglik];
 
 /** İçeriğin en son gözden geçirildiği tarih (ayarlar ekranında gösterilir). */
 export const CONTENT_REVIEWED = 'Kasım 2026';
-
-export const ALL_LESSONS: { lesson: Lesson; module: Module }[] = MODULES.flatMap((module) =>
-  module.lessons.map((lesson) => ({ lesson, module })),
-);
-
-export const ALL_QUESTIONS: { q: Question; lesson: Lesson }[] = ALL_LESSONS.flatMap(({ lesson }) =>
-  lesson.quiz.map((q) => ({ q, lesson })),
-);
-
-/** Tüm senaryolar, konu sırasıyla. */
-export const SENARYOLAR: { sc: Scenario; module: Module }[] = MODULES.flatMap((module) =>
-  (module.scenarios ?? []).map((sc) => ({ sc, module })),
-);
-
-export const findLesson = (id: string) => ALL_LESSONS.find((x) => x.lesson.id === id);
-export const findModule = (id: string) => MODULES.find((m) => m.id === id);
-/** Ders sorusu veya otomatik üretilen işaret sorusu. */
-export const findQuestion = (id: string): Question | undefined =>
-  ALL_QUESTIONS.find((x) => x.q.id === id)?.q ?? parseSignQuestion(id);
 
 export interface Term {
   de: string;
@@ -39,10 +21,20 @@ export interface Term {
   lessonTitle: string;
 }
 
-/** Derslerdeki tüm Almanca terimler, alfabetik ve tekrarsız. */
-export const GLOSSARY: Term[] = (() => {
+const fits = (v: Vehicle) => (x: { only?: Vehicle }) => !x.only || x.only === v;
+
+function build(v: Vehicle) {
+  const ok = fits(v);
+  const modules: Module[] = ALL_MODULES.map((m) => ({
+    ...m,
+    lessons: m.lessons.filter(ok).map((l) => ({ ...l, blocks: l.blocks.filter(ok), quiz: l.quiz.filter(ok) })),
+    scenarios: m.scenarios?.filter(ok),
+  }));
+  const lessons = modules.flatMap((module) => module.lessons.map((lesson) => ({ lesson, module })));
+  const questions = lessons.flatMap(({ lesson }) => lesson.quiz.map((q) => ({ q, lesson })));
+  const scenarios = modules.flatMap((module) => (module.scenarios ?? []).map((sc) => ({ sc, module })));
   const seen = new Map<string, Term>();
-  for (const { lesson } of ALL_LESSONS) {
+  for (const { lesson } of lessons) {
     for (const b of lesson.blocks) {
       if (b.t !== 'terms') continue;
       for (const [de, tr] of b.items) {
@@ -51,16 +43,52 @@ export const GLOSSARY: Term[] = (() => {
       }
     }
   }
-  return [...seen.values()].sort((a, b) => a.de.localeCompare(b.de, 'de'));
-})();
+  const glossary = [...seen.values()].sort((a, b) => a.de.localeCompare(b.de, 'de'));
+  const checklist = CHECKLIST_ALL.map((g) => ({ ...g, items: g.items.filter(ok) }));
+  return { modules, lessons, questions, scenarios, glossary, checklist };
+}
+
+const cache = new Map<Vehicle, ReturnType<typeof build>>();
+
+// Aşağıdaki dışa aktarımlar seçili araca göre süzülmüş içeriktir. ES modül
+// bağlamaları canlıdır: applyVehicle() çağrıldığında içe aktaran her yer yeni
+// değerleri görür. App her çizimde önce applyVehicle() çağırır.
+export let MODULES: Module[] = [];
+export let ALL_LESSONS: { lesson: Lesson; module: Module }[] = [];
+export let ALL_QUESTIONS: { q: Question; lesson: Lesson }[] = [];
+/** Senaryolar, konu sırasıyla. */
+export let SENARYOLAR: { sc: Scenario; module: Module }[] = [];
+/** Derslerdeki Almanca terimler, alfabetik ve tekrarsız. */
+export let GLOSSARY: Term[] = [];
+/** Vardiya öncesi kontrol listesi (Abfahrtskontrolle). */
+export let CHECKLIST: CheckGroup[] = [];
+
+export function applyVehicle(v: Vehicle) {
+  if (!cache.has(v)) cache.set(v, build(v));
+  const c = cache.get(v)!;
+  MODULES = c.modules;
+  ALL_LESSONS = c.lessons;
+  ALL_QUESTIONS = c.questions;
+  SENARYOLAR = c.scenarios;
+  GLOSSARY = c.glossary;
+  CHECKLIST = c.checklist;
+}
+
+export const findLesson = (id: string) => ALL_LESSONS.find((x) => x.lesson.id === id);
+export const findModule = (id: string) => MODULES.find((m) => m.id === id);
+
+/** Tekrar listesindeki soru: araçtan bağımsız aranır, işaret soruları yeniden üretilir. */
+export const findQuestion = (id: string): Question | undefined => {
+  for (const m of ALL_MODULES) for (const l of m.lessons) for (const q of l.quiz) if (q.id === id) return q;
+  return parseSignQuestion(id);
+};
 
 export interface CheckGroup {
   title: string;
-  items: { id: string; label: string; hint?: string }[];
+  items: { id: string; label: string; hint?: string; only?: Vehicle }[];
 }
 
-/** Vardiya öncesi kontrol listesi (Abfahrtskontrolle). */
-export const CHECKLIST: CheckGroup[] = [
+const CHECKLIST_ALL: CheckGroup[] = [
   {
     title: 'Aracın etrafında',
     items: [
@@ -94,9 +122,15 @@ export const CHECKLIST: CheckGroup[] = [
   {
     title: 'Yük',
     items: [
-      { id: 'yerlesim', label: 'Ağır paketler altta ve önde' },
-      { id: 'sabit', label: 'Yük sabit, kabinde gevşek paket yok' },
-      { id: 'kapi', label: 'Yük kapıları kapalı ve kilitli' },
+      { id: 'yerlesim', label: 'Ağır paketler altta ve önde', only: 'van' },
+      { id: 'yerlesim-p', label: 'Ağır paketler bagajda, altta', hint: 'Arka cam önündeki rafta paket yok', only: 'pkw' },
+      { id: 'sabit', label: 'Yük sabit, kabinde gevşek paket yok', only: 'van' },
+      { id: 'sabit-p', label: 'Arka koltuktaki paketler kemerle sabit veya ayak boşluğunda', only: 'pkw' },
+      { id: 'gorus-p', label: 'Arka cam ve aynalardan görüş açık', only: 'pkw' },
+      { id: 'kapi', label: 'Yük kapıları kapalı ve kilitli', only: 'van' },
+      { id: 'kapi-p', label: 'Bagaj kapalı ve kilitli', only: 'pkw' },
     ],
   },
 ];
+
+applyVehicle('van');

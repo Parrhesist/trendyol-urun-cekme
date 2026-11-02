@@ -25,7 +25,7 @@ export const PARK_SENARYO: Scenario[] = [
     id: 'kose',
     title: 'Köşedeki ev',
     situation: 'Paket, kavşağın köşesindeki 6 numaraya. Sokakta park etmiş araçlar var.',
-    question: 'Van’ı nereye bırakırsın?',
+    question: 'Aracı nereye bırakırsın?',
     scene: [
       { k: 'house', x: 0, y: 0, w: 80, h: 26, no: '9' },
       { k: 'house', x: 86, y: 0, w: 90, h: 26, no: '11' },
@@ -59,7 +59,7 @@ export const PARK_SENARYO: Scenario[] = [
     id: 'gecit-durak',
     title: 'Yaya geçidi ve otobüs durağı',
     situation: 'Paket 14 numaraya. Evin önünde yaya geçidi, sokağın başında otobüs durağı var.',
-    question: 'Van’ı nereye bırakırsın?',
+    question: 'Aracı nereye bırakırsın?',
     scene: [
       { k: 'house', x: 0, y: 0, w: 110, h: 26, no: '15' },
       { k: 'house', x: 116, y: 0, w: 120, h: 26, no: '17' },
@@ -88,7 +88,7 @@ export const PARK_SENARYO: Scenario[] = [
     id: 'saat',
     title: 'Ek tabeladaki saat',
     situation: 'Cumartesi, saat 19:30. Paket 7 numaraya. Evin önünde mutlak durma yasağı tabelası var. Altındaki ek tabelada “werktags 8–18 h” yazıyor.',
-    question: 'Van’ı nereye bırakırsın?',
+    question: 'Aracı nereye bırakırsın?',
     scene: [
       { k: 'house', x: 0, y: 0, w: 170, h: 26, no: '8' },
       { k: 'house', x: 176, y: 0, w: 184, h: 26, no: '10' },
@@ -153,7 +153,7 @@ export const PARK_SENARYO: Scenario[] = [
     id: 'tek-yon',
     title: 'Tek yönlü sokak',
     situation: 'Paket 23 numaraya. Sokak tek yönlü, sen ok yönünde gidiyorsun. Ev, gidiş yönüne göre solda.',
-    question: 'Van’ı nereye bırakırsın?',
+    question: 'Aracı nereye bırakırsın?',
     scene: [
       { k: 'house', x: 0, y: 0, w: 120, h: 26, no: '21' },
       { k: 'house', x: 126, y: 0, w: 110, h: 26, no: '23', target: true },
@@ -287,12 +287,12 @@ export const TRAFIK_SENARYO: Scenario[] = [
       { id: 'B', x: 140, y: 124, label: 'Sen', ok: true, why: 'Doğru. Önce bisikletliyi, sonra yolu geçen yayayı geçirirsin. Dönmeden önce sağ aynaya ve omzunun üstünden bak.' },
       { id: 'C', x: 258, y: 173, w: 24, h: 22, label: 'Yan sokağı geçen yaya', ok: false, why: 'Döndüğün yolu geçen yayaya yol vermek zorundasın.' },
     ],
-    rule: 'Dönerken aynı yönde düz giden bisikletlilere ve döndüğün yolu geçen yayalara yol verirsin. Van’ın sağında büyük bir kör nokta var.',
+    rule: 'Dönerken aynı yönde düz giden bisikletlilere ve döndüğün yolu geçen yayalara yol verirsin. Aracının sağında kör nokta var, van’da çok daha büyük.',
   },
   {
     id: 'bisiklet-sollama',
     title: 'Dar sokakta bisikletli',
-    situation: 'Dar bir şehir içi sokaktasın. Önünde aynı yönde bir bisikletli gidiyor, karşıdan araç geliyor. Şeridin yaklaşık 3 m genişliğinde, van’ın 2 m.',
+    situation: 'Dar bir şehir içi sokaktasın. Önünde aynı yönde bir bisikletli gidiyor, karşıdan araç geliyor. Şeridin yaklaşık 3 m genişliğinde, aracın aynalarıyla yaklaşık 2 m.',
     question: 'Ne yaparsın?',
     scene: [
       { k: 'house', x: 0, y: 0, w: 176, h: 74 },
@@ -310,7 +310,7 @@ export const TRAFIK_SENARYO: Scenario[] = [
       { k: 'measure', x1: 326, y1: 120, x2: 326, y2: 150, text: '3 m' },
     ],
     spots: [
-      { id: 'A', x: 150, y: 120, label: 'Şeridimde, bisikletlinin yanından geçerim', ok: false, why: 'Şehir içinde en az 1,5 m yan mesafe gerekir. 2 m genişliğindeki van’la 3 m’lik şeritte bu mesafe kalmaz.' },
+      { id: 'A', x: 150, y: 120, label: 'Şeridimde, bisikletlinin yanından geçerim', ok: false, why: 'Şehir içinde en az 1,5 m yan mesafe gerekir. 2 m genişliğindeki bir araçla 3 m’lik şeritte bu mesafe kalmaz.' },
       { id: 'B', x: 100, y: 124, label: 'Bisikletlinin arkasında beklerim', ok: true, why: 'Doğru. Mesafe yetmiyorsa sollamazsın. Karşı şerit boşalınca 1,5 m mesafe bırakarak geçersin.' },
       { id: 'C', x: 168, y: 95, label: 'Karşı şeride çıkıp sollarım', ok: false, why: 'Karşıdan araç geliyor. Kafa kafaya çarpışma riski var.' },
     ],
@@ -323,6 +323,7 @@ export const TRAFIK_SENARYO: Scenario[] = [
 export const SURUS_SENARYO: Scenario[] = [
   {
     id: 'yukseklik',
+    only: 'van',
     title: 'Hangi yoldan?',
     situation: 'Paket 12 numaraya. Van’ın 2,9 m yüksekliğinde ve 3,5 ton. Önünde üç seçenek var.',
     question: 'Hangisini seçersin?',
@@ -371,7 +372,7 @@ export const BAKIM_SENARYO: Scenario[] = [
   {
     id: 'otoban-ariza',
     title: 'Otobanda arıza',
-    situation: 'Otobanda motor arızası. Van’ı emniyet şeridine çektin, dörtlüler yanıyor, yeleği giydin ve sağ kapıdan indin. Yol yardımını arayacaksın.',
+    situation: 'Otobanda motor arızası. Aracı emniyet şeridine çektin, dörtlüler yanıyor, yeleği giydin ve sağ kapıdan indin. Yol yardımını arayacaksın.',
     question: 'Yardımı nerede beklersin?',
     scene: [
       { k: 'road', x: 0, y: 40, w: 360, h: 110 },
@@ -387,7 +388,7 @@ export const BAKIM_SENARYO: Scenario[] = [
       { k: 'car', x: 250, y: 90, c: 2 },
       { k: 'arrow', x: 140, y: 61, dir: 'r' },
       { k: 'arrow', x: 140, y: 100, dir: 'r' },
-      { k: 'van', x: 220, y: 124, label: 'Arızalı van', labelY: 160 },
+      { k: 'van', x: 220, y: 124, label: 'Arızalı araç', labelY: 160 },
     ],
     spots: [
       { id: 'A', x: 228, y: 126, w: 18, h: 18, label: 'Araçta, kemerim takılı', ok: false, why: 'Emniyet şeridindeki araca arkadan çarpılabilir. Araçta kalmak hayati tehlike.' },
@@ -411,7 +412,7 @@ export const BAKIM_SENARYO: Scenario[] = [
       { k: 'walk', x: 0, y: 150, w: 360, h: 26 },
       { k: 'house', x: 0, y: 176, w: 176, h: 84 },
       { k: 'house', x: 182, y: 176, w: 178, h: 84 },
-      { k: 'van', x: 270, y: 122, label: 'Arızalı van', labelY: 158 },
+      { k: 'van', x: 270, y: 122, label: 'Arızalı araç', labelY: 158 },
       { k: 'arrow', x: 110, y: 133, dir: 'r' },
       { k: 'arrow', x: 250, y: 97, dir: 'l' },
       { k: 'car', x: 300, y: 87, c: 1 },
@@ -424,5 +425,103 @@ export const BAKIM_SENARYO: Scenario[] = [
       { id: 'D', x: 150, y: 88, w: 18, h: 18, label: 'Karşı şeride', ok: false, why: 'Üçgen, arızalı aracın arkasından gelen trafiği uyarmalı. Karşı şeritte yanlış sürücüleri uyarır.' },
     ],
     rule: 'Üçgen, trafiğin geldiği yönde konur: şehir içinde yaklaşık 50 m, şehir dışında 100 m, otobanda 150–400 m geriye.',
+  },
+];
+
+/* ---------- Otomobilde yük (sürüş) ---------- */
+
+export const SURUS_PKW_SENARYO: Scenario[] = [
+  {
+    id: 'otomobil-yuk',
+    only: 'pkw',
+    title: 'Otomobilde ağır paket',
+    situation: '15 kg’lık bir paketi otomobiline yükleyeceksin. Çizim otomobili yandan gösteriyor, ön taraf sağda.',
+    question: 'Paketi nereye koyarsın?',
+    scene: [
+      { k: 'box', x: 84, y: 34, w: 200, h: 70, tone: 'trunk' },
+      { k: 'box', x: 18, y: 98, w: 326, h: 82, tone: 'trunk' },
+      { k: 'box', x: 24, y: 104, w: 100, h: 70, tone: 'body', label: 'bagaj' },
+      { k: 'box', x: 80, y: 66, w: 48, h: 6, tone: 'seat' },
+      { k: 'label', x: 130, y: 28, text: 'raf (Hutablage)', anchor: 'start' },
+      { k: 'box', x: 128, y: 62, w: 13, h: 70, tone: 'seat' },
+      { k: 'box', x: 134, y: 120, w: 46, h: 13, tone: 'seat' },
+      { k: 'label', x: 160, y: 150, text: 'arka koltuk' },
+      { k: 'box', x: 212, y: 62, w: 13, h: 70, tone: 'seat' },
+      { k: 'box', x: 218, y: 120, w: 46, h: 13, tone: 'seat' },
+      { k: 'label', x: 244, y: 150, text: 'ön koltuk' },
+      { k: 'label', x: 196, y: 166, text: 'ayak boşluğu' },
+      { k: 'label', x: 320, y: 90, text: 'ön →' },
+      { k: 'box', x: 50, y: 166, w: 40, h: 40, tone: 'wheel' },
+      { k: 'box', x: 266, y: 166, w: 40, h: 40, tone: 'wheel' },
+      { k: 'road', x: 0, y: 206, w: 360, h: 54 },
+    ],
+    spots: [
+      { id: 'A', x: 82, y: 40, w: 44, h: 22, label: 'Arka cam önündeki rafa', ok: false, why: 'Ani frende raf üstündeki paket kabine uçar. 50 km/s’te 15 kg’lık paket ağırlığının kat kat fazlası bir kuvvetle çarpar.' },
+      { id: 'B', x: 141, y: 96, w: 40, h: 22, label: 'Arka koltuğun üstüne', ok: false, why: 'Serbest duran paket frende öne fırlar. Arka koltuğa koyacaksan kemerle sabitle.' },
+      { id: 'C', x: 92, y: 138, w: 34, h: 34, label: 'Bagaja, en alta, arka koltuk sırtına dayalı', ok: true, why: 'Doğru. Ağırlık alçakta kalır, arka koltuk sırtı paketi kabinden ayırır. Ön koltukların arkasındaki ayak boşluğu da iyi bir yerdir.' },
+      { id: 'D', x: 222, y: 96, w: 40, h: 22, label: 'Ön yolcu koltuğuna', ok: false, why: 'Ağır paket frende öne fırlar, ayrıca hava yastığını ve yolcu koltuğu sensörünü etkileyebilir.' },
+    ],
+    rule: 'Ağır paket bagaja, en alta ve arka koltuk sırtına dayalı konur. Arka cam önündeki rafa hiçbir şey koyma.',
+  },
+];
+
+/* ---------- Yasal: sıralama ---------- */
+
+export const YASAL_SENARYO: Scenario[] = [
+  {
+    kind: 'order',
+    id: 'kaza-sirasi',
+    title: 'Kazadan sonra',
+    situation: 'Bir kavşakta başka bir araçla çarpıştın. Karşı taraftaki sürücü hafif yaralı görünüyor.',
+    question: 'Adımlara yapacağın sırayla dokun.',
+    steps: [
+      'Dur ve dörtlü flaşörü yak',
+      'Reflektif yeleği giy, sonra araçtan in',
+      'Üçgen reflektörü koy',
+      'Yaralıya bak, 112’yi ara, ilk yardım yap',
+      'Polisi ara (110)',
+      'Fotoğraf çek, bilgileri değiş, işverenine haber ver',
+    ],
+    notes: [
+      'Önce arkadan gelenleri uyar.',
+      'Yelek araçtan inmeden giyilir. İnince seni görmeleri gerekir.',
+      'Kaza yeri güvene alınmadan yardım ederken sen de tehlikeye girersin.',
+      'Yaralı varsa yardım her şeyden önce gelir. Yapmamak suçtur.',
+      'Yaralı varsa polis mutlaka gelir. Şirket aracında da polis kaydı genelde istenir.',
+      'Kanıt ve bilgiler sigorta için gerekli. Suçu kabul eden bir şey imzalama.',
+    ],
+    rule: 'Sıra: güvene al (dörtlü, yelek, üçgen), yardım et (112, ilk yardım), bildir (110, fotoğraf, bilgiler, işveren).',
+  },
+];
+
+/* ---------- Sağlık: köpek ---------- */
+
+export const SAGLIK_SENARYO: Scenario[] = [
+  {
+    id: 'kopek',
+    title: 'Bahçede köpek',
+    situation: 'Paket 5 numaraya. Bahçe kapısı açık, bahçede bağlı olmayan bir köpek havlıyor. Ev sahibini göremiyorsun.',
+    question: 'Ne yaparsın?',
+    scene: [
+      { k: 'box', x: 40, y: 8, w: 280, h: 162, tone: 'grass' },
+      { k: 'house', x: 110, y: 14, w: 140, h: 56, no: '5', target: true },
+      { k: 'walk', x: 168, y: 70, w: 24, h: 100 },
+      { k: 'fence', x1: 40, y1: 170, x2: 162, y2: 170 },
+      { k: 'fence', x1: 198, y1: 170, x2: 320, y2: 170 },
+      { k: 'fence', x1: 40, y1: 8, x2: 40, y2: 170 },
+      { k: 'fence', x1: 320, y1: 8, x2: 320, y2: 170 },
+      { k: 'label', x: 180, y: 166, text: 'kapı açık' },
+      { k: 'dog', x: 236, y: 118 },
+      { k: 'walk', x: 0, y: 172, w: 360, h: 30 },
+      { k: 'road', x: 0, y: 202, w: 360, h: 58 },
+      { k: 'van', x: 120, y: 214, label: 'Sen', labelY: 250 },
+    ],
+    spots: [
+      { id: 'A', x: 171, y: 78, w: 18, h: 18, label: 'Bahçeye girip kapıya giderim', ok: false, why: 'Köpeğin alanına girersin. Köpekler bahçelerini korur, ısırık riski yüksek.' },
+      { id: 'B', x: 171, y: 178, w: 18, h: 18, label: 'Bahçe kapısının dışında durup zile basar veya müşteriyi ararım', ok: true, why: 'Doğru. Dışarıda kal, sahibine haber ver. Ulaşamazsan uygulamadaki seçeneklere göre (komşu, teslim noktası) devam et.' },
+      { id: 'C', x: 80, y: 178, w: 18, h: 18, label: 'Paketi çitin üstünden bahçeye bırakırım', ok: false, why: 'Paket zarar görebilir ve teslim edilmiş sayılmaz. Köpek de paketi parçalayabilir.' },
+      { id: 'D', x: 252, y: 132, w: 18, h: 18, label: 'Köpeği sakinleştirip yanından geçerim', ok: false, why: 'Tanımadığın bir köpeğe yaklaşma, eğilme, elini uzatma. Güvenliğin paketten önemli.' },
+    ],
+    rule: 'Bağlı olmayan köpek varken bahçeye girme. Dışarıda kal, sahibine haber ver. Isırılırsan yarayı yıka, doktora git, iş kazası olarak bildir.',
   },
 ];

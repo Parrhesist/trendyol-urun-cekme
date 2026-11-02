@@ -37,7 +37,7 @@ const LIST = [
   { id: 'z307', de: 'Zeichen 307 · Ende der Vorfahrtstraße', tr: 'Ana yolun sonu', desc: 'Öncelik bitiyor. Sonraki kavşaklarda tabelaya bak, yoksa sağdan gelen önceliklidir.', cat: 'oncelik' },
   // Yasak
   { id: 'z250', de: 'Zeichen 250 · Verbot für Fahrzeuge aller Art', tr: 'Her türlü araç giremez', desc: 'Hiçbir araç giremez. Altında “Lieferverkehr frei” gibi ek tabela varsa teslimat için girebilirsin.', cat: 'yasak' },
-  { id: 'z253', de: 'Zeichen 253 · Verbot für Kraftfahrzeuge über 3,5 t', tr: '3,5 tonun üstündeki kamyonlar giremez', desc: 'İzin verilen toplam ağırlığı 3,5 tondan fazla olan kamyonlar giremez. 3,5 tona kadar olan van girebilir.', cat: 'yasak' },
+  { id: 'z253', de: 'Zeichen 253 · Verbot für Kraftfahrzeuge über 3,5 t', tr: '3,5 tonun üstündeki kamyonlar giremez', desc: 'İzin verilen toplam ağırlığı 3,5 tondan fazla olan kamyonlar giremez. Otomobil ve 3,5 tona kadar olan van girebilir.', cat: 'yasak' },
   { id: 'z262', de: 'Zeichen 262 · Tatsächliche Masse', tr: 'Ağırlık sınırı (gerçek ağırlık)', desc: 'Aracın o anki gerçek ağırlığı yazılı değeri aşamaz. Genelde köprülerde görülür.', cat: 'yasak' },
   { id: 'z265', de: 'Zeichen 265 · Tatsächliche Höhe', tr: 'Yükseklik sınırı', desc: 'Aracın yüksekliği yazılı değeri aşamaz. Yüksek tavanlı van’larda alçak geçit ve otopark girişlerinde çok önemli.', cat: 'yasak' },
   { id: 'z267', de: 'Zeichen 267 · Verbot der Einfahrt', tr: 'Girişi yok', desc: 'Bu yöne girmek yasak. Genelde tek yönlü yolun ters ucunda bulunur.', cat: 'yasak' },
@@ -53,14 +53,14 @@ const LIST = [
   { id: 'z209', de: 'Zeichen 209 · Vorgeschriebene Fahrtrichtung rechts', tr: 'Sadece sağa dönülür', desc: 'Bu noktada sağa dönmek zorundasın.', cat: 'yon' },
   { id: 'z220', de: 'Zeichen 220 · Einbahnstraße', tr: 'Tek yönlü yol', desc: 'Yol sadece ok yönünde kullanılır. Teslimat için bile ters girilmez.', cat: 'yon' },
   { id: 'z237', de: 'Zeichen 237 · Radweg', tr: 'Bisiklet yolu', desc: 'Sadece bisikletliler içindir. Üzerinde durmak ve park etmek yasak.', cat: 'yon' },
-  { id: 'z245', de: 'Zeichen 245 · Bussonderfahrstreifen', tr: 'Otobüs şeridi', desc: 'Sadece otobüslere (ve ek tabelayla izin verilenlere) ayrılmış şerit. Teslimat van’ı kullanamaz ve üzerinde duramaz.', cat: 'yon' },
+  { id: 'z245', de: 'Zeichen 245 · Bussonderfahrstreifen', tr: 'Otobüs şeridi', desc: 'Sadece otobüslere (ve ek tabelayla izin verilenlere) ayrılmış şerit. Teslimat aracı kullanamaz ve üzerinde duramaz.', cat: 'yon' },
   // Bilgi
   { id: 'z224', de: 'Zeichen 224 · Haltestelle', tr: 'Otobüs / tramvay durağı', desc: 'Tabelanın 15 m önünde ve arkasında park yasak.', cat: 'bilgi' },
   { id: 'z310', de: 'Zeichen 310 · Ortstafel (Vorderseite)', tr: 'Yerleşim yeri başlangıcı', desc: 'Buradan itibaren yerleşim yeri içi kurallar ve 50 km/s geçerli.', cat: 'bilgi' },
   { id: 'z311', de: 'Zeichen 311 · Ortstafel (Rückseite)', tr: 'Yerleşim yeri sonu', desc: 'Yerleşim yeri bitti. Buradan itibaren 3,5 tona kadar araçlar için 100 km/s geçerli.', cat: 'bilgi' },
   { id: 'z314', de: 'Zeichen 314 · Parken', tr: 'Park yeri', desc: 'Park etmek serbest. Ek tabelalardaki süre, park diski ve ücret kurallarına uy.', cat: 'bilgi' },
   { id: 'z350', de: 'Zeichen 350 · Fußgängerüberweg', tr: 'Yaya geçidi', desc: 'Geçmek isteyen yayalara yol vermek zorundasın. Geçitte ve önündeki 5 m içinde durmak yasak.', cat: 'bilgi' },
-  { id: 'z357', de: 'Zeichen 357 · Sackgasse', tr: 'Çıkmaz sokak', desc: 'Sokağın çıkışı yok. Van ile girersen dönmen veya geri çıkman gerekir. Girişte park edip yürümeyi düşün.', cat: 'bilgi' },
+  { id: 'z357', de: 'Zeichen 357 · Sackgasse', tr: 'Çıkmaz sokak', desc: 'Sokağın çıkışı yok. Araçla girersen dönmen veya geri çıkman gerekir. Girişte park edip yürümeyi düşün.', cat: 'bilgi' },
   // Ek tabelalar
   { id: 'zz-liefer', de: 'Zusatzzeichen · Lieferverkehr frei', tr: 'Teslimat araçları serbest', desc: 'Üstteki yasak teslimat ve yükleme yapan araçlar için geçerli değil.', cat: 'ek' },
   { id: 'zz-anlieger', de: 'Zusatzzeichen 1020-30 · Anlieger frei', tr: 'Bölgede işi olanlar serbest', desc: 'Orada oturanlar ve orada işi olanlar girebilir. Paket teslim etmek de buna dahildir.', cat: 'ek' },

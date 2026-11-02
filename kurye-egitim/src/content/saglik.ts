@@ -1,10 +1,12 @@
 import type { Module } from '../types';
+import { SAGLIK_SENARYO } from './senaryolar';
 
 export const saglik: Module = {
   id: 'saglik',
   title: 'Sağlık ve teslimat pratiği',
   desc: 'Kaldırma, yorgunluk, köpekler, müşteri',
   icon: 'heart',
+  scenarios: SAGLIK_SENARYO,
   lessons: [
     {
       id: 'ergonomi',

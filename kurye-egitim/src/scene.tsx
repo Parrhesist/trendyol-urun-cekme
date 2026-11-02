@@ -1,7 +1,7 @@
 // Senaryo sahnelerinin çizimi: yukarıdan bakış, sade sokak planı.
 // Renkler tema token'larından gelir (styles.css → --sc-*).
 import { Sign } from './signs';
-import type { SceneEl, Spot } from './types';
+import type { SceneEl, Spot, Vehicle } from './types';
 
 export const SCENE_W = 360;
 export const SCENE_H = 260;
@@ -9,7 +9,7 @@ const VAN = { w: 52, h: 22 };
 
 export type SpotState = 'idle' | 'right' | 'picked-wrong' | 'wrong';
 
-function El({ e }: { e: SceneEl }) {
+function El({ e, vehicle }: { e: SceneEl; vehicle: Vehicle }) {
   switch (e.k) {
     case 'road':
       return <rect className="sc-road" x={e.x} y={e.y} width={e.w} height={e.h} />;
@@ -130,9 +130,15 @@ function El({ e }: { e: SceneEl }) {
     case 'van': {
       const w = e.v ? VAN.h : VAN.w;
       const h = e.v ? VAN.w : VAN.h;
+      // Otomobil van'dan biraz kısa ve dar çizilir; aynı yere ortalanır.
+      const car = vehicle === 'pkw';
+      const bw = car ? (e.v ? w - 3 : w - 8) : w;
+      const bh = car ? (e.v ? h - 8 : h - 3) : h;
+      const bx = e.x + (w - bw) / 2;
+      const by = e.y + (h - bh) / 2;
       return (
         <g>
-          <rect className="sc-van" x={e.x} y={e.y} width={w} height={h} rx="4" />
+          <rect className="sc-van" x={bx} y={by} width={bw} height={bh} rx={car ? 6 : 4} />
           {e.v ? (
             <rect className="sc-van-glass" x={e.x + 3} y={e.y + 7} width={w - 6} height={8} rx="2" />
           ) : (
@@ -179,6 +185,30 @@ function El({ e }: { e: SceneEl }) {
         </g>
       );
     }
+    case 'box': {
+      const r = e.tone === 'wheel' ? Math.min(e.w, e.h) / 2 : 4;
+      return (
+        <g>
+          <rect className={`sc-box ${e.tone ?? 'body'}`} x={e.x} y={e.y} width={e.w} height={e.h} rx={r} />
+          {e.label && (
+            <text className="sc-label" x={e.x + e.w / 2} y={e.y + e.h / 2 + 3.5} textAnchor="middle">
+              {e.label}
+            </text>
+          )}
+        </g>
+      );
+    }
+    case 'dog':
+      return (
+        <g className="sc-dog" transform={`translate(${e.x} ${e.y})`}>
+          <ellipse cx="0" cy="0" rx="13" ry="6.5" />
+          <circle cx="14" cy="-3" r="5.5" />
+          <path d="M-12 -2 L-19 -7" strokeWidth="2.5" strokeLinecap="round" />
+          <ellipse cx="17" cy="-8" rx="2.4" ry="3.5" />
+        </g>
+      );
+    case 'fence':
+      return <line className="sc-fence" x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} />;
     case 'bridge':
       return (
         <g>
@@ -253,7 +283,9 @@ export function Scene({
   states,
   onPick,
   label,
+  vehicle,
 }: {
+  vehicle: Vehicle;
   els: SceneEl[];
   spots: Spot[];
   states: Record<string, SpotState>;
@@ -265,7 +297,7 @@ export function Scene({
     <svg className="scene" viewBox={`0 0 ${SCENE_W} ${SCENE_H}`} role="group" aria-label={label}>
       <rect className="sc-ground" width={SCENE_W} height={SCENE_H} />
       {els.map((e, i) => (
-        <El key={i} e={e} />
+        <El key={i} e={e} vehicle={vehicle} />
       ))}
       {spots.map((s) => (
         <SpotView key={s.id} s={s} state={states[s.id] ?? 'idle'} onPick={() => onPick(s.id)} disabled={answered} />

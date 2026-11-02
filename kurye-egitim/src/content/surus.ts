@@ -1,21 +1,23 @@
 import type { Module } from '../types';
-import { SURUS_SENARYO } from './senaryolar';
+import { SURUS_PKW_SENARYO, SURUS_SENARYO } from './senaryolar';
 
 export const surus: Module = {
   id: 'surus',
   title: 'Güvenli ve verimli sürüş',
-  desc: 'Van kullanımı, geri manevra, yük, ekonomi, kış',
+  desc: 'Aracı tanımak, geri manevra, yük, ekonomi, kış',
   icon: 'steering',
-  scenarios: SURUS_SENARYO,
+  scenarios: [...SURUS_SENARYO, ...SURUS_PKW_SENARYO],
   lessons: [
     {
       id: 'van-tanima',
-      title: 'Van’ı tanımak ve geri manevra',
+      title: 'Aracını tanımak ve geri manevra',
       minutes: 5,
       summary: 'Boyutlar, kör noktalar ve hasarların çoğunun yaşandığı an.',
       blocks: [
-        { t: 'p', text: 'Teslimat van’ı otomobilden daha uzun, daha yüksek ve daha ağırdır. Arka camdan görüş yoktur ya da çok azdır. Hasarların büyük kısmı düşük hızda olur: geri manevra, dar sokak, otopark girişi.' },
-        { t: 'list', items: ['Aracın yüksekliğini bil. Kapının içinde veya ön camda yazar. Otopark ve alçak geçit girişlerinde kontrol et.', 'Dönüşlerde arka kısım daha geniş bir yay çizer. Köşeleri daha geniş al.', 'Yüklü araç daha geç durur ve virajda daha fazla yatar.'] },
+        { t: 'p', only: 'van', text: 'Teslimat van’ı otomobilden daha uzun, daha yüksek ve daha ağırdır. Arka camdan görüş yoktur ya da çok azdır. Hasarların büyük kısmı düşük hızda olur: geri manevra, dar sokak, otopark girişi.' },
+        { t: 'list', only: 'van', items: ['Aracın yüksekliğini bil. Kapının içinde veya ön camda yazar. Otopark ve alçak geçit girişlerinde kontrol et.', 'Dönüşlerde arka kısım daha geniş bir yay çizer. Köşeleri daha geniş al.', 'Yüklü araç daha geç durur ve virajda daha fazla yatar.'] },
+        { t: 'p', only: 'pkw', text: 'Otomobille teslimatta da hasarların büyük kısmı düşük hızda olur: geri manevra, dar sokak, park ederken. Paketlerle dolu bir otomobil, boş halinden farklı davranır.' },
+        { t: 'list', only: 'pkw', items: ['Arka koltuk ve bagaj tavana kadar doluysa iç dikiz aynası işe yaramaz. Paketleri arka cam hizasının üstüne yığma.', 'Yüklü otomobil daha geç durur ve virajda daha fazla yatar.', 'Gün boyu yüzlerce kez inip bineceğin için koltuk ve aynaları sabah bir kez doğru ayarla.'] },
         { t: 'h', text: 'Geri manevra' },
         { t: 'law', text: '§ 9 StVO: Geri giderken başkalarını tehlikeye atmamak zorundasın. Gerekirse birinin seni yönlendirmesini iste.' },
         { t: 'steps', items: ['Mümkünse geri girmen gereken yere hiç girme: ileri çıkabileceğin şekilde park et.', 'Gerekiyorsa önce in ve arkaya bak (çocuk, bisiklet, direk, çöp kutusu).', 'Kamera ve sensör yardımcıdır, ama aynalara da bak.', 'Yürüme hızından yavaş geri git.', 'Emin değilsen dur ve tekrar bak.'] },
@@ -40,7 +42,7 @@ export const surus: Module = {
         },
         {
           id: 'vt-3',
-          q: 'Geri görüş kamerası olan bir van’da aynalara bakmak gerekli mi?',
+          q: 'Geri görüş kamerası olan bir araçta aynalara bakmak gerekli mi?',
           options: ['Hayır, kamera yeter', 'Evet, kamera her açıyı göstermez', 'Sadece gece', 'Sadece yağmurda'],
           answer: 1,
           why: 'Kameranın da kör noktaları vardır. Ayna, kamera ve gerekirse inip bakmak birlikte kullanılır.',
@@ -55,7 +57,8 @@ export const surus: Module = {
       blocks: [
         { t: 'law', text: '§ 22 StVO: Yük, ani frende veya kaçış manevrasında bile kaymayacak, devrilmeyecek ve düşmeyecek şekilde yerleştirilmeli ve sabitlenmelidir.' },
         { t: 'p', text: 'Sürücü olarak yükten sen de sorumlusun. Bir kontrolde yük düzgün sabitlenmemişse ceza sürücüye de kesilir.' },
-        { t: 'list', items: ['Ağır paketler alta ve öne, kabin duvarına yakın.', 'Hafif paketler üste.', 'Raflar varsa paketleri rafa yerleştir, yere yığma.', 'Boş alanları azalt, gerekirse kayış veya ağ kullan.', 'Kabinde, ön koltukta veya ayak boşluğunda gevşek paket bırakma.'] },
+        { t: 'list', only: 'van', items: ['Ağır paketler alta ve öne, kabin duvarına yakın.', 'Hafif paketler üste.', 'Raflar varsa paketleri rafa yerleştir, yere yığma.', 'Boş alanları azalt, gerekirse kayış veya ağ kullan.', 'Kabinde, ön koltukta veya ayak boşluğunda gevşek paket bırakma.'] },
+        { t: 'list', only: 'pkw', items: ['Ağır paketler bagaja, en alta ve arka koltuk sırtına dayalı.', 'Arka koltuktaki paketleri emniyet kemeriyle sabitle ya da ön koltukların arkasındaki ayak boşluğuna koy.', 'Arka cam önündeki rafa (Hutablage) asla paket koyma. Ani frende kabine uçar.', 'Ön yolcu koltuğuna ağır paket koyma. Ani frende öne fırlar.', 'Otomobilin taşıma kapasitesi sınırlıdır, çoğu zaman 400–550 kg. Ruhsattaki F.2 (izin verilen toplam ağırlık) ile G (boş ağırlık) arasındaki fark kadar yük alabilirsin; sürücü de buna dahil.'] },
         { t: 'warn', text: '50 km/s hızla ani frende 10 kiloluk bir paket, ağırlığının kat kat fazlası bir kuvvetle öne fırlar. Kabine uçan paket ciddi yaralanmaya yol açabilir.' },
         { t: 'tip', text: 'Paketleri teslimat sırasına göre diz. Aradığını kolay bulursan hem zaman kazanırsın hem de yük karışmaz.' },
         { t: 'terms', items: [['Ladungssicherung', 'Yük sabitleme'], ['Spanngurt', 'Spanzet kayış'], ['Zuladung', 'Taşıma kapasitesi'], ['überladen', 'Aşırı yüklenmiş']] },
@@ -63,10 +66,19 @@ export const surus: Module = {
       quiz: [
         {
           id: 'yk-1',
+          only: 'van',
           q: 'Ağır paketler van’ın neresine konmalı?',
           options: ['Üste', 'Alta ve öne, kabin duvarına yakın', 'Arka kapının önüne', 'Ön koltuğa'],
           answer: 1,
           why: 'Ağırlık merkezi alçak ve önde olunca araç daha dengeli olur ve yük kaymaz.',
+        },
+        {
+          id: 'yk-1p',
+          only: 'pkw',
+          q: 'Otomobilde ağır bir paketi nereye koyarsın?',
+          options: ['Arka cam önündeki rafa', 'Bagaja, en alta ve arka koltuk sırtına dayalı', 'Ön yolcu koltuğuna', 'Arka koltuğun üstüne, serbest'],
+          answer: 1,
+          why: 'Bagajın en altında, arka koltuk sırtına dayalı paket ani frende kabine uçmaz.',
         },
         {
           id: 'yk-2',
@@ -77,7 +89,7 @@ export const surus: Module = {
         },
         {
           id: 'yk-3',
-          q: 'Van’ın izin verilen toplam ağırlığını aşarsan ne olur?',
+          q: 'Aracın izin verilen toplam ağırlığını aşarsan ne olur?',
           options: ['Hiçbir şey', 'Fren mesafesi uzar ve para cezası gelir', 'Araç daha hızlı gider', 'Sadece yakıt artar'],
           answer: 1,
           why: 'Aşırı yük frenleri ve lastikleri zorlar. Kontrolde para cezası ve puan gelebilir.',
@@ -86,13 +98,13 @@ export const surus: Module = {
     },
     {
       id: 'ekonomi',
-      title: 'Ekonomik sürüş ve elektrikli van',
+      title: 'Ekonomik sürüş ve elektrikli araç',
       minutes: 4,
       summary: 'Dur-kalk trafiğinde yakıt ve menzil tasarrufu.',
       blocks: [
         { t: 'p', text: 'Teslimatta günde yüzlerce kez durup kalkarsın. Küçük alışkanlıklar gün sonunda büyük fark yaratır: daha az yakıt, daha uzun menzil, daha az fren ve lastik aşınması.' },
         { t: 'list', items: ['Öngörülü sür: kırmızı ışığı uzaktan gör, gazı erken bırak.', 'Hafif hızlan, sert frenden kaçın.', 'Manuel vitesse erken büyük vitese geç (yaklaşık 2.000 devir).', 'Gereksiz yükü araçta taşıma.', 'Lastik basıncını haftada bir kontrol et. Düşük basınç tüketimi artırır.', 'Rotayı planla. Aynı sokağa ikinci kez dönme.'] },
-        { t: 'h', text: 'Elektrikli van' },
+        { t: 'h', text: 'Elektrikli araç' },
         { t: 'list', items: ['Gaz pedalını bırakınca araç enerji geri kazanır (rekuperasyon). Erken bırakırsan frene daha az basarsın.', 'Soğukta menzil belirgin şekilde düşer. Araç şarjdayken ön ısıtma (Vorklimatisierung) yap.', 'Klima ve ısıtma en büyük tüketicilerdir. Koltuk ısıtması daha az enerji harcar.', 'Elektrikli araç sessizdir. Yayalar ve bisikletliler seni duymayabilir.'] },
         { t: 'tip', text: 'Menzil göstergesi %20’nin altına düştüğünde rotanın geri kalanını ve depoya dönüşü hesapla. Gerekirse filo sorumlusuna erken haber ver.' },
         { t: 'terms', items: [['Rekuperation', 'Enerji geri kazanımı'], ['Reichweite', 'Menzil'], ['Ladestation', 'Şarj istasyonu'], ['vorausschauend fahren', 'Öngörülü sürmek']] },
@@ -100,7 +112,7 @@ export const surus: Module = {
       quiz: [
         {
           id: 'ek-1',
-          q: 'Elektrikli van’da menzili en çok ne uzatır?',
+          q: 'Elektrikli araçta menzili en çok ne uzatır?',
           options: ['Sert hızlanıp sert fren yapmak', 'Gazı erken bırakıp rekuperasyonla yavaşlamak', 'Klimayı sonuna kadar açmak', 'Lastik basıncını düşürmek'],
           answer: 1,
           why: 'Rekuperasyon frenleme enerjisini bataryaya geri kazandırır.',
@@ -114,7 +126,7 @@ export const surus: Module = {
         },
         {
           id: 'ek-3',
-          q: 'Kışın elektrikli van’ı ısıtmanın en verimli yolu nedir?',
+          q: 'Kışın elektrikli aracı ısıtmanın en verimli yolu nedir?',
           options: ['Yolda tam güçte ısıtmak', 'Şarjdayken ön ısıtma yapmak', 'Hiç ısıtmamak', 'Camları açmak'],
           answer: 1,
           why: 'Şarjdayken ısıtma enerjisi şebekeden gelir, batarya menzili korunur.',

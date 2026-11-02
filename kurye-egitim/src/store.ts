@@ -1,6 +1,7 @@
 // İlerleme sadece bu cihazdaki tarayıcıda saklanır (localStorage).
 // Bağlantıyı açan herkesin kendi, bağımsız ilerlemesi olur.
 import { useSyncExternalStore } from 'react';
+import type { Vehicle } from './types';
 
 export interface LessonProgress {
   read: boolean;
@@ -27,6 +28,8 @@ export interface State {
   signBest?: { best: number; total: number };
   /** Senaryoların son sonucu (ilk seçim doğru muydu) */
   scen?: Record<string, boolean>;
+  /** Dağıtımda kullanılan araç; ilk açılışta sorulur */
+  vehicle?: Vehicle;
 }
 
 const KEY = 'kurye-egitim:v1';
@@ -122,16 +125,21 @@ export function saveSignTest(correct: number, total: number, wrongIds: string[])
   });
 }
 
+export function setVehicle(vehicle: Vehicle) {
+  set((s) => ({ ...s, vehicle }));
+}
+
 export function saveScenario(id: string, ok: boolean) {
   set((s) => touchDay({ ...s, scen: { ...s.scen, [id]: ok } }));
 }
 
-export function toggleCheck(id: string, totalItems: number) {
+/** ids: seçili araca ait tüm kontrol maddeleri */
+export function toggleCheck(id: string, ids: string[]) {
   set((s) => {
     const base = s.check.date === today() ? s.check : { date: today(), done: [] };
     const done = base.done.includes(id) ? base.done.filter((x) => x !== id) : [...base.done, id];
     const finishedAt =
-      done.length === totalItems
+      ids.every((x) => done.includes(x))
         ? base.finishedAt ?? new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
         : undefined;
     return touchDay({ ...s, check: { date: base.date, done, finishedAt } });
@@ -143,7 +151,8 @@ export function resetCheck() {
 }
 
 export function resetAll() {
-  set(() => empty());
+  // Araç seçimi korunur; sadece ilerleme silinir.
+  set((s) => ({ ...empty(), vehicle: s.vehicle }));
 }
 
 export const todaysCheck = (s: State) => (s.check.date === today() ? s.check : { date: today(), done: [] as string[] });

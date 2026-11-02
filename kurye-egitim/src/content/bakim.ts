@@ -15,6 +15,7 @@ export const bakim: Module = {
       summary: 'Her sabah 5 dakikada yapılan kontrol ve neden zorunlu olduğu.',
       blocks: [
         { t: 'p', text: 'Şirket araçları için iş güvenliği kuralları (DGUV Vorschrift 70) geçerlidir. Araç yılda en az bir kez uzman tarafından kontrol edilir. Sürücü de her vardiyadan önce aracın işletme güvenliğini kontrol etmek zorundadır.' },
+        { t: 'tip', only: 'pkw', text: 'Kendi otomobilinle çalışıyorsan bu kontrol daha da önemli: aracın bakımı ve güvenliği tamamen senin sorumluluğunda. Ayrıntılar “Kendi aracınla çalışmak” dersinde.' },
         { t: 'steps', items: ['Aracın etrafında bir tur at, yeni hasar var mı bak ve fotoğrafla.', 'Lastiklere bak: hava, kesik, şişlik.', 'Işıkları dene: far, fren, sinyal, geri vites.', 'Camlar ve aynalar temiz ve sağlam mı?', 'Motoru çalıştır: uyarı ışıkları sönüyor mu?', 'Frenleri ve el frenini dene.', 'Yakıt veya şarj seviyesi rotaya yetiyor mu?', 'Yelek, üçgen reflektör ve ilk yardım çantası yerinde mi?'] },
         { t: 'warn', text: 'Hasarı vardiyadan önce bildirmezsen, sonradan sana ait sayılabilir. Fotoğraf, tarih ve saat seni korur.' },
         { t: 'tip', text: 'Uygulamadaki “Kontrol” sekmesinde her gün işaretleyebileceğin bir liste var.' },
@@ -90,7 +91,7 @@ export const bakim: Module = {
         { t: 'h', text: 'Hemen durman gereken kırmızı ışıklar' },
         { t: 'list', items: ['Yağ basıncı (yağdanlık): Motor yağsız kalabilir. Devam etmek motoru bozar.', 'Motor sıcaklığı (termometre): Motor aşırı ısınıyor.', 'Fren sistemi (daire içinde ünlem): Fren hidroliği veya fren arızası.', 'Şarj (akü sembolü): Alternatör şarj etmiyor.'] },
         { t: 'h', text: 'Sık görülen sarı ışıklar' },
-        { t: 'list', items: ['Motor arıza ışığı: Servise bildir. Yanıp sönüyorsa yavaşla ve dur.', 'Lastik basıncı: Lastikleri kontrol et.', 'AdBlue: Dizel van’larda AdBlue azalıyor. Bittiğinde motor tekrar çalışmayabilir.', 'ABS / ESP: Fren veya denge sisteminde sorun.'] },
+        { t: 'list', items: ['Motor arıza ışığı: Servise bildir. Yanıp sönüyorsa yavaşla ve dur.', 'Lastik basıncı: Lastikleri kontrol et.', 'AdBlue: Dizel araçlarda AdBlue azalıyor. Bittiğinde motor tekrar çalışmayabilir.', 'ABS / ESP: Fren veya denge sisteminde sorun.'] },
         { t: 'tip', text: 'Herhangi bir uyarı ışığını gördüğünde fotoğrafını çek ve filo sorumlusuna gönder. Işık sönse bile hata kaydı tamirciye yardım eder.' },
         { t: 'terms', items: [['Kontrollleuchte', 'Uyarı ışığı'], ['Öldruck', 'Yağ basıncı'], ['Kühlmittel', 'Soğutma suyu'], ['Bremsflüssigkeit', 'Fren hidroliği'], ['AdBlue', 'Dizel egzoz sıvısı']] },
       ],
@@ -111,7 +112,7 @@ export const bakim: Module = {
         },
         {
           id: 'ui-3',
-          q: 'Dizel van’da AdBlue tamamen biterse ne olabilir?',
+          q: 'Dizel bir araçta AdBlue tamamen biterse ne olabilir?',
           options: ['Hiçbir şey', 'Motor yeniden çalışmayabilir', 'Araç daha hızlı olur', 'Sadece klima kapanır'],
           answer: 1,
           why: 'AdBlue bitince birçok araç motoru yeniden çalıştırmaya izin vermez.',

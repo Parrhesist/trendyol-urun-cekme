@@ -1,7 +1,15 @@
 import type { SignId } from './signs';
 
+/** Kuryenin kullandığı araç. Ortak içerikte boş bırakılır. */
+export type Vehicle = 'van' | 'pkw';
+
+/** Sadece bir araç türünde gösterilecek içerik */
+export interface Only {
+  only?: Vehicle;
+}
+
 /** Ders içeriğindeki tek bir blok. */
-export type Block =
+export type Block = Only & (
   | { t: 'p'; text: string }
   | { t: 'h'; text: string }
   | { t: 'list'; items: string[] }
@@ -11,9 +19,9 @@ export type Block =
   /** Almanca terim ve Türkçe karşılığı */
   | { t: 'terms'; items: [de: string, tr: string][] }
   | { t: 'signs'; items: [sign: SignId, caption: string][] }
-  | { t: 'table'; head: [string, string]; rows: [string, string][] };
+  | { t: 'table'; head: [string, string]; rows: [string, string][] });
 
-export interface Question {
+export interface Question extends Only {
   id: string;
   q: string;
   /** Soruda gösterilen işaret(ler); ikincisi genelde ek tabela */
@@ -26,7 +34,7 @@ export interface Question {
   why: string;
 }
 
-export interface Lesson {
+export interface Lesson extends Only {
   id: string;
   title: string;
   minutes: number;
@@ -47,7 +55,7 @@ export interface Module {
 export type IconName =
   | 'road' | 'parking' | 'law' | 'steering' | 'wrench' | 'heart'
   | 'home' | 'book' | 'check' | 'dict' | 'gear' | 'chevron' | 'back'
-  | 'clock' | 'repeat' | 'bolt' | 'close' | 'flame' | 'info' | 'sign' | 'map';
+  | 'clock' | 'repeat' | 'bolt' | 'close' | 'flame' | 'info' | 'sign' | 'map' | 'van' | 'car';
 
 /* ---------- Senaryolar (yukarıdan bakış sokak sahneleri) ---------- */
 // Sahne koordinatları: 360 × 260 birim. Yaklaşık 10 birim = 1 metre.
@@ -74,7 +82,11 @@ export type SceneEl =
   /** Bariyer (Leitplanke) */
   | { k: 'rail'; x1: number; y1: number; x2: number; y2: number }
   /** Köprü veya üst geçit */
-  | { k: 'bridge'; x: number; y: number; w: number; h: number; label?: string };
+  | { k: 'bridge'; x: number; y: number; w: number; h: number; label?: string }
+  /** Nötr kutu (koltuk, bagaj, bahçe vb.) */
+  | { k: 'box'; x: number; y: number; w: number; h: number; label?: string; tone?: 'seat' | 'trunk' | 'grass' | 'body' | 'wheel' }
+  | { k: 'dog'; x: number; y: number }
+  | { k: 'fence'; x1: number; y1: number; x2: number; y2: number };
 
 export interface Spot {
   id: 'A' | 'B' | 'C' | 'D';
@@ -90,7 +102,8 @@ export interface Spot {
   why: string;
 }
 
-export interface Scenario {
+export interface SpotScenario extends Only {
+  kind?: 'spots';
   id: string;
   title: string;
   /** Durumun anlatımı */
@@ -101,3 +114,19 @@ export interface Scenario {
   /** Akılda kalacak kural */
   rule: string;
 }
+
+/** Sıralama senaryosu: adımlar doğru sırayla seçilir. */
+export interface OrderScenario extends Only {
+  kind: 'order';
+  id: string;
+  title: string;
+  situation: string;
+  question: string;
+  /** Doğru sırayla adımlar */
+  steps: string[];
+  /** Adım adım açıklama (steps ile aynı sırada) */
+  notes: string[];
+  rule: string;
+}
+
+export type Scenario = SpotScenario | OrderScenario;

@@ -62,6 +62,21 @@ const PATHS: Record<IconName, JSX.Element> = {
       <path d="M9 4v13.5M15 6.5V20" />
     </>
   ),
+  van: (
+    <>
+      <path d="M2.5 16.5V8a2 2 0 0 1 2-2H14v10.5M14 9h3.6a2 2 0 0 1 1.7 1l2 3.4V16.5H2.5" />
+      <circle cx="7" cy="17.5" r="1.8" />
+      <circle cx="17" cy="17.5" r="1.8" />
+    </>
+  ),
+  car: (
+    <>
+      <path d="M3 16v-3.2l1.8-4.4A2 2 0 0 1 6.7 7h10.6a2 2 0 0 1 1.9 1.4L21 12.8V16H3Z" />
+      <path d="M3.5 12.5h17" />
+      <circle cx="7" cy="16.5" r="1.8" />
+      <circle cx="17" cy="16.5" r="1.8" />
+    </>
+  ),
   info: (
     <>
       <circle cx="12" cy="12" r="9" />

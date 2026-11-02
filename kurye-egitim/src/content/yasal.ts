@@ -1,10 +1,12 @@
 import type { Module } from '../types';
+import { YASAL_SENARYO } from './senaryolar';
 
 export const yasal: Module = {
   id: 'yasal',
   title: 'Yasal zorunluluklar',
   desc: 'Ehliyet, puan, alkol, çalışma süresi, kaza',
   icon: 'law',
+  scenarios: YASAL_SENARYO,
   lessons: [
     {
       id: 'ehliyet',
@@ -12,7 +14,7 @@ export const yasal: Module = {
       minutes: 5,
       summary: 'B sınıfı ehliyetin sınırları, Probezeit ve Flensburg puan sistemi.',
       blocks: [
-        { t: 'p', text: 'B sınıfı ehliyet, toplam ağırlığı 3,5 tona kadar olan araçları kullanma hakkı verir. Teslimat van’larının çoğu bu sınırın içindedir. Aracın izin verilen toplam ağırlığı ruhsatta (Zulassungsbescheinigung Teil I) F.2 satırında yazar.' },
+        { t: 'p', text: 'B sınıfı ehliyet, toplam ağırlığı 3,5 tona kadar olan araçları kullanma hakkı verir. Otomobiller ve teslimat van’larının çoğu bu sınırın içindedir. Aracın izin verilen toplam ağırlığı ruhsatta (Zulassungsbescheinigung Teil I) F.2 satırında yazar.' },
         { t: 'warn', text: 'AB dışı ülkelerden alınmış ehliyetler (örneğin Türkiye) Almanya’ya yerleşmenden sonra 6 ay geçerlidir. Sonra Alman ehliyetine çevrilmesi gerekir. Hangi sınavların gerektiğini Führerscheinstelle’ye (ehliyet dairesine) sor. Süresi geçmiş ehliyetle araç kullanmak suçtur.' },
         { t: 'h', text: 'Deneme süresi (Probezeit)' },
         { t: 'p', text: 'İlk kez ehliyet alanlar için 2 yıllık deneme süresi vardır. Bu sürede alkol sınırı sıfırdır (0,0 promil) ve ciddi bir ihlalde eğitim semineri zorunlu olur, deneme süresi 4 yıla uzar.' },
@@ -50,6 +52,48 @@ export const yasal: Module = {
           options: ['Süresiz', '6 ay', '2 yıl', 'Hiç geçerli değil'],
           answer: 1,
           why: 'AB dışı ehliyetler ikamet başladıktan sonra 6 ay kullanılabilir, sonra çevrilmelidir.',
+        },
+      ],
+    },
+    {
+      id: 'kendi-araci',
+      only: 'pkw',
+      title: 'Kendi aracınla çalışmak',
+      minutes: 4,
+      summary: 'Muayene (TÜV), sigorta ve bakım: kendi otomobilinle dağıtım yapıyorsan.',
+      blocks: [
+        { t: 'p', text: 'Paketleri kendi otomobilinle dağıtıyorsan, şirket aracında filo sorumlusunun yaptığı birçok iş sana kalır. Bu ders şirket aracı kullananlar için değil, kendi aracıyla çalışanlar içindir.' },
+        { t: 'h', text: 'Muayene (Hauptuntersuchung, “TÜV”)' },
+        { t: 'p', text: 'Yeni otomobil ilk kez 3 yıl sonra, sonra 2 yılda bir muayeneye girer. Sıradaki muayenenin ay ve yılı arka plakadaki renkli etikette (Plakette) yazar.' },
+        { t: 'fine', text: 'Muayeneyi 8 aydan fazla geciktirmek 60 € ve 1 puan. Daha kısa gecikmelerde de para cezası vardır.' },
+        { t: 'h', text: 'Sigorta' },
+        { t: 'p', text: 'Özel araç sigortası çoğu zaman özel kullanıma göre hesaplanır. Aracı paket dağıtmak için kullanıyorsan bunu sigorta şirketine mutlaka bildir.' },
+        { t: 'warn', text: 'Kurye işini bildirmeden kaza yaparsan, sigorta karşı tarafın zararını yine öder. Ama ödediği tutarın bir kısmını senden geri isteyebilir. Sözleşmende “gewerbliche Nutzung” ya da “Kurierfahrten” konusunu sor.' },
+        { t: 'h', text: 'Bakım ve masraflar' },
+        { t: 'list', items: ['Teslimat işi aracı normalden çok daha fazla yıpratır: frenler, debriyaj, lastikler ve kapılar.', 'Yağ ve lastik kontrolünü sık yap. Arızalı araçla çalışmak hem tehlikeli hem pahalı.', 'Kilometre ve yakıt masraflarını kaydet. İşverenin ödemesi ya da vergi beyanı için gerekebilir.', 'Araçta zorunlu ekipman (yelek, üçgen, ilk yardım çantası) senin sorumluluğunda.'] },
+        { t: 'terms', items: [['Hauptuntersuchung (HU)', 'Periyodik muayene'], ['Prüfplakette', 'Muayene etiketi'], ['Kfz-Haftpflichtversicherung', 'Zorunlu trafik sigortası'], ['Vollkasko', 'Kasko'], ['gewerbliche Nutzung', 'Ticari kullanım']] },
+      ],
+      quiz: [
+        {
+          id: 'ka-1',
+          q: 'Otomobil muayenesi (HU) ilk muayeneden sonra hangi sıklıkla yapılır?',
+          options: ['Her yıl', '2 yılda bir', '4 yılda bir', 'Sadece satarken'],
+          answer: 1,
+          why: 'Otomobil ilk kez 3 yıl sonra, sonra 2 yılda bir muayeneye girer.',
+        },
+        {
+          id: 'ka-2',
+          q: 'Kendi otomobilinle paket dağıtmaya başladın. Sigorta için ne yaparsın?',
+          options: ['Hiçbir şey, sigorta her durumu kapsar', 'Ticari kullanımı sigorta şirketine bildiririm', 'Sadece kasko yaptırırım', 'Sadece kaza olunca söylerim'],
+          answer: 1,
+          why: 'Bildirilmeyen ticari kullanımda sigorta, ödediği tutarın bir kısmını senden geri isteyebilir.',
+        },
+        {
+          id: 'ka-3',
+          q: 'Sıradaki muayene tarihini nereden görürsün?',
+          options: ['Ehliyetten', 'Arka plakadaki etiketten', 'Kilometre sayacından', 'Lastikten'],
+          answer: 1,
+          why: 'Arka plakadaki Prüfplakette ayı ve yılı gösterir. Ruhsatta da yazar.',
         },
       ],
     },
@@ -102,7 +146,7 @@ export const yasal: Module = {
         { t: 'table', head: ['Kural', 'Süre'], rows: [['Normal günlük çalışma', 'En fazla 8 saat'], ['Uzatılmış günlük çalışma', 'En fazla 10 saat (ortalamada 8 saati aşmamak şartıyla)'], ['6 saatten uzun çalışmada mola', 'En az 30 dakika'], ['9 saatten uzun çalışmada mola', 'En az 45 dakika'], ['İki vardiya arası', 'En az 11 saat kesintisiz dinlenme']] },
         { t: 'p', text: 'Molalar en az 15 dakikalık parçalar halinde verilebilir. 6 saatten fazla molasız çalışılamaz.' },
         { t: 'tip', text: 'Yükleme, depo bekleme ve paket ayırma da çalışma süresine dahildir. Sadece direksiyonda geçen süre sayılmaz.' },
-        { t: 'warn', text: 'Uluslararası taşımada 2,5 tonun üzerindeki van’lar için 2026 Temmuz’undan itibaren takograf zorunludur. Sadece Almanya içinde teslimat yapıyorsan bu seni etkilemez.' },
+        { t: 'warn', only: 'van', text: 'Uluslararası taşımada 2,5 tonun üzerindeki van’lar için 2026 Temmuz’undan itibaren takograf zorunludur. Sadece Almanya içinde teslimat yapıyorsan bu seni etkilemez.' },
         { t: 'terms', items: [['Arbeitszeit', 'Çalışma süresi'], ['Pause', 'Mola'], ['Ruhezeit', 'Dinlenme süresi'], ['Fahrtenschreiber', 'Takograf']] },
       ],
       quiz: [
