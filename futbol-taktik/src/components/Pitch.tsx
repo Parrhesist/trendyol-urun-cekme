@@ -62,10 +62,17 @@ export function viewBoxFor(half?: boolean) {
   return half ? `${PITCH.w / 2 - 3} -3 ${PITCH.w / 2 + 6} ${PITCH.h + 6}` : `-3 -3 ${PITCH.w + 6} ${PITCH.h + 6}`;
 }
 
-export function DrawingShape({ d, faded, onClick }: { d: Drawing; faded?: boolean; onClick?: () => void }) {
+/** Silme düğmesinin yeri: çizginin ortası ya da bölgenin merkezi */
+function midOf(d: Drawing): Pt {
+  const [a, b] = [d.pts[0], d.pts[d.pts.length - 1]];
+  if (d.kind === 'zone' || d.pts.length < 3) return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  return d.pts[Math.floor(d.pts.length / 2)];
+}
+
+export function DrawingShape({ d, faded, selected, onClick }: { d: Drawing; faded?: boolean; selected?: boolean; onClick?: () => void }) {
   const color = DRAW_COLORS[d.color] ?? DRAW_COLORS.a;
   const marker = `url(#arrow-${d.color})`;
-  const common = { onClick, style: { cursor: onClick ? 'pointer' : undefined, opacity: faded ? 0.25 : 1 }, className: 'drawing' };
+  const common = { onClick, style: { cursor: onClick ? 'pointer' : undefined, opacity: faded ? 0.25 : 1 }, className: 'drawing' + (selected ? ' sel' : '') };
   if (d.kind === 'zone') {
     const [a, b] = d.pts;
     return <rect {...common} x={Math.min(a.x, b.x)} y={Math.min(a.y, b.y)} width={Math.abs(b.x - a.x)} height={Math.abs(b.y - a.y)} rx={1.2} fill={color} fillOpacity={0.22} stroke={color} strokeWidth={0.25} strokeDasharray="1 0.6" />;
@@ -117,6 +124,7 @@ export function TokenShape({ t, p, sub, role, selected, colors, scale = 1 }: { t
   if (t.kind === 'ball')
     return (
       <g transform={`translate(${p.x},${p.y})`} className="tok">
+        <circle r={1.5} fill="transparent" />
         <circle r={0.95} fill="url(#ball-g)" stroke="#1d2430" strokeWidth={0.18} />
         <path d="M0,-0.4 L0.38,-0.12 L0.24,0.32 L-0.24,0.32 L-0.38,-0.12 Z" fill="#1d2430" />
       </g>
@@ -138,7 +146,7 @@ export function TokenShape({ t, p, sub, role, selected, colors, scale = 1 }: { t
   return (
     <g transform={`translate(${p.x},${p.y})`} className="tok">
       <circle r={r + 0.35} fill="rgba(0,0,0,.28)" cy={0.35} />
-      {selected && <circle r={r + 0.9} fill="none" stroke="var(--ink-draw-c)" strokeWidth={0.35} />}
+      {selected && <circle r={r + 0.9} fill="none" stroke="var(--ink-draw-c)" strokeWidth={0.35} pointerEvents="none" />}
       <circle r={r} fill={fill} stroke="#fff" strokeWidth={0.32} />
       <text y={0.62 * scale} textAnchor="middle" className="tok-num" style={{ fontSize: (t.label.length > 2 ? 1.25 : 1.75) * scale }}>
         {t.label}
@@ -208,8 +216,14 @@ export function Pitch(props: Props) {
     return { x: +pt.x.toFixed(2), y: +pt.y.toFixed(2) };
   };
 
+  // oyuncu ve top silgi dışındaki her araçta doğrudan sürüklenir
+  const grabs = editable && tool !== 'erase';
+  const [selDraw, setSelDraw] = useState<string | null>(null);
+  const shownSel = editable && tool === 'move' ? drawings.find((d) => d.id === selDraw) : undefined;
+
   const startToken = (e: React.PointerEvent, id: string) => {
-    if (!editable || tool !== 'move') return;
+    if (!grabs) return;
+    setSelDraw(null);
     e.stopPropagation();
     (e.target as Element).setPointerCapture?.(e.pointerId);
     const p = toPt(e);
@@ -227,6 +241,7 @@ export function Pitch(props: Props) {
     if (!editable) return;
     if (tool === 'move') {
       props.onSelect?.(null);
+      setSelDraw(null);
       return;
     }
     if (tool === 'erase') return;
@@ -287,15 +302,36 @@ export function Pitch(props: Props) {
       <PitchSurface half={half} />
       {props.ghostDrawings?.map((d) => <DrawingShape key={'g' + d.id} d={d} faded />)}
       {drawings.map((d) => (
-        <DrawingShape key={d.id} d={d} onClick={editable && tool === 'erase' ? () => props.onErase?.(d.id) : undefined} />
+        <DrawingShape
+          key={d.id}
+          d={d}
+          selected={shownSel?.id === d.id}
+          onClick={editable && tool === 'erase' ? () => props.onErase?.(d.id) : editable && tool === 'move' ? () => setSelDraw(d.id) : undefined}
+        />
       ))}
       {draft && <DrawingShape d={draft} />}
       {order.map((t) =>
         pos[t.id] ? (
-          <g key={t.id} onPointerDown={(e) => startToken(e, t.id)} style={{ cursor: editable && tool === 'move' ? 'grab' : undefined }}>
+          <g key={t.id} onPointerDown={(e) => startToken(e, t.id)} style={{ cursor: grabs ? 'grab' : undefined }}>
             <TokenShape t={t} p={pos[t.id]} sub={props.subFor?.(t)} role={props.roleFor?.(t)} selected={props.selected === t.id} colors={colors} scale={props.tokenScale} />
           </g>
         ) : null,
+      )}
+      {shownSel && (
+        <g
+          className="draw-del"
+          transform={`translate(${midOf(shownSel).x},${midOf(shownSel).y})`}
+          role="button"
+          aria-label="Bu çizimi sil"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => {
+            props.onErase?.(shownSel.id);
+            setSelDraw(null);
+          }}
+        >
+          <circle r={1.7} />
+          <path d="M-0.6,-0.6 L0.6,0.6 M0.6,-0.6 L-0.6,0.6" />
+        </g>
       )}
       {props.overlay}
       </g>

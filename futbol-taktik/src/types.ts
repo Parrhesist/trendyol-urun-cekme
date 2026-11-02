@@ -31,6 +31,11 @@ export interface Drawing {
   kind: DrawKind;
   pts: Pt[];
   color: string; // palet anahtarı: a | b | c | d
+  // hareket oku: sonraki adımda bu taş okun ucuna (to) gider; top sürmede top da (carry → carryTo)
+  mover?: string;
+  to?: Pt;
+  carry?: string;
+  carryTo?: Pt;
 }
 
 export interface Frame {

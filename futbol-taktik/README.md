@@ -4,7 +4,7 @@ Tablet öncelikli (ekrana yansıtılabilir), bilgisayarda da çalışan tek tak�
 
 ## Modüller
 - **Panel**: sıradaki maç, sezon formu, yük durumu, kadro uygunluğu, son taktikler.
-- **Taktik tahtası**: oyuncu etiketi seçilebilir (no / konuma göre mevki / soyad / ikisi); FIFA ölçülerinde (105×68 m) saha, sürükle-bırak oyuncu/rakip/top/huni/kale, koşu–pas–top sürme okları, bölge ve hat çizimi, çok adımlı animasyon, sunum (tam ekran) modu, bağlantı ile paylaşım.
+- **Taktik tahtası**: oyuncu etiketi seçilebilir (no / konuma göre mevki / soyad / ikisi); FIFA ölçülerinde (105×68 m) saha, sürükle-bırak oyuncu/rakip/top/huni/kale (her araçta doğrudan sürüklenir), koşu–pas–top sürme okları, bölge ve hat çizimi, çok adımlı animasyon. Taşın hemen yanından başlayan ok harekete bağlanır: koşu oyuncuyu, pas topu (alıcıya atılırsa ayağına), top sürme oyuncuyu ve topu sonraki adımda okun ucuna götürür (adım yoksa eklenir), animasyon okun yolunu izler; ok silinince hareket geri alınır. Oka dokunup × ile çizim, adım düğmesinin köşesindeki × ile adım silinir; sunum (tam ekran) modu, bağlantı ile paylaşım.
 - **Antrenman**: haftalık takvim, drill kütüphanesi (saha diyagramlı), seans akışı, katılım, sRPE yükü ve akut:kronik yük oranı.
 - **Maçlar**: maç öncesi
   - *Kadro ve diziliş*: oyuncular sahada serbestçe sürüklenir, üst üste bırakılınca yer değiştirir, kadro listesinden sürükle-bırak veya dokun-yerleştir; mevki her oyuncunun konumundan otomatik yazılır (doğal mevkisi dışındaysa turuncu), sahadaki diziliş hatlardan okunur (ör. 4-2-3-1). Şablona geçişte oyuncular korunur ve en uygun yerlere eşleştirilir (Macar algoritması: mesafe + doğal mevki). Kaptan, yedekler, oyuncu görevleri, geri al, son maçın kadrosunu kopyalama.

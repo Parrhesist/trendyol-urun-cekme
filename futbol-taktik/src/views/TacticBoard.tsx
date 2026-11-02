@@ -4,9 +4,10 @@ import { labelModeOf, useTacticAnimation, useTokenLabels } from '../components/T
 import { cloneFrame, FORMATION_NAMES, FORMATIONS, makeTactic, mirror, uid } from '../football';
 import { autoLineup, tacticFromMatch } from '../lineup';
 import { useStore } from '../store';
-import type { LabelMode, Pt, Tactic, TacticCategory, Token, TokenKind } from '../types';
+import type { Drawing, LabelMode, Pt, Tactic, TacticCategory, Token, TokenKind } from '../types';
 import { Btn, ConfirmBtn, Empty, enterFullscreen, exitFullscreen, Field, fullscreenElement, fullscreenHint, Icon, Modal, Segmented, useFullscreen } from '../ui';
 import { libItem } from '../library';
+import { addDrawing, previewDrawings, removeDrawing } from '../moves';
 import { PresentActions } from '../present/Actions';
 import { TacticTabs } from './Library';
 import { ShareModal } from './Share';
@@ -68,7 +69,7 @@ export function TacticBoard({ openId, onOpen, backLabel }: { openId?: string; on
         <div className="card-grid">
           {list.map((t) => (
             <button key={t.id} type="button" className="tcard" onClick={() => onOpen(t.id)}>
-              <MiniPitch tokens={t.tokens} pos={t.frames[0].pos} drawings={t.frames[t.frames.length > 1 ? 1 : 0].drawings} half={t.half} colors={colors} />
+              <MiniPitch tokens={t.tokens} pos={t.frames[0].pos} drawings={previewDrawings(t)} half={t.half} colors={colors} />
               <div className="tcard-body">
                 <span className={'cat cat-' + CATEGORIES.indexOf(t.category)}>
                   {t.category}
@@ -282,10 +283,18 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
     anim.setFi(fi + 1);
   };
 
-  const delFrame = () => {
+  const delFrameAt = (i: number) => {
     if (t.frames.length < 2) return;
-    update((d) => ({ ...d, frames: d.frames.filter((_, i) => i !== fi) }));
-    anim.setFi(Math.max(0, fi - 1));
+    update((d) => ({ ...d, frames: d.frames.filter((_, j) => j !== i) }));
+    if (i < fi || (i === fi && fi > 0)) anim.setFi(fi - 1);
+    toast(`Adım ${i + 1} silindi. Geri al ile geri getirebilirsiniz.`);
+  };
+
+  // koşu, pas ve top sürme oku taşın yanından başlarsa sonraki adımda taş okun ucuna gider
+  const drawn = (d: Drawing) => {
+    const r = addDrawing(t, fi, d);
+    update(() => r.tactic);
+    if (r.created) toast(`Adım ${fi + 2} eklendi: Oynat'a basınca ${r.mover === 'ball' ? 'top' : 'oyuncu'} okun ucuna gider.`);
   };
 
   const addToken = (kind: TokenKind) => {
@@ -400,7 +409,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
         </div>
       </header>
 
-      {editable && (
+      {canEdit && (
         <div className="toolbar ed-tools" role="toolbar" aria-label="Çizim araçları">
           <div className="tool-group tools-main">
             {TOOLS.map((x) => (
@@ -417,12 +426,12 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
           </div>
           <div className="tool-group adds">
             {ADDS.map((k) => (
-              <button key={k} type="button" className="add-tok" onClick={() => addToken(k)} title={kindLabel(k) + ' ekle'}>
+              <button key={k} type="button" className="add-tok" onClick={() => addToken(k)} title={kindLabel(k) + ' ekle'} disabled={!editable}>
                 <i className={'add-ico ' + k} aria-hidden="true" />
                 <span>+ {kindLabel(k)}</span>
               </button>
             ))}
-            <Btn size="sm" variant="ghost" icon="undo" onClick={undo} disabled={!history.current.length} title="Geri al">
+            <Btn size="sm" variant="ghost" icon="undo" onClick={undo} disabled={!editable || !history.current.length} title="Geri al">
               <span className="hide-narrow">Geri al</span>
             </Btn>
           </div>
@@ -437,29 +446,13 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
           <Btn icon="prev" variant="ghost" size="lg" onClick={() => anim.setFi(fi - 1)} disabled={fi === 0} aria-label="Önceki adım" />
           <Btn icon="next" variant="ghost" size="lg" onClick={() => anim.setFi(fi + 1)} disabled={fi >= t.frames.length - 1} aria-label="Sonraki adım" />
         </div>
-        <ol className="frame-list">
-          {t.frames.map((_, i) => (
-            <li key={i}>
-              <button type="button" className={i === fi ? 'on' : ''} onClick={() => anim.setFi(i)}>
-                {i + 1}
-              </button>
-            </li>
-          ))}
-          {editable && (
-            <li>
-              <button type="button" className="add" onClick={addFrame} title="Bu adımı kopyalayıp yeni adım ekle">
-                + Adım
-              </button>
-            </li>
-          )}
-        </ol>
+        <StepChips n={t.frames.length} fi={fi} editable={editable} onGo={anim.setFi} onAdd={addFrame} onDel={delFrameAt} addLabel="+ Adım" />
         <div className="frame-note">
           {editable ? (
             <textarea id="frame-note" rows={2} placeholder={`Adım ${fi + 1} notu: kim, nereye, ne zaman?`} value={frame.note ?? ''} onChange={(e) => setFrame((f) => ({ ...f, note: e.target.value }), false)} />
           ) : (
             <p className="note-read">{frame.note || 'Bu adım için not yok.'}</p>
           )}
-          {editable && t.frames.length > 1 && <Btn variant="ghost" size="sm" icon="trash" onClick={delFrame} aria-label="Adımı sil" title="Adımı sil" />}
         </div>
       </section>
 
@@ -467,7 +460,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
         <Pitch
           tokens={t.tokens}
           pos={anim.pos}
-          drawings={frame.drawings}
+          drawings={anim.drawings}
           half={t.half}
           colors={colors}
           subFor={labels.subFor}
@@ -480,8 +473,8 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
           onSelect={setSelected}
           onMove={onMove}
           onMoveEnd={() => (moveStart.current = false)}
-          onDraw={(d) => setFrame((f) => ({ ...f, drawings: [...f.drawings, d] }))}
-          onErase={(id) => setFrame((f) => ({ ...f, drawings: f.drawings.filter((x) => x.id !== id) }))}
+          onDraw={drawn}
+          onErase={(id) => update((d) => removeDrawing(d, fi, id))}
           className="board"
         />
       </div>
@@ -589,7 +582,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
                 Kütüphaneden kopya: <a href={'#kutuphane-' + t.libId}>{libItem(t.libId)!.def.name}</a>
               </p>
             )}
-            <p className="hint small">Sürükle: taşı · araç seç: çiz · “+ Adım”: sonraki an · ← → adım, boşluk: oynat</p>
+            <p className="hint small">Oyuncu ve top her araçta sürüklenir · koşu, pas ve top sürme okunu taşın hemen yanından başlatın: oynatınca okun ucuna gider · oka dokunup × ile silin · adımın köşesindeki × adımı siler · ← → adım, boşluk: oynat</p>
             {canEdit && (
               <ConfirmBtn
                 variant="ghost"
@@ -663,6 +656,7 @@ function Editor({ tactic, onBack, backLabel }: { tactic: Tactic; onBack: () => v
           onUndo={undo}
           onAdd={addToken}
           onAddFrame={addFrame}
+          onDelFrame={delFrameAt}
           kindLabel={kindLabel}
           hint={fsHint}
           onHint={setFsHint}
@@ -708,6 +702,7 @@ function LessonUI(props: {
   onUndo: () => void;
   onAdd: (k: TokenKind) => void;
   onAddFrame: () => void;
+  onDelFrame: (i: number) => void;
   kindLabel: (k: TokenKind) => string;
   hint: string | null;
   onHint: (h: string | null) => void;
@@ -786,25 +781,38 @@ function LessonUI(props: {
             {anim.playing ? 'Durdur' : 'Oynat'}
           </Btn>
           <Btn icon="prev" variant="ghost" onClick={() => anim.setFi(fi - 1)} disabled={fi === 0} aria-label="Önceki adım" />
-          <ol className="frame-list">
-            {t.frames.map((_, i) => (
-              <li key={i}>
-                <button type="button" className={i === fi ? 'on' : ''} onClick={() => anim.setFi(i)}>
-                  {i + 1}
-                </button>
-              </li>
-            ))}
-            {canEdit && (
-              <li>
-                <button type="button" className="add" onClick={props.onAddFrame} title="Bu adımı kopyalayıp yeni adım ekle">
-                  +
-                </button>
-              </li>
-            )}
-          </ol>
+          <StepChips n={t.frames.length} fi={fi} editable={canEdit && !anim.playing} onGo={anim.setFi} onAdd={props.onAddFrame} onDel={props.onDelFrame} addLabel="+" />
           <Btn icon="next" variant="ghost" onClick={() => anim.setFi(fi + 1)} disabled={fi >= t.frames.length - 1} aria-label="Sonraki adım" />
         </div>
       )}
     </>
+  );
+}
+
+/** Adım düğmeleri: dokununca o adıma gider, köşedeki × o adımı siler */
+function StepChips(props: { n: number; fi: number; editable: boolean; onGo: (i: number) => void; onAdd: () => void; onDel: (i: number) => void; addLabel: string }) {
+  const { n, fi, editable } = props;
+  return (
+    <ol className="frame-list">
+      {Array.from({ length: n }, (_, i) => (
+        <li key={i} className={i === fi ? 'on' : ''}>
+          <button type="button" className={i === fi ? 'on' : ''} onClick={() => props.onGo(i)}>
+            {i + 1}
+          </button>
+          {editable && n > 1 && (
+            <button type="button" className="chip-del" onClick={() => props.onDel(i)} aria-label={`Adım ${i + 1}: sil`} title={`Adım ${i + 1}: sil`}>
+              <Icon name="close" size={10} />
+            </button>
+          )}
+        </li>
+      ))}
+      {editable && (
+        <li>
+          <button type="button" className="add" onClick={props.onAdd} title="Bu adımı kopyalayıp yeni adım ekle">
+            {props.addLabel}
+          </button>
+        </li>
+      )}
+    </ol>
   );
 }

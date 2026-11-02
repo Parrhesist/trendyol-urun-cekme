@@ -5404,3 +5404,58 @@ body.no-select,
   opacity: 0;
   pointer-events: none;
 }
+
+/* adım düğmesinin köşesindeki sil (etkin adımda hep, diğerlerinde üzerine gelince) */
+.frame-list li {
+  position: relative;
+}
+.frame-list li > button.chip-del {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  display: none;
+  place-items: center;
+  width: 18px;
+  min-width: 0;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bad);
+  color: #fff;
+  font-size: 0;
+  cursor: pointer;
+}
+.frame-list li.on > button.chip-del,
+.frame-list li:hover > button.chip-del {
+  display: grid;
+}
+/* seçili çizim yanıp söner, ortasındaki × ile silinir */
+.drawing.sel {
+  animation: draw-sel 0.8s ease-in-out infinite alternate;
+}
+@keyframes draw-sel {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.35;
+  }
+}
+.draw-del {
+  cursor: pointer;
+}
+.draw-del circle {
+  fill: var(--bad);
+  stroke: #fff;
+  stroke-width: 0.3;
+}
+.draw-del path {
+  stroke: #fff;
+  stroke-width: 0.35;
+  stroke-linecap: round;
+}
+.add-tok:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

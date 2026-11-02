@@ -1,6 +1,7 @@
 import { MiniPitch } from '../components/Pitch';
 import { addDays, fmtDate, STATUS_META, todayISO } from '../football';
 import { surname } from '../lineup';
+import { previewDrawings } from '../moves';
 import { useStore } from '../store';
 import { acwr, acwrText, acwrTone, isPlayed, result, RESULT_LABEL, sessionMinutes } from '../stats';
 import { Btn, Icon, Pill } from '../ui';
@@ -163,7 +164,7 @@ export function Dashboard({ go }: { go: (hash: string) => void }) {
           <div className="recent-grid">
             {recent.map((t) => (
               <button key={t.id} type="button" className="recent-t" onClick={() => go('taktik-' + t.id)}>
-                <MiniPitch tokens={t.tokens} pos={t.frames[0].pos} drawings={t.frames[Math.min(1, t.frames.length - 1)].drawings} half={t.half} colors={colors} />
+                <MiniPitch tokens={t.tokens} pos={t.frames[0].pos} drawings={previewDrawings(t)} half={t.half} colors={colors} />
                 <span>{t.name}</span>
               </button>
             ))}

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ROLE_NAMES, surname, tokenRoles } from '../lineup';
 import { usePlayer, useStore } from '../store';
-import type { LabelMode, Pt, Tactic, Token } from '../types';
+import type { Drawing, LabelMode, Pt, Tactic, Token } from '../types';
 import { Btn } from '../ui';
+import { movePaths } from '../moves';
 import { Pitch } from './Pitch';
 
 const STEP_MS = 1500;
@@ -83,21 +84,27 @@ export function useTacticAnimation(tactic: Tactic | undefined) {
   );
 
   let pos: Record<string, Pt> = {};
+  let drawings: Drawing[] = [];
   if (tactic && n) {
     const cur = tactic.frames[Math.min(fi, n - 1)];
     const prev = tactic.frames[Math.max(0, Math.min(fi, n - 1) - 1)];
+    drawings = cur.drawings;
     if (progress >= 1 || fi === 0) pos = cur.pos;
     else {
       const e = ease(progress);
+      // oku olan taş okun yolunu izler; ok geçiş boyunca görünür kalır
+      const paths = movePaths(prev, cur);
       pos = Object.fromEntries(
         Object.entries(cur.pos).map(([k, p]) => {
+          if (paths[k]) return [k, paths[k](e)];
           const a = prev.pos[k] ?? p;
           return [k, { x: a.x + (p.x - a.x) * e, y: a.y + (p.y - a.y) * e }];
         }),
       );
+      drawings = [...prev.drawings.filter((d) => d.mover), ...cur.drawings];
     }
   }
-  return { fi, setFi: go, playing, play, stop, pos, progress, n };
+  return { fi, setFi: go, playing, play, stop, pos, drawings, progress, n };
 }
 
 export const labelModeOf = (s: { labels?: LabelMode; showNames: boolean }): LabelMode => s.labels ?? (s.showNames ? 'name' : 'role');
@@ -204,7 +211,7 @@ export function TacticPlayer({
         </div>
       )}
       <div className="pitch-fit" style={{ '--fit-ar': tactic.half ? 58.5 / 74 : 1.5 } as React.CSSProperties}>
-        <Pitch tokens={tactic.tokens} pos={a.pos} drawings={frame?.drawings ?? []} half={tactic.half} colors={colors} subFor={labels.subFor} roleFor={labels.roleFor} tokenScale={tactic.tokenScale} />
+        <Pitch tokens={tactic.tokens} pos={a.pos} drawings={a.drawings} half={tactic.half} colors={colors} subFor={labels.subFor} roleFor={labels.roleFor} tokenScale={tactic.tokenScale} />
       </div>
       {frame?.note && <p className="tplayer-note">{frame.note}</p>}
     </div>
