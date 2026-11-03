@@ -49,6 +49,11 @@ Tarayıcı tarafında `sunucu/public/runtime.js`, uygulamanın claude.ai'de kull
 sunucuya bağlar; kod iki ortamda aynıdır. Düzenleme `ANTRENOR_SIFRESI` ile korunur, isteğe bağlı `IZLEME_SIFRESI` siteyi
 tamamen kapatır. Ana ekrana eklenince tarayıcı çerçevesiz açılır (web app manifest). Kurulum: paketteki `BENIOKU.md`.
 
+Paylaşımlı hosting (cPanel/Plesk, yalnız PHP) için `dagitim/saha-kenari-hosting.zip`: `public_html` içine ayıklanır,
+alan adının kökünde açılır. `hosting/api.php` (PHP 7.2+, veritabanısız) belgeleri geldiği JSON metniyle `veri/veri.php`'de
+saklar (dosya tarayıcıdan açılamaz), `hosting/runtime.js` aynı `window.claude` arayüzünü kısa aralıklı sorgulamayla sağlar
+(sunum sürerken 1 sn). Antrenör şifresi ilk girişte uygulamada belirlenir (ya da `ayarlar.php`).
+
 ## Altyapı
 React 18 + TypeScript + Vite, tek HTML dosyasına derlenir (`vite-plugin-singlefile`). Grafikler ve saha SVG ile çizilir, harici kütüphane yoktur.
 

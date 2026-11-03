@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { HOSTED } from './host';
+import { host, HOSTED } from './host';
 import { LiveIndicator } from './present/Actions';
 import { parseDeckHash, SCREEN_HASH } from './present/links';
 import { DeckPage, ScreenView } from './present/Screen';
@@ -7,7 +7,7 @@ import { buildSample } from './sample';
 import { useStore } from './store';
 import { Btn, Icon, Toasts } from './ui';
 import { Dashboard } from './views/Dashboard';
-import { CoachLogin } from './views/Login';
+import { CoachLogin, CoachSetup } from './views/Login';
 import { Library } from './views/Library';
 import { Matches } from './views/Matches';
 import { SettingsView } from './views/Settings';
@@ -36,6 +36,19 @@ export function App() {
   const [returnTo, setReturnTo] = useState<string | null>(null);
   const [login, setLogin] = useState(false);
   const canLogin = HOSTED && mode === 'shared' && !canEdit;
+  // paylaşımlı hosting ilk kurulum: şifre belirlenene kadar uyarı, oturum başına bir kez pencere
+  const needsSetup = HOSTED && mode === 'shared' && !!host()?.needsSetup?.();
+  const [setup, setSetup] = useState(false);
+  useEffect(() => {
+    if (!needsSetup) return;
+    try {
+      if (sessionStorage.getItem('saha-kenari-kurulum')) return;
+      sessionStorage.setItem('saha-kenari-kurulum', '1');
+    } catch {
+      /* depolama kapalı */
+    }
+    setSetup(true);
+  }, [needsSetup]);
   useEffect(() => {
     if (!route.startsWith('taktik-')) setReturnTo(null);
   }, [route]);
@@ -187,6 +200,14 @@ export function App() {
         </div>
       </nav>
       <main className="main">
+        {needsSetup && (
+          <div className="conn-banner" role="alert">
+            <strong>Antrenör şifresi belirlenmedi.</strong> Adresi bilen herkes verileri değiştirebilir.{' '}
+            <button type="button" className="link-btn" onClick={() => setSetup(true)}>
+              Şifreyi şimdi belirleyin
+            </button>
+          </div>
+        )}
         {sharedUnavailable && (
           <div className="conn-banner" role="alert">
             <strong>Takım verilerine bağlanılamadı.</strong>{' '}
@@ -201,6 +222,7 @@ export function App() {
       </main>
       <LiveIndicator />
       {login && <CoachLogin onClose={() => setLogin(false)} />}
+      {setup && <CoachSetup onClose={() => setSetup(false)} />}
       <Toasts />
     </div>
   );

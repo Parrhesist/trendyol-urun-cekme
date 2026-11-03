@@ -1,0 +1,23 @@
+# Saha Kenarı. Bu dosya silinse de uygulama çalışır; yalnızca önbellek ve güvenlik başlıklarını ekler.
+
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  <FilesMatch "\.(html|js|webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+
+# ayarlar ve veri dosyaları dışarıya kapalı
+<FilesMatch "^(ayarlar(-ornek)?\.php|BENIOKU\.md)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>

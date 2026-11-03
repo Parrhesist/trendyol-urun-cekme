@@ -2,3 +2,4 @@ node_modules
 dist
 paket
 sunucu/data
+hosting/veri/*.php

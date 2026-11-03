@@ -1,5 +1,6 @@
-// Kendi sunucusunda çalışacak paketi hazırlar: dagitim/saha-kenari-sunucu.zip
-//   saha-kenari/server.js, public/ (uygulama + sunucu bağlantısı), statik/ (sunucusuz kullanım), kurulum dosyaları
+// Kendi sunucusunda çalışacak paketleri hazırlar:
+//   dagitim/saha-kenari-sunucu.zip  — Node.js sunucusu (VPS): server.js, public/, statik/, kurulum dosyaları
+//   dagitim/saha-kenari-hosting.zip — paylaşımlı hosting (PHP): public_html'e ayıklanır, kökte çalışır
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
@@ -35,5 +36,15 @@ for (const f of ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-
 
 rmSync(ZIP, { force: true });
 execFileSync('zip', ['-r', '-X', '-q', `../${ZIP}`, 'saha-kenari'], { cwd: 'paket' });
-rmSync('paket', { recursive: true, force: true });
 console.log(`${ZIP}: ${(readFileSync(ZIP).length / 1024).toFixed(0)} KB`);
+
+// paylaşımlı hosting: dosyalar zip'in kökünde (public_html içine ayıklanınca doğrudan alan adında açılır)
+const HOST_OUT = 'paket/hosting';
+const HOST_ZIP = 'dagitim/saha-kenari-hosting.zip';
+cpSync('hosting', HOST_OUT, { recursive: true });
+writeFileSync(`${HOST_OUT}/index.html`, inject('<script src="runtime.js"></script>\n    '));
+for (const f of ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'icon.svg']) cpSync(`sunucu/public/${f}`, `${HOST_OUT}/${f}`);
+rmSync(HOST_ZIP, { force: true });
+execFileSync('zip', ['-r', '-X', '-q', `../../${HOST_ZIP}`, '.'], { cwd: HOST_OUT });
+rmSync('paket', { recursive: true, force: true });
+console.log(`${HOST_ZIP}: ${(readFileSync(HOST_ZIP).length / 1024).toFixed(0)} KB`);

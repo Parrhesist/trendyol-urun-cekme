@@ -6,6 +6,9 @@ type HostRT = {
   /** sunucu antrenör şifresi istiyor mu */
   isProtected?: () => boolean;
   login?: (password: string) => Promise<boolean>;
+  /** paylaşımlı hosting: henüz antrenör şifresi belirlenmemiş (ilk kurulum) */
+  needsSetup?: () => boolean;
+  setup?: (password: string) => Promise<boolean>;
   logout?: () => void;
   loggedIn?: () => boolean;
 };
