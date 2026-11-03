@@ -7,8 +7,10 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const os = require('os');
 
-const PORT = Number(process.env.PORT || 8080);
+// PORT verilmezse önce 80 denenir (adres çubuğunda port yazmadan http://alanadi/), olmazsa 8080
+const PORTS = process.env.PORT ? [Number(process.env.PORT)] : [80, 8080];
 const HOST = process.env.HOST || '0.0.0.0';
 const COACH_PW = process.env.ANTRENOR_SIFRESI || '';
 const VIEW_PW = process.env.IZLEME_SIFRESI || '';
@@ -281,12 +283,47 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`Saha Kenarı çalışıyor: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
-  console.log(`Veri dosyası: ${DB_FILE} (${docs.size} belge)`);
-  if (!COACH_PW) console.warn('UYARI: ANTRENOR_SIFRESI verilmedi; adresi bilen herkes verileri değiştirebilir.');
-  if (VIEW_PW) console.log('Site şifreli: açılışta IZLEME_SIFRESI (ya da antrenör şifresi) sorulur.');
-});
+/** Sunucuya dışarıdan ulaşılabilecek adresler (yerel ağ IP'leri) */
+function addresses(port) {
+  const tail = port === 80 ? '' : `:${port}`;
+  if (HOST !== '0.0.0.0') return [`http://${HOST}${tail}/`];
+  const ips = Object.values(os.networkInterfaces())
+    .flat()
+    .filter((n) => n && n.family === 'IPv4' && !n.internal)
+    .map((n) => n.address);
+  return ['localhost', ...ips].map((h) => `http://${h}${tail}/`);
+}
+
+function listen(i) {
+  const port = PORTS[i];
+  const onError = (e) => {
+    const next = PORTS[i + 1];
+    if (e.code === 'EACCES') {
+      console.warn(`${port} numaralı port yönetici yetkisi ister.${next ? ` ${next} numaralı porta geçiliyor.` : ''}`);
+      if (port < 1024)
+        console.warn('  Adres çubuğunda port yazmadan açmak için: sudo ile çalıştırın, ya da bir kez "sudo setcap cap_net_bind_service=+ep $(which node)" deyin (bkz. BENIOKU.md).');
+    } else if (e.code === 'EADDRINUSE') {
+      console.warn(`${port} numaralı portu başka bir program kullanıyor${port === 80 ? ' (büyük olasılıkla Apache ya da nginx)' : ''}.${next ? ` ${next} numaralı porta geçiliyor.` : ''}`);
+      if (port === 80) console.warn('  Alan adının kökünde açmak için o web sunucusuna yönlendirme ekleyin: nginx-ornek.conf ya da apache-ornek.conf (bkz. BENIOKU.md).');
+    } else console.error(`Sunucu başlatılamadı: ${e.message}`);
+    server.removeListener('listening', onListening);
+    if (next && (e.code === 'EACCES' || e.code === 'EADDRINUSE')) return listen(i + 1);
+    console.error(e.code === 'EADDRINUSE' ? `Başka bir port seçin, örn. PORT=${port + 1} node server.js` : 'Sunucu başlatılamadı.');
+    process.exit(1);
+  };
+  const onListening = () => {
+    server.removeListener('error', onError);
+    console.log('Saha Kenarı çalışıyor. Tarayıcıda açın:');
+    for (const a of addresses(port)) console.log(`  ${a}`);
+    console.log(`Veri dosyası: ${DB_FILE} (${docs.size} belge)`);
+    if (!COACH_PW) console.warn('UYARI: ANTRENOR_SIFRESI verilmedi; adresi bilen herkes verileri değiştirebilir.');
+    if (VIEW_PW) console.log('Site şifreli: açılışta IZLEME_SIFRESI (ya da antrenör şifresi) sorulur.');
+  };
+  server.once('error', onError);
+  server.once('listening', onListening);
+  server.listen(port, HOST);
+}
+listen(0);
 
 function shutdown() {
   try {

@@ -3,7 +3,9 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      # http://alanadi/ (port yazmadan). Sunucuda 80'i Apache/nginx kullanıyorsa "8080:8080" yapıp
+      # o web sunucusuna yönlendirme ekleyin (nginx-ornek.conf / apache-ornek.conf)
+      - "80:8080"
     environment:
       ANTRENOR_SIFRESI: "buraya-guclu-bir-sifre"
       # Siteyi tamamen kapatmak için (oyuncular ve TV de bu şifreyle girer):

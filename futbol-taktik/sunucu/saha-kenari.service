@@ -7,11 +7,14 @@ After=network.target
 [Service]
 WorkingDirectory=/opt/saha-kenari
 ExecStart=/usr/bin/node server.js
-Environment=PORT=8080
+# PORT verilmezse önce 80 (http://alanadi/), 80 doluysa 8080 kullanılır.
+# Apache/nginx önünde çalışacaksa: Environment=PORT=8080 ve Environment=HOST=127.0.0.1
 Environment=ANTRENOR_SIFRESI=buraya-guclu-bir-sifre
 # Environment=IZLEME_SIFRESI=oyuncu-sifresi
 User=www-data
 Group=www-data
+# 80 numaralı portu yönetici olmadan açabilmesi için
+AmbientCapabilities=CAP_NET_BIND_SERVICE
 Restart=always
 RestartSec=3
 
