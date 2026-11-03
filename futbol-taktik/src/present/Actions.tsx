@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { QR } from '../components/QR';
 import { useStore } from '../store';
+import { HOSTED } from '../host';
 import { Btn, copyText, Icon, Modal, toggleFullscreen } from '../ui';
 import { useDeck } from './decks';
 import { appBase, deckHash, linkFor, SCREEN_HASH, type DeckTarget } from './links';
@@ -244,7 +245,13 @@ export function CastModal({ target, onClose, onStart }: { target: DeckTarget; on
             <details open={!live.screens}>
               <summary>TV'yi bağlama (bir kez)</summary>
               <ol className="steps">
-                {mode === 'shared' ? (
+                {mode === 'shared' && HOSTED ? (
+                  <>
+                    <li>TV'nin internet tarayıcısında şu adresi açın (giriş gerekmez); ya da uygulamayı açıp ana sayfadaki <strong>Bu cihazı TV ekranı yap</strong> düğmesine basın:</li>
+                    <LinkBox link={screenLink} id="cast-screen-link" />
+                    <li>TV'de “ekran olarak bağlı ve hazır” yazısı çıkınca burada ekranın adı görünür.</li>
+                  </>
+                ) : mode === 'shared' ? (
                   <>
                     <li>TV'nin internet tarayıcısında claude.ai'yi açın ve uygulamayı açabilen bir hesapla giriş yapın (en kolayı sizin hesabınız).</li>
                     <li>
@@ -261,7 +268,7 @@ export function CastModal({ target, onClose, onStart }: { target: DeckTarget; on
                   </>
                 )}
               </ol>
-              {mode === 'shared' && <p className="hint">TV başka bir hesapla açıldıysa listede görünmeyebilir ama gönderilen sunumu yine de gösterir. TV giriş yapamıyorsa yukarıdaki yansıtma yolunu kullanın.</p>}
+              {mode === 'shared' && !HOSTED && <p className="hint">TV başka bir hesapla açıldıysa listede görünmeyebilir ama gönderilen sunumu yine de gösterir. TV giriş yapamıyorsa yukarıdaki yansıtma yolunu kullanın.</p>}
             </details>
           </section>
         )}
@@ -276,7 +283,7 @@ export function CastModal({ target, onClose, onStart }: { target: DeckTarget; on
             {hasBase && <QR text={deckLink} size={132} label="Sunum bağlantısı QR kodu" />}
           </div>
           {!hasBase && <p className="hint">Tam adres oluşturmak için Ayarlar → TV ve ekranlar bölümüne uygulamanın bağlantısını girin.</p>}
-          {mode === 'shared' && <p className="hint">Bağlantıyı açan kişinin claude.ai'de giriş yapmış olması ve uygulamaya erişimi olmalı.</p>}
+          {mode === 'shared' && !HOSTED && <p className="hint">Bağlantıyı açan kişinin claude.ai'de giriş yapmış olması ve uygulamaya erişimi olmalı.</p>}
         </section>
       </div>
     </Modal>

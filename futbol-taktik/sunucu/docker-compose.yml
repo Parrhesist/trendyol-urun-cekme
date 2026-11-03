@@ -1,0 +1,15 @@
+services:
+  saha-kenari:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ANTRENOR_SIFRESI: "buraya-guclu-bir-sifre"
+      # Siteyi tamamen kapatmak için (oyuncular ve TV de bu şifreyle girer):
+      # IZLEME_SIFRESI: "oyuncu-sifresi"
+    volumes:
+      - saha-veri:/app/data
+
+volumes:
+  saha-veri:

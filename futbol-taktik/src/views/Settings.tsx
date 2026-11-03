@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Importer } from '../components/Importer';
+import { host, HOSTED } from '../host';
 import { LinkBox } from '../present/Actions';
 import { appBase, linkFor, SCREEN_HASH } from '../present/links';
 import { buildSample } from '../sample';
@@ -77,7 +78,7 @@ export function SettingsView() {
         <LinkBox link={linkFor(s, SCREEN_HASH)} id="st-screen-link" />
         <ul className="tv-howto">
           <li>
-            <strong>Samsung, LG, Android TV tarayıcısı:</strong> bağlantıyı açın, claude.ai'ye uygulamayı açabilen bir hesapla giriş yapın, yer imlerine ekleyin. Kumandada ← → slayt, ↑ ↓ taktik adımı, OK oynat.
+            <strong>Samsung, LG, Android TV tarayıcısı:</strong> bağlantıyı açın{HOSTED ? '' : ", claude.ai'ye uygulamayı açabilen bir hesapla giriş yapın"}, yer imlerine ekleyin. Kumandada ← → slayt, ↑ ↓ taktik adımı, OK oynat.
           </li>
           <li>
             <strong>Chromecast / Google TV:</strong> bilgisayarda Chrome ile bağlantıyı açın → ⋮ menü → Yayınla → TV'yi seçin.
@@ -102,6 +103,23 @@ export function SettingsView() {
           Kaydet
         </Btn>
       </section>
+
+      {HOSTED && host()?.isProtected?.() && host()?.loggedIn?.() && (
+        <section className="panel">
+          <h2 className="section-title">Antrenör oturumu</h2>
+          <p className="muted">Bu cihaz antrenör şifresiyle giriş yaptı ve düzenleyebiliyor. Cihazı başkasına bırakacaksanız oturumu kapatın; sonra yalnızca görüntüleme yapılır.</p>
+          <div className="row">
+            <Btn
+              onClick={() => {
+                host()?.logout?.();
+                location.reload();
+              }}
+            >
+              Bu cihazda oturumu kapat
+            </Btn>
+          </div>
+        </section>
+      )}
 
       <section className="panel">
         <h2 className="section-title">Yedekleme</h2>

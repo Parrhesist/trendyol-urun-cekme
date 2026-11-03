@@ -6,7 +6,7 @@ import { useStore } from '../store';
 import { acwr, acwrText, acwrTone, isPlayed, result, RESULT_LABEL, sessionMinutes } from '../stats';
 import { Btn, Icon, Pill } from '../ui';
 
-export function Dashboard({ go }: { go: (hash: string) => void }) {
+export function Dashboard({ go, onLogin }: { go: (hash: string) => void; onLogin?: () => void }) {
   const { data } = useStore();
   const today = todayISO();
   const next = [...data.matches].filter((m) => !isPlayed(m) && m.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0];
@@ -29,10 +29,17 @@ export function Dashboard({ go }: { go: (hash: string) => void }) {
           <p className="eyebrow">{fmtDate(today, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
           <h1>{data.settings.teamName}</h1>
         </div>
-        <a className="btn btn-plain btn-md" href="#ekran" title="TV'de açtıysanız buna basın: bu cihaz sunumların gösterileceği ekran olur">
-          <Icon name="cast" />
-          <span>Bu cihazı TV ekranı yap</span>
-        </a>
+        <div className="row">
+          {onLogin && (
+            <Btn variant="primary" icon="edit" onClick={onLogin}>
+              Antrenör girişi
+            </Btn>
+          )}
+          <a className="btn btn-plain btn-md" href="#ekran" title="TV'de açtıysanız buna basın: bu cihaz sunumların gösterileceği ekran olur">
+            <Icon name="cast" />
+            <span>Bu cihazı TV ekranı yap</span>
+          </a>
+        </div>
       </header>
 
       <div className="dash">

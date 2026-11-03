@@ -1,0 +1,14 @@
+{
+  "name": "saha-kenari-sunucu",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Saha Kenarı: taktik, antrenman ve maç değerlendirme — takım sunucusu",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}

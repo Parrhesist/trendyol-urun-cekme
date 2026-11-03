@@ -5459,3 +5459,11 @@ body.no-select,
   opacity: 0.45;
   cursor: default;
 }
+
+/* kendi sunucusunda: izleme rozetinin yerinde antrenör girişi */
+.badge.badge-btn {
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+}

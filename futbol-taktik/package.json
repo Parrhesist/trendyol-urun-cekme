@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build && node scripts/artifact.mjs",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "paket": "npm run build && node scripts/package-server.mjs",
+    "sunucu": "node sunucu/server.js"
   },
   "dependencies": {
     "qrcode-generator": "1.4.4",

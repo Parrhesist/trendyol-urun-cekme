@@ -42,6 +42,13 @@ Yatay tablet ve bilgisayarda (en az 900 × 500 px) sahalı ekranlar — taktik t
 
 Yan çevrilmiş telefonda (en az 560 px genişlik, 500 px altı yükseklik) aynı tek ekran düzeni sıkıştırılmış hâliyle açılır: menü ince bir simge sütununa iner, araçlar sahanın solunda, adımlar ve ekleme düğmeleri sağında durur; taktik ayarları dişli düğmesiyle açılan çekmecede, maçın tarih/saha bilgileri takvim düğmesiyle açılan pencerededir. Uzun listeler (kadro, istatistik) kendi sütunlarında kayar, sayfa kaymaz. Dikey telefonda sahalı ekranlarda yan çevirme ipucu çıkar ve taktik tahtasında saha başlığın hemen altına gelir.
 
+## Kendi sunucunda çalıştırma
+`npm run paket` → `dagitim/saha-kenari-sunucu.zip`. İçinde ek paket gerektirmeyen Node.js 18+ sunucusu (`sunucu/server.js`) ve
+derlenmiş uygulama vardır: veriler sunucuda `data/veri.json`'da tutulur, cihazlar arası eşitleme ve TV yayını SSE ile anlıktır.
+Tarayıcı tarafında `sunucu/public/runtime.js`, uygulamanın claude.ai'de kullandığı `window.claude` (db, user, room) arayüzünü
+sunucuya bağlar; kod iki ortamda aynıdır. Düzenleme `ANTRENOR_SIFRESI` ile korunur, isteğe bağlı `IZLEME_SIFRESI` siteyi
+tamamen kapatır. Ana ekrana eklenince tarayıcı çerçevesiz açılır (web app manifest). Kurulum: paketteki `BENIOKU.md`.
+
 ## Altyapı
 React 18 + TypeScript + Vite, tek HTML dosyasına derlenir (`vite-plugin-singlefile`). Grafikler ve saha SVG ile çizilir, harici kütüphane yoktur.
 

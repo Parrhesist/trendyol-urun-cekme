@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { HOSTED } from './host';
 import { LiveIndicator } from './present/Actions';
 import { parseDeckHash, SCREEN_HASH } from './present/links';
 import { DeckPage, ScreenView } from './present/Screen';
@@ -6,6 +7,7 @@ import { buildSample } from './sample';
 import { useStore } from './store';
 import { Btn, Icon, Toasts } from './ui';
 import { Dashboard } from './views/Dashboard';
+import { CoachLogin } from './views/Login';
 import { Library } from './views/Library';
 import { Matches } from './views/Matches';
 import { SettingsView } from './views/Settings';
@@ -32,6 +34,8 @@ export function App() {
   const [route, setRoute] = useState(readHash);
   // maçtan açılan taktikte "geri" maça döner
   const [returnTo, setReturnTo] = useState<string | null>(null);
+  const [login, setLogin] = useState(false);
+  const canLogin = HOSTED && mode === 'shared' && !canEdit;
   useEffect(() => {
     if (!route.startsWith('taktik-')) setReturnTo(null);
   }, [route]);
@@ -99,7 +103,16 @@ export function App() {
             </div>
           </>
         ) : (
-          <p>Antrenörünüz henüz içerik eklemedi.</p>
+          <>
+            <p>Antrenörünüz henüz içerik eklemedi.</p>
+            {canLogin && (
+              <div className="row">
+                <Btn variant="primary" size="lg" icon="edit" onClick={() => setLogin(true)}>
+                  Antrenör girişi
+                </Btn>
+              </div>
+            )}
+          </>
         )}
       </div>
     );
@@ -138,11 +151,14 @@ export function App() {
       case 'kadro':
         view = <Squad />;
         break;
+      case 'panel':
+        view = <Dashboard go={go} onLogin={canLogin ? () => setLogin(true) : undefined} />;
+        break;
       case 'ayarlar':
         view = <SettingsView />;
         break;
       default:
-        view = <Dashboard go={go} />;
+        view = <Dashboard go={go} onLogin={canLogin ? () => setLogin(true) : undefined} />;
     }
 
   return (
@@ -160,20 +176,31 @@ export function App() {
           </a>
         ))}
         <div className="rail-foot">
-          {!canEdit && <span className="badge">İzleme</span>}
+          {canLogin ? (
+            <button type="button" className="badge badge-btn" onClick={() => setLogin(true)} title="Antrenör şifresiyle düzenlemeyi aç">
+              Giriş
+            </button>
+          ) : (
+            !canEdit && <span className="badge">İzleme</span>
+          )}
           {mode === 'local' && <span className="badge" title="Veriler bu tarayıcıda saklanıyor">Bu cihaz</span>}
         </div>
       </nav>
       <main className="main">
         {sharedUnavailable && (
           <div className="conn-banner" role="alert">
-            <strong>Takım verilerine bağlanılamadı.</strong> Bu tarayıcıda claude.ai oturumu açık değil ya da bu hesabın uygulamaya erişimi yok. Şu an bu cihazda kayıtlı veriler gösteriliyor; burada yapılan değişiklikler takımla paylaşılmaz.
+            <strong>Takım verilerine bağlanılamadı.</strong>{' '}
+            {HOSTED
+              ? 'Sunucuya ulaşılamıyor (internet bağlantısı ya da sunucu kapalı olabilir).'
+              : "Bu tarayıcıda claude.ai oturumu açık değil ya da bu hesabın uygulamaya erişimi yok."}{' '}
+            Şu an bu cihazda kayıtlı veriler gösteriliyor; burada yapılan değişiklikler takımla paylaşılmaz.
           </div>
         )}
         <RotateHint />
         {view}
       </main>
       <LiveIndicator />
+      {login && <CoachLogin onClose={() => setLogin(false)} />}
       <Toasts />
     </div>
   );

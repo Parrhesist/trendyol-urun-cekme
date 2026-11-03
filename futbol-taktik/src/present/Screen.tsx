@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { fmtDate, todayISO } from '../football';
 import { useStore } from '../store';
 import { isPlayed, sessionMinutes } from '../stats';
+import { HOSTED } from '../host';
 import { Btn, toggleFullscreen } from '../ui';
 import { useDeck } from './decks';
 import type { DeckTarget } from './links';
@@ -50,12 +51,25 @@ function NotConnected() {
   return (
     <div className="tv-root tv-idle tv-error">
       <h1>Bu ekran takıma bağlanamadı</h1>
-      <p className="tv-lead">TV'nin tarayıcısında claude.ai oturumu açık değil ya da bu hesabın uygulamaya erişimi yok. Bu yüzden tabletten gönderilen sunumlar buraya gelemez.</p>
-      <ol className="tv-steps">
-        <li>Bu tarayıcıda claude.ai'ye, uygulamayı açabilen bir hesapla giriş yapın (en kolayı sizin hesabınız).</li>
-        <li>Saha Kenarı uygulamasını yeniden açın ve ana sayfadaki <strong>Bu cihazı TV ekranı yap</strong> düğmesine basın.</li>
-        <li>Giriş yapılamıyorsa tableti TV'ye yansıtın (AirPlay, Smart View, Chromecast) ve tablette <strong>Ekrana yansıt → Tam ekran başlat</strong> deyin.</li>
-      </ol>
+      {HOSTED ? (
+        <>
+          <p className="tv-lead">Takımın sunucusuna ulaşılamıyor. Bu yüzden tabletten gönderilen sunumlar buraya gelemez.</p>
+          <ol className="tv-steps">
+            <li>TV'nin internete (ya da sunucunun bulunduğu ağa) bağlı olduğunu kontrol edin.</li>
+            <li>Adres çubuğundaki adresin tabletteki uygulamanın adresiyle aynı olduğundan emin olun.</li>
+            <li>Olmuyorsa tableti TV'ye yansıtın (AirPlay, Smart View, Chromecast) ve tablette <strong>Ekrana yansıt → Tam ekran başlat</strong> deyin.</li>
+          </ol>
+        </>
+      ) : (
+        <>
+          <p className="tv-lead">TV'nin tarayıcısında claude.ai oturumu açık değil ya da bu hesabın uygulamaya erişimi yok. Bu yüzden tabletten gönderilen sunumlar buraya gelemez.</p>
+          <ol className="tv-steps">
+            <li>Bu tarayıcıda claude.ai'ye, uygulamayı açabilen bir hesapla giriş yapın (en kolayı sizin hesabınız).</li>
+            <li>Saha Kenarı uygulamasını yeniden açın ve ana sayfadaki <strong>Bu cihazı TV ekranı yap</strong> düğmesine basın.</li>
+            <li>Giriş yapılamıyorsa tableti TV'ye yansıtın (AirPlay, Smart View, Chromecast) ve tablette <strong>Ekrana yansıt → Tam ekran başlat</strong> deyin.</li>
+          </ol>
+        </>
+      )}
       <Btn size="lg" variant="primary" autoFocus onClick={() => location.reload()}>
         Yeniden dene
       </Btn>
